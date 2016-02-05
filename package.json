@@ -1,0 +1,27 @@
+{
+  "name": "aurelia-webpack-plugin",
+  "version": "0.1.0",
+  "description": "Webpack plugin that creates a webpack context for aurelia-webpack-loader",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/martijnboland/aurelia-webpack-plugin.git"
+  },
+  "keywords": [
+    "Aurelia",
+    "webpack",
+    "plugin"
+  ],
+  "author": "Martijn Boland",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/martijnboland/aurelia-webpack-plugin/issues"
+  },
+  "homepage": "https://github.com/martijnboland/aurelia-webpack-plugin#readme",
+  "dependencies": {
+    "webpack": "^1.12.12"
+  }
+}
