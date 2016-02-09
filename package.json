@@ -4,7 +4,7 @@
   "description": "Webpack plugin that creates a webpack context for aurelia-webpack-loader",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha test"
   },
   "repository": {
     "type": "git",
@@ -23,5 +23,10 @@
   "homepage": "https://github.com/martijnboland/aurelia-webpack-plugin#readme",
   "dependencies": {
     "webpack": "^1.12.12"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "mocha": "^2.4.5",
+    "rimraf": "^2.5.1"
   }
 }

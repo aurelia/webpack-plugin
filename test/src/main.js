@@ -1,0 +1,1 @@
+var loader = require('../loader/aurelia-loader-webpack-fake');
