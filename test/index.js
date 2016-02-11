@@ -9,23 +9,19 @@ var OUTPUT_DIR = path.join(__dirname, '../testoutput');
 
 function testAureliaPlugin (webpackConfig, done) {
 
-  webpack(webpackConfig, function (err, stats) {
-    expect(err).to.be.falsy;
-    var compilationErrors = (stats.compilation.errors || []).join('\n');
-    var compilationWarnings = (stats.compilation.warnings || []).join('\n');
-    done();
-  });
+  
 }
-
 
 describe('Aurelia webpack plugin', function () {
   
   beforeEach(function (done) {
-    rm_rf(OUTPUT_DIR, done);
+    //rm_rf(OUTPUT_DIR, done);
+    done();
   });
   
   it('resolves modules with the default options', function (done) {
-    testAureliaPlugin({
+    var config = {
+      target: 'async-node',
       entry: path.join(__dirname, 'src/main.js'),
       output: {
         path: OUTPUT_DIR,
@@ -34,7 +30,20 @@ describe('Aurelia webpack plugin', function () {
       plugins: [
         new AureliaWebpackPlugin()
       ]      
-    }, done);
-  });
+    };
+    
+    webpack(config, function (err, stats) {
+      expect(err).to.be.falsy;
+      expect(stats.hasErrors()).to.be.falsy;
+      expect(stats.hasWarnings()).to.be.falsy;
+      
+      expect(fs.existsSync(path.join(OUTPUT_DIR, '1.bundle.js'))).to.be.truthy;
+
+      // todo try to require from bundle
+      
+      done();
+    });
+  
+  });  
   
 });
