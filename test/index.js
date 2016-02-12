@@ -7,16 +7,10 @@ var AureliaWebpackPlugin = require('../');
 
 var OUTPUT_DIR = path.join(__dirname, '../testoutput');
 
-function testAureliaPlugin (webpackConfig, done) {
-
-  
-}
-
 describe('Aurelia webpack plugin', function () {
   
   beforeEach(function (done) {
-    //rm_rf(OUTPUT_DIR, done);
-    done();
+    rm_rf(OUTPUT_DIR, done);
   });
   
   it('resolves modules with the default options', function (done) {
