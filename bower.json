@@ -1,0 +1,20 @@
+{
+  "name": "aurelia-webpack-plugin",
+  "version": "0.1.0",
+  "description": "A plugin for webpack that enables bundling Aurelia applications.",
+  "keywords": [
+    "aurelia",
+    "webpack",
+    "plugin"
+  ],
+  "homepage": "http://aurelia.io",
+  "bugs": {
+    "url": "https://github.com/aurelia/webpack-plugin/issues"
+  },
+  "license": "MIT",
+  "author": "Rob Eisenberg <rob@bluespire.com> (http://robeisenberg.com/)",
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/aurelia/webpack-plugin"
+  }
+}
