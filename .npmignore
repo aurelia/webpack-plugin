@@ -1,3 +1,6 @@
-jspm_packages
-bower_components
+node_modules
+test
+testoutput
 .idea
+.vscode
+.DS_STORE

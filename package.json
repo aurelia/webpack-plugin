@@ -13,12 +13,21 @@
   },
   "license": "MIT",
   "author": "Rob Eisenberg <rob@bluespire.com> (http://robeisenberg.com/)",
-  "main": "dist/commonjs/aurelia-webpack-plugin.js",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha test"
+  },
   "repository": {
     "type": "git",
     "url": "http://github.com/aurelia/webpack-plugin"
   },
+  "dependencies": {
+    "webpack": "^1.12"
+  },
   "devDependencies": {
+    "chai": "^3.5.0",
+    "mocha": "^2.4.5",
+    "rimraf": "^2.5.1"
   },
   "aurelia": {
     "documentation": {
