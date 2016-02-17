@@ -1,0 +1,16 @@
+{
+  "name": "aurelia-webpack",
+  "version": "0.1.0",
+  "description": "This is a TEST package.json file!",
+  "private": true,
+  "scripts": {
+  },
+  "author": "Martijn Boland",
+  "license": "MIT",
+  "dependencies": {
+    "aurelia-framework": "^1.0.0-beta.1.1.1",
+    "aurelia-templating-resources": "^1.0.0-beta.1.1.0"
+  },
+  "devDependencies": {
+  }
+}

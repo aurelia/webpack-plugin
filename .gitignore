@@ -3,3 +3,4 @@ testoutput
 .idea
 .vscode
 .DS_STORE
+npm-debug.log*

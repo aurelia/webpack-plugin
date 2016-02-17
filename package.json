@@ -25,6 +25,7 @@
     "webpack": "^1.12"
   },
   "devDependencies": {
+    "aurelia-tools": "^0.1.18",
     "chai": "^3.5.0",
     "mocha": "^2.4.5",
     "rimraf": "^2.5.1"
