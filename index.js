@@ -1,5 +1,5 @@
 /*
-	MIT License http://www.opensource.org/licenses/mit-license.php
+  MIT License http://www.opensource.org/licenses/mit-license.php
   Based on ContextReplacementPlugin by Tobias Koppers @sokra
 */
 var path = require("path");
@@ -55,7 +55,7 @@ AureliaWebpackPlugin.prototype.apply = function(compiler) {
     });
     cmf.plugin("after-resolve", function(result, callback) {
       if (!result) return callback();
-      if (self.options.src.endsWith(result.resource)) {
+      if (self.options.src.indexOf(result.resource, self.options.src.length - result.resource.length) !== -1) {
         result.resolveDependencies = createResolveDependenciesFromContextMap(self.createContextMap, result.resolveDependencies);
       }
       return callback(null, result);
@@ -72,25 +72,27 @@ function createResolveDependenciesFromContextMap(createContextMap, originalResol
       createContextMap(fs, function(err, map) {
         if(err) return callback(err);
         
-        Object.keys(map).forEach(function(key) {
+        var keys = Object.keys(map);
+        for (var i = 0; i < keys.length; i++) {
+          var key = keys[i];
           // Add main module as dependency
           dependencies.push(new ContextElementDependency(key, './' + key));
           // Also include all other modules as subdependencies when it is an aurelia module. This is required
           // because Aurelia submodules are not in the root of the NPM package and thus cannot be loaded 
           // directly like import 'aurelia-templating-resources/compose'
-          if (key.startsWith('aurelia-')) {
+          if (key.substr(0, 8) === 'aurelia-') {
             var mainDir = path.dirname(map[key]);
             var mainFileName = path.basename(map[key]);
             var files = fileSystem.readdirSync(mainDir);
-            files.forEach(function(fileName) {
+            for (var j = 0; j < files.length; j++) {
+              var fileName = files[j];
               if (fileName.indexOf(mainFileName) === -1 && fileName.match(/[^\.]\.(js||html|css)$/)) {
                 var subModuleKey = key + '/' + path.basename(fileName, path.extname(fileName));
                 dependencies.push(new ContextElementDependency(path.resolve(mainDir, fileName), './' + subModuleKey));
-              } 
-            });          
+              }               
+            }
           }
-        });
-        
+        };        
         callback(null, dependencies);
       });      
     });
