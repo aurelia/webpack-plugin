@@ -22,7 +22,7 @@
     "url": "http://github.com/aurelia/webpack-plugin"
   },
   "dependencies": {
-    "webpack": ">= 1.12 < 3"
+    "webpack": ">=1.12 <3"
   },
   "devDependencies": {
     "aurelia-tools": "^0.1.18",
