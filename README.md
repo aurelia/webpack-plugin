@@ -43,6 +43,25 @@ The directory where the app source files are located. Defaults to './src'.
 
 The root project directory. Defaults to the directory from where webpack is called.
 
+*includeSubModules*
+
+Some Aurelia modules or plugins have more than 1 file that need to be resolved (for example, when a plugin also contains an html template).
+By default, only the main file of a module is loaded. Adding this option allows you include extra files in the bundles.
+
+```javascript
+new AureliaWebpackPlugin({
+  includeSubModules: [
+    { moduleId: 'my-aurelia-plugin', include: /optional_regex/, exclude: /optional_regex/ }
+  ]
+})
+``` 
+
+Every module that needs extra files to be included is represented by one object in the array. 
+The *moduleId* field is required and the *include* and *exclude* fields are optional.
+
+> **Note**: internally, the includeSubModules feature is also used to resolve Aurelia's submodules in
+aurelia-templating-resources and aurelia-templating-router. 
+
 *contextMap*
 
 By default, the plugin scans the dependencies in package.json and creates a map object with package name

@@ -117,10 +117,17 @@ function createResolveDependenciesFromContextMap(createContextMap, originalResol
                   var filePath = files[j];
                   var fileSubPath = filePath.substring(mainDir.length + 1);
                   
-                  var filter = module.filter || /[^\.]\.(js||html|css)$/;
+                  var include = module.include || /[^\.]\.(js||html|css)$/;
+                  var exclude = module.exclude || /[^\.]\.d\.ts$/
 
-                  if (fileSubPath.indexOf(mainFileName) === -1 && fileSubPath.match(filter)) {
-                    var subModuleKey = module.moduleId + '/' + fileSubPath.substring(0, fileSubPath.length - path.extname(fileSubPath).length);
+                  if (fileSubPath.indexOf(mainFileName) === -1 && 
+                    (fileSubPath.match(include) && ! fileSubPath.match(exclude))) {
+                    var extension = path.extname(fileSubPath);
+                    if (extension === '.js') {
+                      var extensionLessSubModuleKey = module.moduleId + '/' + fileSubPath.substring(0, fileSubPath.length - extension.length);
+                      dependencies.push(new ContextElementDependency(path.resolve(mainDir, fileSubPath), './' + extensionLessSubModuleKey));  
+                    }
+                    var subModuleKey = module.moduleId + '/' + fileSubPath;
                     dependencies.push(new ContextElementDependency(path.resolve(mainDir, fileSubPath), './' + subModuleKey));
                   }                                                             
                 }
