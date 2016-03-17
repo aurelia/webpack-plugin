@@ -4,7 +4,7 @@
 */
 var path = require("path");
 var fileSystem = require('fs');
-var readdir = require('recursive-readdir-sync');
+var readdir = require('recursive-readdir');
 var ContextElementDependency = require('webpack/lib/dependencies/ContextElementDependency');
 
 function AureliaWebpackPlugin(options) {  
@@ -23,10 +23,14 @@ function AureliaWebpackPlugin(options) {
   
   for (var i = 0; i < options.includeSubModules.length; i++) {
     var includeSubModule = options.includeSubModules[i];
-    if (this.subModulesToInclude.some(function(entry) {
-      return entry.moduleId === includeSubModule.moduleId
-    }) === false) {
+    
+    var existingModuleIndex = 
+      this.subModulesToInclude.map(function(m) { return m.moduleId; }).indexOf(includeSubModule.moduleId);
+    
+    if (existingModuleIndex === -1) {
       this.subModulesToInclude.push(includeSubModule);
+    } else {
+      this.subModulesToInclude.splice(existingModuleIndex, 1, includeSubModule);
     }
   }
   
@@ -89,36 +93,48 @@ function createResolveDependenciesFromContextMap(createContextMap, originalResol
         if(err) return callback(err);
         
         var keys = Object.keys(map);
+        var processed = 0;
+        
         for (var i = 0; i < keys.length; i++) {
           var key = keys[i];
           // Add main module as dependency
           dependencies.push(new ContextElementDependency(key, './' + key));
 
           // Check if we also need to include all submodules
-          if (subModulesToInclude.some(function(entry) {
-            return entry.moduleId === key
-          })) {
+          var moduleToIncludeSubModulesFor = subModulesToInclude.find(function(m) {
+            return m.moduleId === key
+          });
+          if (moduleToIncludeSubModulesFor) {
             // Include all other modules as subdependencies when it is an aurelia module. This is required
             // because Aurelia submodules are not in the root of the NPM package and thus cannot be loaded 
             // directly like import 'aurelia-templating-resources/compose'
-            var mainDir = path.dirname(map[key]);
-            var mainFileName = path.basename(map[key]);
-            console.log(mainDir);
-            var files = readdir(mainDir); 
-            for (var j = 0; j < files.length; j++) {
-              var filePath = files[j];
-              var fileSubPath = filePath.substring(mainDir.length + 1);
-              console.log('mainDir: ' + mainDir);
-              console.log('fileSubPath: ' + fileSubPath);
-              if (fileSubPath.indexOf(mainFileName) === -1 && fileSubPath.match(/[^\.]\.(js||html|css)$/)) {
-                var subModuleKey = key + '/' + fileSubPath.substring(0, fileSubPath.length - path.extname(fileSubPath).length);
-                console.log(subModuleKey);
-                dependencies.push(new ContextElementDependency(path.resolve(mainDir, fileSubPath), './' + subModuleKey));
-              }                                                             
+            (function (module) {
+              var mainDir = path.dirname(map[module.moduleId]);
+              var mainFileName = path.basename(map[module.moduleId]);
+
+              readdir(mainDir, function(err, files) {
+                for (var j = 0; j < files.length; j++) {
+                  var filePath = files[j];
+                  var fileSubPath = filePath.substring(mainDir.length + 1);
+                  
+                  var filter = module.filter || /[^\.]\.(js||html|css)$/;
+
+                  if (fileSubPath.indexOf(mainFileName) === -1 && fileSubPath.match(filter)) {
+                    var subModuleKey = module.moduleId + '/' + fileSubPath.substring(0, fileSubPath.length - path.extname(fileSubPath).length);
+                    dependencies.push(new ContextElementDependency(path.resolve(mainDir, fileSubPath), './' + subModuleKey));
+                  }                                                             
+                }
+                if (++processed == keys.length) {
+                  callback(null, dependencies);
+                }                       
+              })
+            })(moduleToIncludeSubModulesFor);
+          } else {
+            if (++processed == keys.length) {
+              callback(null, dependencies);
             }
           }
-        };        
-        callback(null, dependencies);
+        }        
       });      
     });
 	}.bind(this);
