@@ -4,6 +4,7 @@
 */
 var path = require("path");
 var fileSystem = require('fs');
+var readdir = require('recursive-readdir-sync');
 var ContextElementDependency = require('webpack/lib/dependencies/ContextElementDependency');
 
 function AureliaWebpackPlugin(options) {  
@@ -11,8 +12,23 @@ function AureliaWebpackPlugin(options) {
   options.root = options.root || path.dirname(module.parent.filename);
   options.src = options.src || path.resolve(options.root, 'src');
   options.resourceRegExp = options.resourceRegExp || /aurelia-loader-context/;
+  options.includeSubModules = options.includeSubModules || []
   
   this.options = options;
+  
+  this.subModulesToInclude = [
+    { moduleId: 'aurelia-templating-resources' },
+    { moduleId: 'aurelia-templating-router'}
+  ];
+  
+  for (var i = 0; i < options.includeSubModules.length; i++) {
+    var includeSubModule = options.includeSubModules[i];
+    if (this.subModulesToInclude.some(function(entry) {
+      return entry.moduleId === includeSubModule.moduleId
+    }) === false) {
+      this.subModulesToInclude.push(includeSubModule);
+    }
+  }
   
   if (options.contextMap) {
     this.createContextMap = function(fs, callback) {
@@ -56,14 +72,14 @@ AureliaWebpackPlugin.prototype.apply = function(compiler) {
     cmf.plugin("after-resolve", function(result, callback) {
       if (!result) return callback();
       if (self.options.src.indexOf(result.resource, self.options.src.length - result.resource.length) !== -1) {
-        result.resolveDependencies = createResolveDependenciesFromContextMap(self.createContextMap, result.resolveDependencies);
+        result.resolveDependencies = createResolveDependenciesFromContextMap(self.createContextMap, result.resolveDependencies, self.subModulesToInclude);
       }
       return callback(null, result);
 		});
 	});
 };
 
-function createResolveDependenciesFromContextMap(createContextMap, originalResolveDependencies) {
+function createResolveDependenciesFromContextMap(createContextMap, originalResolveDependencies, subModulesToInclude) {
 	return function resolveDependenciesFromContextMap(fs, resource, recursive, regExp, callback) {
     
     originalResolveDependencies(fs, resource, recursive, regExp, function (err, dependencies)  {
@@ -77,19 +93,28 @@ function createResolveDependenciesFromContextMap(createContextMap, originalResol
           var key = keys[i];
           // Add main module as dependency
           dependencies.push(new ContextElementDependency(key, './' + key));
-          // Also include all other modules as subdependencies when it is an aurelia module. This is required
-          // because Aurelia submodules are not in the root of the NPM package and thus cannot be loaded 
-          // directly like import 'aurelia-templating-resources/compose'
-          if (key.substr(0, 8) === 'aurelia-') {
+
+          // Check if we also need to include all submodules
+          if (subModulesToInclude.some(function(entry) {
+            return entry.moduleId === key
+          })) {
+            // Include all other modules as subdependencies when it is an aurelia module. This is required
+            // because Aurelia submodules are not in the root of the NPM package and thus cannot be loaded 
+            // directly like import 'aurelia-templating-resources/compose'
             var mainDir = path.dirname(map[key]);
             var mainFileName = path.basename(map[key]);
-            var files = fileSystem.readdirSync(mainDir);
+            console.log(mainDir);
+            var files = readdir(mainDir); 
             for (var j = 0; j < files.length; j++) {
-              var fileName = files[j];
-              if (fileName.indexOf(mainFileName) === -1 && fileName.match(/[^\.]\.(js||html|css)$/)) {
-                var subModuleKey = key + '/' + path.basename(fileName, path.extname(fileName));
-                dependencies.push(new ContextElementDependency(path.resolve(mainDir, fileName), './' + subModuleKey));
-              }               
+              var filePath = files[j];
+              var fileSubPath = filePath.substring(mainDir.length + 1);
+              console.log('mainDir: ' + mainDir);
+              console.log('fileSubPath: ' + fileSubPath);
+              if (fileSubPath.indexOf(mainFileName) === -1 && fileSubPath.match(/[^\.]\.(js||html|css)$/)) {
+                var subModuleKey = key + '/' + fileSubPath.substring(0, fileSubPath.length - path.extname(fileSubPath).length);
+                console.log(subModuleKey);
+                dependencies.push(new ContextElementDependency(path.resolve(mainDir, fileSubPath), './' + subModuleKey));
+              }                                                             
             }
           }
         };        
