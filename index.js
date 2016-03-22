@@ -6,63 +6,61 @@ var path = require("path");
 var fileSystem = require('fs');
 var readdir = require('recursive-readdir');
 var ContextElementDependency = require('webpack/lib/dependencies/ContextElementDependency');
+var assign = Object.assign || require('object.assign');
 
-function AureliaWebpackPlugin(options) {  
+function getContextMap(options) {
+  var contextMap = {};
+  var pkg = JSON.parse(fileSystem.readFileSync(path.resolve(options.root, 'package.json')));
+  var vendorPackages = Object.keys(pkg.dependencies || {});
+  vendorPackages.forEach(function(moduleId) {
+    // We're storing the complete path to the package entry file in the context map. This is not
+    // required directly, but we need it to resolve aurelia's submodules.
+    var vendorPath = path.resolve(options.root, 'node_modules', moduleId);
+    var vendorPkgPath = path.resolve(vendorPath, 'package.json');
+    var vendorPkg = JSON.parse(fileSystem.readFileSync(vendorPkgPath, 'utf8'));
+    if (vendorPkg.browser || vendorPkg.main) {
+      contextMap[moduleId] = path.resolve(vendorPath, vendorPkg.browser || vendorPkg.main);
+    }
+  });
+  return contextMap;
+}
+
+function AureliaWebpackPlugin(options) {
   options = options || {};
   options.root = options.root || path.dirname(module.parent.filename);
   options.src = options.src || path.resolve(options.root, 'src');
   options.resourceRegExp = options.resourceRegExp || /aurelia-loader-context/;
   options.includeSubModules = options.includeSubModules || []
-  
+
   this.options = options;
-  
+
   this.subModulesToInclude = [
     { moduleId: 'aurelia-templating-resources' },
     { moduleId: 'aurelia-templating-router'}
   ];
-  
+
   for (var i = 0; i < options.includeSubModules.length; i++) {
     var includeSubModule = options.includeSubModules[i];
-    
-    var existingModuleIndex = 
+
+    var existingModuleIndex =
       this.subModulesToInclude.map(function(m) { return m.moduleId; }).indexOf(includeSubModule.moduleId);
-    
+
     if (existingModuleIndex === -1) {
       this.subModulesToInclude.push(includeSubModule);
     } else {
       this.subModulesToInclude.splice(existingModuleIndex, 1, includeSubModule);
     }
   }
-  
-  if (options.contextMap) {
-    this.createContextMap = function(fs, callback) {
-      callback(null, this.options.contextMap);
-    }.bind(this);
-  } else {
-    this.createContextMap = function(fs, callback) {
-      var self = this;
-      var contextMap = {};
-          // No context map supplied, let's create a default map from all dependencies in package.json
-      var pkg = JSON.parse(fileSystem.readFileSync(path.resolve(self.options.root, 'package.json')));
-      var vendorPackages = Object.keys(pkg.dependencies);
-      vendorPackages.forEach(function(moduleId) {
-        // We're storing the complete path to the package entry file in the context map. This is not
-        // required directly, but we need it to resolve aurelia's submodules.
-        var vendorPath = path.resolve(self.options.root, 'node_modules', moduleId);
-        var vendorPkgPath = path.resolve(vendorPath, 'package.json');
-        var vendorPkg = JSON.parse(fileSystem.readFileSync(vendorPkgPath, 'utf8'));
-        if (vendorPkg.browser || vendorPkg.main) {
-          contextMap[moduleId] = path.resolve(vendorPath, vendorPkg.browser || vendorPkg.main);        
-        }
-      });
-      callback(null, contextMap);
-    }.bind(this);
-  }
+
+  this.createContextMap = function(fs, callback) {
+    var contextMap = assign(getContextMap(this.options), this.options.contextMap);
+    callback(null, contextMap);
+  }.bind(this);
 }
 
 AureliaWebpackPlugin.prototype.apply = function(compiler) {
   var self = this;
-  
+
 	compiler.plugin("context-module-factory", function(cmf) {
     cmf.plugin("before-resolve", function(result, callback) {
       if (!result) return callback();
@@ -85,16 +83,16 @@ AureliaWebpackPlugin.prototype.apply = function(compiler) {
 
 function createResolveDependenciesFromContextMap(createContextMap, originalResolveDependencies, subModulesToInclude) {
 	return function resolveDependenciesFromContextMap(fs, resource, recursive, regExp, callback) {
-    
+
     originalResolveDependencies(fs, resource, recursive, regExp, function (err, dependencies)  {
       if(err) return callback(err);
-      
+
       createContextMap(fs, function(err, map) {
         if(err) return callback(err);
-        
+
         var keys = Object.keys(map);
         var processed = 0;
-        
+
         for (var i = 0; i < keys.length; i++) {
           var key = keys[i];
           // Add main module as dependency
@@ -106,7 +104,7 @@ function createResolveDependenciesFromContextMap(createContextMap, originalResol
           });
           if (moduleToIncludeSubModulesFor) {
             // Include all other modules as subdependencies when it is an aurelia module. This is required
-            // because Aurelia submodules are not in the root of the NPM package and thus cannot be loaded 
+            // because Aurelia submodules are not in the root of the NPM package and thus cannot be loaded
             // directly like import 'aurelia-templating-resources/compose'
             (function (module) {
               var mainDir = path.dirname(map[module.moduleId]);
@@ -116,24 +114,24 @@ function createResolveDependenciesFromContextMap(createContextMap, originalResol
                 for (var j = 0; j < files.length; j++) {
                   var filePath = files[j];
                   var fileSubPath = filePath.substring(mainDir.length + 1);
-                  
+
                   var include = module.include || /[^\.]\.(js||html|css)$/;
                   var exclude = module.exclude || /[^\.]\.d\.ts$/
 
-                  if (fileSubPath.indexOf(mainFileName) === -1 && 
+                  if (fileSubPath.indexOf(mainFileName) === -1 &&
                     (fileSubPath.match(include) && ! fileSubPath.match(exclude))) {
                     var extension = path.extname(fileSubPath);
                     if (extension === '.js') {
                       var extensionLessSubModuleKey = module.moduleId + '/' + fileSubPath.substring(0, fileSubPath.length - extension.length);
-                      dependencies.push(new ContextElementDependency(path.resolve(mainDir, fileSubPath), './' + extensionLessSubModuleKey));  
+                      dependencies.push(new ContextElementDependency(path.resolve(mainDir, fileSubPath), './' + extensionLessSubModuleKey));
                     }
                     var subModuleKey = module.moduleId + '/' + fileSubPath;
                     dependencies.push(new ContextElementDependency(path.resolve(mainDir, fileSubPath), './' + subModuleKey));
-                  }                                                             
+                  }
                 }
                 if (++processed == keys.length) {
                   callback(null, dependencies);
-                }                       
+                }
               })
             })(moduleToIncludeSubModulesFor);
           } else {
@@ -141,8 +139,8 @@ function createResolveDependenciesFromContextMap(createContextMap, originalResol
               callback(null, dependencies);
             }
           }
-        }        
-      });      
+        }
+      });
     });
 	}.bind(this);
 };
