@@ -113,7 +113,7 @@ function createResolveDependenciesFromContextMap(createContextMap, originalResol
               readdir(mainDir, function(err, files) {
                 for (var j = 0; j < files.length; j++) {
                   var filePath = files[j];
-                  var fileSubPath = filePath.substring(mainDir.length + 1);
+                  var fileSubPath = filePath.substring(mainDir.length + 1).replace(/\\/g, '/');
 
                   var include = module.include || /[^\.]\.(js||html|css)$/;
                   var exclude = module.exclude || /[^\.]\.d\.ts$/
