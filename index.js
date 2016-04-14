@@ -63,7 +63,8 @@ function AureliaWebpackPlugin(options) {
 
   this.subModulesToInclude = [
     { moduleId: 'aurelia-templating-resources' },
-    { moduleId: 'aurelia-templating-router' }
+    { moduleId: 'aurelia-templating-router' },
+    { moduleId: 'aurelia-auth' }
   ];
 
   for (var i = 0; i < options.includeSubModules.length; i++) {
