@@ -2,27 +2,47 @@
   MIT License http://www.opensource.org/licenses/mit-license.php
   Based on ContextReplacementPlugin by Tobias Koppers @sokra
 */
-var path = require("path");
+var path = require('path');
 var fileSystem = require('fs');
 var readdir = require('recursive-readdir');
 var ContextElementDependency = require('webpack/lib/dependencies/ContextElementDependency');
 var assign = Object.assign || require('object.assign');
 
-function getContextMap(options) {
-  var contextMap = {};
-  var pkg = JSON.parse(fileSystem.readFileSync(path.resolve(options.root, 'package.json')));
-  var vendorPackages = Object.keys(pkg.dependencies || {});
-  vendorPackages.forEach(function(moduleId) {
-    // We're storing the complete path to the package entry file in the context map. This is not
-    // required directly, but we need it to resolve aurelia's submodules.
-    var vendorPath = path.resolve(options.root, 'node_modules', moduleId);
-    var vendorPkgPath = path.resolve(vendorPath, 'package.json');
-    var vendorPkg = JSON.parse(fileSystem.readFileSync(vendorPkgPath, 'utf8'));
-    if (vendorPkg.browser || vendorPkg.main) {
-      contextMap[moduleId] = path.resolve(vendorPath, vendorPkg.browser || vendorPkg.main);
-    }
-  });
-  return contextMap;
+function getHubContextAndSubModuleMap(pkgJson, processedModules) {
+  if (processedModules.indexOf(pkgJson.name) >= 0) {
+    return null;
+  }
+
+  return Object.keys(pkgJson.dependencies)
+    .map(function(dep) {
+      return path.join(process.cwd(), 'node_modules', dep, 'package.json');
+    })
+    .reduce((prev, pkgJsonFile) => {
+      var pkg = require(pkgJsonFile);
+      var vendor = pkg.name;
+
+      if (pkg.browser || pkg.main) {
+        prev.contextMap[vendor] = `node_modules/${vendor}/${pkg.browser || pkg.main}`;
+      }
+
+      if (vendor.startsWith('hub.')) {
+        prev.subModules.push({ moduleId: vendor, include: /.*/ });
+      }
+
+      // Keep track of what's processed so we can handle circular deps
+      processedModules.push(pkgJson.name);
+
+      // Get dependencies of our hub modules
+      if (vendor.startsWith('hub.')) {
+        var subDeps = getHubContextAndSubModuleMap(pkg, processedModules);
+        if (subDeps) {
+          assign(prev.contextMap, subDeps.contextMap);
+          prev.subModules = prev.subModules.concat(subDeps.subModules);
+        }
+      }
+
+      return prev;
+    }, { contextMap: {}, subModules: [] });
 }
 
 function AureliaWebpackPlugin(options) {
@@ -30,13 +50,21 @@ function AureliaWebpackPlugin(options) {
   options.root = options.root || path.dirname(module.parent.filename);
   options.src = options.src || path.resolve(options.root, 'src');
   options.resourceRegExp = options.resourceRegExp || /aurelia-loader-context/;
-  options.includeSubModules = options.includeSubModules || []
+  options.includeSubModules = options.includeSubModules || [];
+  options.contextMap = options.contextMap || {};
 
   this.options = options;
 
+  // Hub context and submodules
+  var pkgJson = require(path.resolve(options.root, 'package.json'));
+  var hubMappings = getHubContextAndSubModuleMap(pkgJson, []);
+  assign(options.contextMap, hubMappings.contextMap);
+  assign(options.includeSubModules, hubMappings.subModules);
+
   this.subModulesToInclude = [
     { moduleId: 'aurelia-templating-resources' },
-    { moduleId: 'aurelia-templating-router'}
+    { moduleId: 'aurelia-templating-router' },
+    { moduleId: 'aurelia-auth' }
   ];
 
   for (var i = 0; i < options.includeSubModules.length; i++) {
@@ -53,15 +81,14 @@ function AureliaWebpackPlugin(options) {
   }
 
   this.createContextMap = function(fs, callback) {
-    var contextMap = assign(getContextMap(this.options), this.options.contextMap);
-    callback(null, contextMap);
+    callback(null, options.contextMap);
   }.bind(this);
 }
 
 AureliaWebpackPlugin.prototype.apply = function(compiler) {
   var self = this;
 
-	compiler.plugin("context-module-factory", function(cmf) {
+  compiler.plugin("context-module-factory", function(cmf) {
     cmf.plugin("before-resolve", function(result, callback) {
       if (!result) return callback();
       if (self.options.resourceRegExp.test(result.request)) {
@@ -77,18 +104,18 @@ AureliaWebpackPlugin.prototype.apply = function(compiler) {
         result.resolveDependencies = createResolveDependenciesFromContextMap(self.createContextMap, result.resolveDependencies, self.subModulesToInclude);
       }
       return callback(null, result);
-		});
-	});
+    });
+  });
 };
 
 function createResolveDependenciesFromContextMap(createContextMap, originalResolveDependencies, subModulesToInclude) {
-	return function resolveDependenciesFromContextMap(fs, resource, recursive, regExp, callback) {
+  return function resolveDependenciesFromContextMap(fs, resource, recursive, regExp, callback) {
 
-    originalResolveDependencies(fs, resource, recursive, regExp, function (err, dependencies)  {
-      if(err) return callback(err);
+    originalResolveDependencies(fs, resource, recursive, regExp, function(err, dependencies) {
+      if (err) return callback(err);
 
       createContextMap(fs, function(err, map) {
-        if(err) return callback(err);
+        if (err) return callback(err);
 
         var keys = Object.keys(map);
         var processed = 0;
@@ -106,7 +133,7 @@ function createResolveDependenciesFromContextMap(createContextMap, originalResol
             // Include all other modules as subdependencies when it is an aurelia module. This is required
             // because Aurelia submodules are not in the root of the NPM package and thus cannot be loaded
             // directly like import 'aurelia-templating-resources/compose'
-            (function (module) {
+            (function(module) {
               var mainDir = path.dirname(map[module.moduleId]);
               var mainFileName = path.basename(map[module.moduleId]);
 
@@ -119,9 +146,9 @@ function createResolveDependenciesFromContextMap(createContextMap, originalResol
                   var exclude = module.exclude || /[^\.]\.d\.ts$/
 
                   if (fileSubPath.indexOf(mainFileName) === -1 &&
-                    (fileSubPath.match(include) && ! fileSubPath.match(exclude))) {
+                    (fileSubPath.match(include) && !fileSubPath.match(exclude))) {
                     var extension = path.extname(fileSubPath);
-                    if (extension === '.js') {
+                    if (extension === '.js' || extension === '.ts') {
                       var extensionLessSubModuleKey = module.moduleId + '/' + fileSubPath.substring(0, fileSubPath.length - extension.length);
                       dependencies.push(new ContextElementDependency(path.resolve(mainDir, fileSubPath), './' + extensionLessSubModuleKey));
                     }
@@ -142,7 +169,7 @@ function createResolveDependenciesFromContextMap(createContextMap, originalResol
         }
       });
     });
-	}.bind(this);
+  }.bind(this);
 };
 
 module.exports = AureliaWebpackPlugin;

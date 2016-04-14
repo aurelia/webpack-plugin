@@ -1,6 +1,6 @@
 {
-  "name": "aurelia-webpack-plugin",
-  "version": "1.0.0-beta.1.0.2",
+  "name": "hub.plugin.webpack",
+  "version": "1.0.1",
   "description": "A plugin for webpack that enables bundling Aurelia applications.",
   "keywords": [
     "aurelia",
@@ -19,7 +19,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "http://github.com/aurelia/webpack-plugin"
+    "url": "http://github.com/iQmetrix/hub.plugin.webpack"
   },
   "dependencies": {
     "object.assign": "^4.0.3",
