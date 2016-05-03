@@ -19,7 +19,14 @@ function getContextMap(options) {
     var vendorPkgPath = path.resolve(vendorPath, 'package.json');
     var vendorPkg = JSON.parse(fileSystem.readFileSync(vendorPkgPath, 'utf8'));
     if (vendorPkg.browser || vendorPkg.main) {
-      contextMap[moduleId] = path.resolve(vendorPath, vendorPkg.browser || vendorPkg.main);
+      var main = vendorPkg.main;
+      if (typeof vendorPkg.browser === 'string') {
+        main = vendorPkg.browser;
+      } else if (vendorPkg.browser) {
+        // if 'browser' is an object, we should query it to find the replacement
+        main = vendorPkg.browser[vendorPkg.main];
+      }
+      contextMap[moduleId] = path.resolve(vendorPath, main);
     }
   });
   return contextMap;
