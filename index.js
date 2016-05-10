@@ -18,8 +18,8 @@ function getContextMap(options) {
     var vendorPath = path.resolve(options.root, 'node_modules', moduleId);
     var vendorPkgPath = path.resolve(vendorPath, 'package.json');
     var vendorPkg = JSON.parse(fileSystem.readFileSync(vendorPkgPath, 'utf8'));
-    if (vendorPkg.browser || vendorPkg.main) {
-      contextMap[moduleId] = path.resolve(vendorPath, vendorPkg.browser || vendorPkg.main);
+    if (vendorPkg.main) {
+      contextMap[moduleId] = path.resolve(vendorPath, vendorPkg.main);
     }
   });
   return contextMap;
