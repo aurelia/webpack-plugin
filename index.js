@@ -74,14 +74,14 @@ AureliaWebpackPlugin.prototype.apply = function(compiler) {
     cmf.plugin("after-resolve", function(result, callback) {
       if (!result) return callback();
       if (self.options.src.indexOf(result.resource, self.options.src.length - result.resource.length) !== -1) {
-        result.resolveDependencies = createResolveDependenciesFromContextMap(self.createContextMap, result.resolveDependencies, self.subModulesToInclude);
+        result.resolveDependencies = createResolveDependenciesFromContextMap(self.createContextMap, result.resolveDependencies, self.subModulesToInclude, self.options);
       }
       return callback(null, result);
 		});
 	});
 };
 
-function createResolveDependenciesFromContextMap(createContextMap, originalResolveDependencies, subModulesToInclude) {
+function createResolveDependenciesFromContextMap(createContextMap, originalResolveDependencies, subModulesToInclude, options) {
 	return function resolveDependenciesFromContextMap(fs, resource, recursive, regExp, callback) {
 
     originalResolveDependencies(fs, resource, recursive, regExp, function (err, dependencies)  {
@@ -121,12 +121,13 @@ function createResolveDependenciesFromContextMap(createContextMap, originalResol
                   if (fileSubPath.indexOf(mainFileName) === -1 &&
                     (fileSubPath.match(include) && ! fileSubPath.match(exclude))) {
                     var extension = path.extname(fileSubPath);
+                    var modulePath = options.moduleType ? path.resolve(mainDir, '..', options.moduleType, fileSubPath) : path.resolve(mainDir, fileSubPath);
                     if (extension === '.js') {
                       var extensionLessSubModuleKey = module.moduleId + '/' + fileSubPath.substring(0, fileSubPath.length - extension.length);
-                      dependencies.push(new ContextElementDependency(path.resolve(mainDir, fileSubPath), './' + extensionLessSubModuleKey));
+                      dependencies.push(new ContextElementDependency(modulePath, './' + extensionLessSubModuleKey));
                     }
                     var subModuleKey = module.moduleId + '/' + fileSubPath;
-                    dependencies.push(new ContextElementDependency(path.resolve(mainDir, fileSubPath), './' + subModuleKey));
+                    dependencies.push(new ContextElementDependency(modulePath, './' + subModuleKey));
                   }
                 }
                 if (++processed == keys.length) {
