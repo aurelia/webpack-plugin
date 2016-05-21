@@ -2,12 +2,16 @@
   MIT License http://www.opensource.org/licenses/mit-license.php
   Based on ContextReplacementPlugin by Tobias Koppers @sokra
 */
-var path = require("path");
+var path = require('path');
 var fileSystem = require('fs');
 var readdir = require('recursive-readdir');
 var ContextElementDependency = require('webpack/lib/dependencies/ContextElementDependency');
 var assign = Object.assign || require('object.assign');
+var resolveTemplates = require('./resolve-template');
 
+/**
+ * returns a key-value object with [module-name]: pathToMainFile
+ */
 function getContextMap(options) {
   var contextMap = {};
   var pkg = JSON.parse(fileSystem.readFileSync(path.resolve(options.root, 'package.json')));
@@ -31,6 +35,7 @@ function AureliaWebpackPlugin(options) {
   options.src = options.src || path.resolve(options.root, 'src');
   options.resourceRegExp = options.resourceRegExp || /aurelia-loader-context/;
   options.includeSubModules = options.includeSubModules || []
+  options.srcResolve = options.async ? 'bundle?lazy!' + options.src : options.src;
 
   this.options = options;
 
@@ -54,7 +59,12 @@ function AureliaWebpackPlugin(options) {
 
   this.createContextMap = function(fs, callback) {
     var contextMap = assign(getContextMap(this.options), this.options.contextMap);
-    callback(null, contextMap);
+    var additionalKeyValueMap = resolveTemplates.processAll(this.options).then((additionalKeyValueContextElements) => {
+      callback(null, contextMap, additionalKeyValueContextElements);
+    }, (error) => {
+      console.error('Error processing templates', error.message);
+      callback(null, contextMap, {});
+    });
   }.bind(this);
 }
 
@@ -65,15 +75,15 @@ AureliaWebpackPlugin.prototype.apply = function(compiler) {
     cmf.plugin("before-resolve", function(result, callback) {
       if (!result) return callback();
       if (self.options.resourceRegExp.test(result.request)) {
-        if (typeof self.options.src !== "undefined") {
-          result.request = self.options.src;
+        if (typeof self.options.srcResolve !== "undefined") {
+          result.request = self.options.srcResolve;
         }
       }
       return callback(null, result);
     });
     cmf.plugin("after-resolve", function(result, callback) {
       if (!result) return callback();
-      if (self.options.src.indexOf(result.resource, self.options.src.length - result.resource.length) !== -1) {
+      if (self.options.srcResolve.indexOf(result.resource, self.options.srcResolve.length - result.resource.length) !== -1) {
         result.resolveDependencies = createResolveDependenciesFromContextMap(self.createContextMap, result.resolveDependencies, self.subModulesToInclude, self.options);
       }
       return callback(null, result);
@@ -83,18 +93,25 @@ AureliaWebpackPlugin.prototype.apply = function(compiler) {
 
 function createResolveDependenciesFromContextMap(createContextMap, originalResolveDependencies, subModulesToInclude, options) {
 	return function resolveDependenciesFromContextMap(fs, resource, recursive, regExp, callback) {
-
     originalResolveDependencies(fs, resource, recursive, regExp, function (err, dependencies)  {
       if(err) return callback(err);
 
-      createContextMap(fs, function(err, map) {
+      createContextMap(fs, function(err, map, additionalKeyValueContextElements) {
         if(err) return callback(err);
+
+        var additionalKeys = Object.keys(additionalKeyValueContextElements);
+        for (var i = 0; i < additionalKeys.length; i++) {
+          var key = additionalKeys[i];
+          var value = additionalKeyValueContextElements[key];
+          dependencies.push(new ContextElementDependency(key, value));          
+        }
 
         var keys = Object.keys(map);
         var processed = 0;
 
         for (var i = 0; i < keys.length; i++) {
           var key = keys[i];
+          
           // Add main module as dependency
           dependencies.push(new ContextElementDependency(key, './' + key));
 

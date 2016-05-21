@@ -4,3 +4,4 @@ testoutput
 .vscode
 .DS_STORE
 npm-debug.log*
+/typings

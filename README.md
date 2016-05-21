@@ -89,7 +89,7 @@ var webpackConfig = {
   },
   plugins: [
     new AureliaWebpackPlugin({
-      src: path.resolve('./app');
+      src: path.resolve('./app')
     })
   ]
 }
@@ -103,7 +103,7 @@ To enable lazy loading, you'll need to install webpack's bundle-loader:
 npm install bundle-loader --save-dev
 ```
 
-Now, you can prefix the src option with a bundle expression.
+Now, you can enable lazy loading using the parameter `async`.
 
 ```javascript
 var path = require('path');
@@ -116,7 +116,8 @@ var webpackConfig = {
   },
   plugins: [
     new AureliaWebpackPlugin({
-      src: 'bundle?lazy!' + path.resolve('./src');
+      src: path.resolve('./src'),
+      async: true
     })
   ]
 }

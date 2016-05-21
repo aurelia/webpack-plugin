@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "experimentalDecorators": true,
+    "moduleResolution": "node",
+    "allowJs": true
+  },
+  "exclude": [
+    "node_modules",
+    "doc"
+  ]
+}
