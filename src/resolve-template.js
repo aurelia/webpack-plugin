@@ -9,6 +9,11 @@ var cheerio = require('cheerio');
  * this global var is reset every run in case of circular dependencies between files
  */
 let filesProcessed = [];
+let modulesProcessed = [];
+/**
+ * this is used for displaying logs only
+ */
+let optionsGlobal = {};
 
 function getFilesRecursively(targetDir, extension) {
   return new Promise((resolve, reject) => 
@@ -23,19 +28,22 @@ function getFilesRecursively(targetDir, extension) {
  */
 async function processAll(options) {
   filesProcessed = [];
+  modulesProcessed = [];
+  optionsGlobal = options;
   const dependencies = {};
   const nodeModules = path.join(options.root, 'node_modules');
-  try {
-    // try to load any resources explicitly defined in package.json:
-    const packageJson = path.join(options.root, 'package.json');
-    const vendorPkg = JSON.parse(fileSystem.readFileSync(packageJson, 'utf8'));
-    if (vendorPkg.aurelia && vendorPkg.aurelia.resources) {
-      for (let resource of vendorPkg.aurelia.resources) {
-        let fromPath = resource instanceof Object ? resource.path : resource;
-        assign(dependencies, await getDependency(fromPath, options.root, options.root, [nodeModules], null, packageJson, options.async || resource.async, options.bundle || resource.bundle));
-      }
+  const packageJson = path.join(options.root, 'package.json');
+  let vendorPkg;
+  try { vendorPkg = JSON.parse(fileSystem.readFileSync(packageJson, 'utf8')) } catch (_) {}
+
+  // try to load any resources explicitly defined in package.json:
+  if (vendorPkg && vendorPkg.aurelia && vendorPkg.aurelia.resources) {
+    for (let resource of vendorPkg.aurelia.resources) {
+      let fromPath = resource instanceof Object ? resource.path : resource;
+      assign(dependencies, await getDependency(fromPath, options.root, options.root, [nodeModules], null, packageJson, options.async || resource.async, options.bundle || resource.bundle));
     }
-  } catch (_) {}
+  }
+  
   // resolve all requirements of .html templates
   assign(dependencies, await autoresolveTemplates(options.src, nodeModules, options.async, options.bundle));
   return dependencies;
@@ -63,7 +71,7 @@ async function autoresolveTemplates(srcPath, nodeModules, isAsync, bundleName) {
  * @param  {Array<string>} nodeModulesList
  * @param  {string} fromWithinModule
  */
-async function resolveTemplate(htmlFilePath, srcPath, nodeModulesList, fromWithinModule, isParentAsync, bundleName) {
+async function resolveTemplate(htmlFilePath, srcPath, nodeModulesList, fromWithinModule, isParentAsync, bundleName, rootAlias) {
   const dependencies = {};
   const html = fileSystem.readFileSync(htmlFilePath);
   const $ = cheerio.load(html);
@@ -103,7 +111,7 @@ async function resolveTemplate(htmlFilePath, srcPath, nodeModulesList, fromWithi
   
   // for (let fromPath of fromPaths) {
   for (let resource of resources) {
-    assign(dependencies, await getDependency(resource.path, relativeParent, srcPath, nodeModulesList, fromWithinModule, htmlFilePath, isParentAsync || resource.async, bundleName || resource.bundle));
+    assign(dependencies, await getDependency(resource.path, relativeParent, srcPath, nodeModulesList, fromWithinModule, htmlFilePath, isParentAsync || resource.async, bundleName || resource.bundle, rootAlias));
   }
   return dependencies;
 }
@@ -127,6 +135,10 @@ function getPath(input, async, bundle) {
   return `${output}${input}`
 }
 
+function getPathWithoutExtension(input) {
+  return path.join(path.parse(input).dir, path.parse(input).name);
+}
+
 /**
  * @param  {string} fromPath
  * @param  {string} relativeParent
@@ -137,17 +149,50 @@ function getPath(input, async, bundle) {
  * @param  {boolean|void} isAsync
  * @param  {string|void} bundleName
  */
-async function getDependency(fromPath, relativeParent, srcPath, nodeModulesList, fromWithinModule, requestedBy, isAsync, bundleName) {
+async function getDependency(fromPath, relativeParent, srcPath, nodeModulesList, fromWithinModule, requestedBy, isAsync, bundleName, rootAlias) {
   const dependencies = {};
-  let key;
-  let value;
+  const relativeToSrc = path.relative(srcPath, requestedBy);
+  
+  let split = relativeToSrc.split(path.sep);
+  if (split[0] == 'node_modules') {
+    // handle edge case when adding htmlCounterpart
+    nodeModulesList = nodeModulesList.concat([path.join(srcPath, 'node_modules')]);
+    srcPath = path.join(srcPath, split[0], split[1]);
+    fromWithinModule = split[1];
+  }
+  
+  async function addDependency(webpackRequireString, webpackPath, htmlCounterpart, rootAlias, moduleName, modulePath) {
+    if (filesProcessed.indexOf(webpackRequireString) == -1 && webpackRequireString.indexOf('..') == -1) {
+      dependencies[webpackRequireString] = webpackPath;
+      console.log((fromWithinModule ? '<' + fromWithinModule + '> ' + '[' + path.basename(requestedBy) : '[' + relativeToSrc) + '] required "' + webpackRequireString + '" from "' + webpackPath.replace(optionsGlobal.root + path.sep, '') + '".')
+      filesProcessed.push(webpackRequireString);
+    }
+    
+    if (htmlCounterpart) {
+      let htmlWebpackRequireString = './' + getPathWithoutExtension(webpackRequireString) + '.html';
+      if (filesProcessed.indexOf(htmlWebpackRequireString) >= 0) return;
+      
+      dependencies[htmlWebpackRequireString] = htmlCounterpart;
+      console.log((fromWithinModule ? '<' + fromWithinModule + '> ' + '[' + path.basename(requestedBy) : '[' + relativeToSrc) + '] required "' + htmlWebpackRequireString + '" from "' + htmlCounterpart.replace(optionsGlobal.root + path.sep, '') + '".');
+      filesProcessed.push(htmlWebpackRequireString);
+
+      assign(dependencies, await resolveTemplate(htmlCounterpart, modulePath || srcPath, nodeModulesList, moduleName || fromWithinModule, isAsync, bundleName, rootAlias));
+    }
+  }
+  
+  let webpackPath;
+  let webpackRequireString;
   let fullPathOrig = path.join(relativeParent, fromPath);
   let fullPath = fullPathOrig;
-  let fullPathNoExt = path.join(path.parse(fullPath).dir, path.parse(fullPath).name);
+  let fullPathNoExt = getPathWithoutExtension(fullPath);
   let extOrig = path.extname(fullPath)
   const pathIsLocal = fromPath.startsWith('./');
   let htmlCounterpart;
   let stats;
+  let extension;
+  let moduleName;
+  let modulePath;
+  let packagesOwnNodeModules;
   
   try { stats = fileSystem.statSync(fullPath) } catch (_) {}
   
@@ -165,23 +210,31 @@ async function getDependency(fromPath, relativeParent, srcPath, nodeModulesList,
   }
   
   if (stats && stats.isFile()) {
-    if (filesProcessed.indexOf(fullPath) >= 0) return dependencies;
-    filesProcessed.push(fullPath);
+    extension = path.extname(fullPath);
     
     // load relative file
-    key = getPath(fullPath, isAsync, bundleName);
+    webpackPath = getPath(fullPath, isAsync, bundleName);
     
     if (!fromWithinModule) {
       // if user used './somepath' then traverse from local directory; else 'somepath', he meant /src/somepath
-      value = './' + (pathIsLocal ? path.relative(srcPath, path.join(relativeParent, fromPath)) : fromPath);
+      
+      webpackRequireString = './' + (pathIsLocal ? path.relative(srcPath, path.join(relativeParent, fromPath)) : fromPath);
+      await addDependency(webpackRequireString, webpackPath, htmlCounterpart, rootAlias);
+      
+      if (rootAlias) {
+        webpackRequireString = './' + (pathIsLocal ? path.relative(rootAlias, path.join(relativeParent, fromPath)) : fromPath);
+        await addDependency(webpackRequireString, webpackPath, htmlCounterpart, rootAlias);
+      }
+      
     } else {
       // resolves to: 'some-module/some-file'
-      value = './' + fromWithinModule + '/' + path.relative(srcPath, path.join(relativeParent, fromPath));
       
-      const extension = path.extname(fullPath);
-      if (extension == ".html") {
-        // if we were referred to .html, get dependencies recursively:
-        assign(dependencies, await resolveTemplate(fullPath, srcPath, nodeModulesList, fromWithinModule, isAsync, bundleName));
+      webpackRequireString = './' + fromWithinModule + '/' + path.relative(srcPath, path.join(relativeParent, fromPath));      
+      await addDependency(webpackRequireString, webpackPath, htmlCounterpart, rootAlias);
+      
+      if (rootAlias) {
+        webpackRequireString = './' + fromWithinModule + '/' + path.relative(rootAlias, path.join(relativeParent, fromPath));
+        await addDependency(webpackRequireString, webpackPath, htmlCounterpart, rootAlias);
       }
     }
   }
@@ -196,7 +249,7 @@ async function getDependency(fromPath, relativeParent, srcPath, nodeModulesList,
       let nodeModules = nodeModulesList[nodeModulesIndex]
       fullPathOrig = path.join(nodeModules, fromPath);
       fullPath = fullPathOrig;
-      fullPathNoExt = path.join(path.parse(fullPath).dir, path.parse(fullPath).name);
+      fullPathNoExt = getPathWithoutExtension(fullPath);
       
       try { stats = fileSystem.statSync(fullPath) } catch (_) {}
       
@@ -212,71 +265,83 @@ async function getDependency(fromPath, relativeParent, srcPath, nodeModulesList,
     }
     
     if (stats) {
-      if (filesProcessed.indexOf(fullPath) >= 0) return dependencies;
-      filesProcessed.push(fullPath);
-      
-      let moduleName;
-      let modulePath;
+      extension = path.extname(fullPath);
       
       // check if parent is a node_module directory
       if (stats.isDirectory() && path.basename(path.dirname(fullPath)) === 'node_modules') {
         // we're requiring a package (webpack will handle resolving main)
-        key = getPath(path.basename(fullPath), isAsync, bundleName);
-        
-        value = './' + fromPath;
+        moduleName = path.basename(fullPath);
         modulePath = fullPath;
+        
+        webpackPath = getPath(moduleName, isAsync, bundleName);
+        webpackRequireString = './' + fromPath;
         
       } else if (stats.isFile()) {
         // require the file directly
-        key = getPath(fullPath, isAsync, bundleName);
-        
-        value = './' + fromPath;
-        
         moduleName = fromPath.split('/')[0];
         modulePath = path.resolve(nodeModulesList[nodeModulesIndex], moduleName);
-
-        const extension = path.extname(fullPath);        
-        if (extension == ".html") {
-          // if we were referred to .html, get dependencies recursively:
-          assign(dependencies, await resolveTemplate(fullPath, srcPath, nodeModulesList, fromWithinModule, isAsync, bundleName));
-        }
+        
+        webpackPath = getPath(fullPath, isAsync, bundleName);
+        webpackRequireString = './' + fromPath;
       }
       
-      if (moduleName) {
-        try {
-          // try to also load any files and templates defined in package.json:
-          const packageJson = path.resolve(modulePath, 'package.json');
-          const vendorPkg = JSON.parse(fileSystem.readFileSync(packageJson, 'utf8'));
+      await addDependency(webpackRequireString, webpackPath, htmlCounterpart, rootAlias, moduleName, modulePath);
+      
+      if (moduleName && modulePath) {
+        const packageJson = path.resolve(modulePath, 'package.json');
+        let vendorPkg;
+        try { vendorPkg = JSON.parse(fileSystem.readFileSync(packageJson, 'utf8')) } catch (_) {}
+        if (vendorPkg) {
+          const mainDir = vendorPkg.main ? path.resolve(modulePath, path.dirname(vendorPkg.main)) : null;
+          rootAlias = (vendorPkg.aurelia && vendorPkg.aurelia.root && path.resolve(modulePath, vendorPkg.aurelia.root)) || mainDir;
           
-          let packagesOwnNodeModules;
-          try {
-            // check if there are nested 'node_modules' under the package's directory
-            let ownPath = path.resolve(modulePath, 'node_modules');
-            fileSystem.statSync(ownPath);
-            packagesOwnNodeModules = ownPath;
-          } catch (_) {}
+          if (rootAlias === modulePath)
+            rootAlias = null;
           
-          if (vendorPkg.aurelia && vendorPkg.aurelia.resources) {
-            for (let resource of vendorPkg.aurelia.resources) {
-              let resourcePath = resource instanceof Object ? resource.path : resource;
-              assign(dependencies, await getDependency(resourcePath, modulePath, modulePath, packagesOwnNodeModules ? nodeModulesList.concat(packagesOwnNodeModules) : nodeModulesList, moduleName, packageJson, isAsync || resource.async, bundleName || resource.bundle));
+          if (rootAlias && stats.isFile()) {
+            webpackRequireString = './' + moduleName + '/' + path.relative(rootAlias, fullPath);
+            await addDependency(webpackRequireString, webpackPath, htmlCounterpart, rootAlias);
+            
+            if (extension == '.js' || extension == '.ts') {
+              webpackRequireString = './' + moduleName + '/' + path.relative(rootAlias, getPathWithoutExtension(fullPath));
+              await addDependency(webpackRequireString, webpackPath, htmlCounterpart, rootAlias);
             }
           }
-        } catch (_) {}
+          
+          if (modulesProcessed.indexOf(modulePath) == -1) {
+            // try to also load any files and templates defined in package.json:
+            try {
+              // check if there are nested 'node_modules' under the package's directory
+              const ownPath = path.resolve(modulePath, 'node_modules');
+              fileSystem.statSync(ownPath);
+              packagesOwnNodeModules = ownPath;
+            } catch (_) {}
+            
+            if (vendorPkg.aurelia && vendorPkg.aurelia.resources) {
+              for (let resource of vendorPkg.aurelia.resources) {
+                let resourcePath = resource instanceof Object ? resource.path : resource;
+                let useRootAlias = rootAlias;
+                if (resource.root) {
+                  let useRootAlias = path.resolve(modulePath, resource.root);
+                  if (useRootAlias === modulePath)
+                    useRootAlias = null;
+                }
+                assign(dependencies, await getDependency(resourcePath, modulePath, modulePath, packagesOwnNodeModules ? nodeModulesList.concat(packagesOwnNodeModules) : nodeModulesList, moduleName, packageJson, isAsync || resource.async, bundleName || resource.bundle, useRootAlias));
+              }
+            }
+            modulesProcessed.push(modulePath);
+          }
+        }
       }
     }
   }
   
-  
-  if (!key) {
+  if (!webpackPath) {
     console.error('[' + (fromWithinModule ? '<' + fromWithinModule + '>' : path.relative(srcPath, requestedBy)) + '] wants to require "' + fromPath + '", which does not exist.')
   } else {
-    dependencies[key] = value;
-    console.log('[' + (fromWithinModule ? '<' + fromWithinModule + '>' : path.relative(srcPath, requestedBy)) + '] loaded "' + key + '" as "' + value + '".')
-    if (htmlCounterpart) {
-      dependencies[htmlCounterpart] = './' + path.join(path.parse(value).dir, path.parse(value).name) + '.html';
-      console.log('[' + (fromWithinModule ? '<' + fromWithinModule + '>' : path.relative(srcPath, requestedBy)) + '] loaded "' + htmlCounterpart + '" as "' + dependencies[htmlCounterpart] + '".')
-      assign(dependencies, await resolveTemplate(htmlCounterpart, srcPath, nodeModulesList, fromWithinModule, isAsync, bundleName));
+    if (extension == ".html") {
+      // if we were referred to .html, get dependencies recursively:
+      assign(dependencies, await resolveTemplate(fullPath, modulePath || srcPath, packagesOwnNodeModules ? nodeModulesList.concat(packagesOwnNodeModules) : nodeModulesList, moduleName || fromWithinModule, isAsync, bundleName, rootAlias));
     }
   }
   

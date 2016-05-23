@@ -16,7 +16,10 @@
   "aurelia": {
     "resources": [
       "resources/local-resource",
-      "external-2/resource"
+      "external-2/resource",
+      "external-3",
+      "external-3/dist/commonjs/sub/resource-4",
+      "external-3/dist/commonjs/sub/resource-5.html"
     ]
   }
 }

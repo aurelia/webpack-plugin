@@ -101,9 +101,9 @@ function createResolveDependenciesFromContextMap(createContextMap, originalResol
 
         var additionalKeys = Object.keys(additionalKeyValueContextElements);
         for (var i = 0; i < additionalKeys.length; i++) {
-          var key = additionalKeys[i];
-          var value = additionalKeyValueContextElements[key];
-          dependencies.push(new ContextElementDependency(key, value));          
+          var requireRequestPath = additionalKeys[i];
+          var webpackRequestPath = additionalKeyValueContextElements[requireRequestPath];
+          dependencies.push(new ContextElementDependency(webpackRequestPath, requireRequestPath));          
         }
 
         var keys = Object.keys(map);
