@@ -14,6 +14,7 @@ let modulesProcessed = [];
  * this is used for displaying logs only
  */
 let optionsGlobal = {};
+let baseVendorPkg;
 
 function getFilesRecursively(targetDir, extension) {
   return new Promise((resolve, reject) => 
@@ -33,15 +34,38 @@ async function processAll(options) {
   const dependencies = {};
   const nodeModules = path.join(options.root, 'node_modules');
   const packageJson = path.join(options.root, 'package.json');
-  let vendorPkg;
-  try { vendorPkg = JSON.parse(fileSystem.readFileSync(packageJson, 'utf8')) } catch (_) {}
+  
+  if (!baseVendorPkg) {
+    try { baseVendorPkg = JSON.parse(fileSystem.readFileSync(packageJson, 'utf8')) } catch (_) {}
+  }
 
-  // try to load any resources explicitly defined in package.json:
-  if (vendorPkg && vendorPkg.aurelia && vendorPkg.aurelia.resources) {
-    for (let resource of vendorPkg.aurelia.resources) {
-      let fromPath = resource instanceof Object ? resource.path : resource;
-      assign(dependencies, await getDependency(fromPath, options.root, options.root, [nodeModules], null, packageJson, options.async || resource.async, options.bundle || resource.bundle));
+  if (baseVendorPkg) {
+    // try to load any resources explicitly defined in package.json:
+    if (baseVendorPkg.aurelia && baseVendorPkg.aurelia.resources) {
+      for (let resource of baseVendorPkg.aurelia.resources) {
+        let fromPath = resource instanceof Object ? resource.path : resource;
+        let moduleName = fromPath.split(path.sep)[0];
+        let rootAlias = resource.root ? path.resolve(options.root, 'node_modules', moduleName, resource.root) : undefined;
+        if (!rootAlias && baseVendorPkg.aurelia.moduleRootOverride && baseVendorPkg.aurelia.moduleRootOverride[moduleName]) {
+          rootAlias = path.resolve(options.root, 'node_modules', moduleName, baseVendorPkg.aurelia.moduleRootOverride[moduleName]);
+        }
+        assign(dependencies, await getDependency(fromPath, options.root, options.root, [nodeModules], null, packageJson, options.async || resource.async, options.bundle || resource.bundle, rootAlias));
+      }
     }
+    
+    // load all 'dependencies' defined in package.json:
+    if (baseVendorPkg.dependencies) {
+      for (let moduleName of Object.getOwnPropertyNames(baseVendorPkg.dependencies)) {
+        const vendorPath = path.resolve(options.root, 'node_modules', moduleName);
+        const vendorPkgPath = path.resolve(vendorPath, 'package.json');
+        const vendorPkg = JSON.parse(fileSystem.readFileSync(vendorPkgPath, 'utf8'));
+        if (vendorPkg.browser || vendorPkg.main) {
+          // only load the dependencies that have either main or browser fields defined
+          assign(dependencies, await getDependency(moduleName, options.root, options.root, [nodeModules], null, packageJson, options.async, options.bundle));
+        }
+      }
+    }
+    // TASK: first try-load without root-alias, then with 
   }
   
   // resolve all requirements of .html templates
@@ -149,11 +173,11 @@ function getPathWithoutExtension(input) {
  * @param  {boolean|void} isAsync
  * @param  {string|void} bundleName
  */
-async function getDependency(fromPath, relativeParent, srcPath, nodeModulesList, fromWithinModule, requestedBy, isAsync, bundleName, rootAlias) {
+async function getDependency(fromPath, relativeParent, srcPath, nodeModulesList, fromWithinModule, requestedBy, isAsync, bundleName, rootAlias, triedToCorrectPath) {
   const dependencies = {};
-  const relativeToSrc = path.relative(srcPath, requestedBy);
+  const requestedByRelativeToSrc = path.relative(srcPath, requestedBy);
   
-  let split = relativeToSrc.split(path.sep);
+  let split = requestedByRelativeToSrc.split(path.sep);
   if (split[0] == 'node_modules') {
     // handle edge case when adding htmlCounterpart
     nodeModulesList = nodeModulesList.concat([path.join(srcPath, 'node_modules')]);
@@ -164,7 +188,7 @@ async function getDependency(fromPath, relativeParent, srcPath, nodeModulesList,
   async function addDependency(webpackRequireString, webpackPath, htmlCounterpart, rootAlias, moduleName, modulePath) {
     if (filesProcessed.indexOf(webpackRequireString) == -1 && webpackRequireString.indexOf('..') == -1) {
       dependencies[webpackRequireString] = webpackPath;
-      console.log((fromWithinModule ? '<' + fromWithinModule + '> ' + '[' + path.basename(requestedBy) : '[' + relativeToSrc) + '] required "' + webpackRequireString + '" from "' + webpackPath.replace(optionsGlobal.root + path.sep, '') + '".')
+      console.log((fromWithinModule ? '<' + fromWithinModule + '> ' + '[' + path.basename(requestedBy) : '[' + requestedByRelativeToSrc) + '] required "' + webpackRequireString + '" from "' + webpackPath.replace(optionsGlobal.root + path.sep, '') + '".')
       filesProcessed.push(webpackRequireString);
     }
     
@@ -173,7 +197,7 @@ async function getDependency(fromPath, relativeParent, srcPath, nodeModulesList,
       if (filesProcessed.indexOf(htmlWebpackRequireString) >= 0) return;
       
       dependencies[htmlWebpackRequireString] = htmlCounterpart;
-      console.log((fromWithinModule ? '<' + fromWithinModule + '> ' + '[' + path.basename(requestedBy) : '[' + relativeToSrc) + '] required "' + htmlWebpackRequireString + '" from "' + htmlCounterpart.replace(optionsGlobal.root + path.sep, '') + '".');
+      console.log((fromWithinModule ? '<' + fromWithinModule + '> ' + '[' + path.basename(requestedBy) : '[' + requestedByRelativeToSrc) + '] required "' + htmlWebpackRequireString + '" from "' + htmlCounterpart.replace(optionsGlobal.root + path.sep, '') + '".');
       filesProcessed.push(htmlWebpackRequireString);
 
       assign(dependencies, await resolveTemplate(htmlCounterpart, modulePath || srcPath, nodeModulesList, moduleName || fromWithinModule, isAsync, bundleName, rootAlias));
@@ -186,7 +210,7 @@ async function getDependency(fromPath, relativeParent, srcPath, nodeModulesList,
   let fullPath = fullPathOrig;
   let fullPathNoExt = getPathWithoutExtension(fullPath);
   let extOrig = path.extname(fullPath)
-  const pathIsLocal = fromPath.startsWith('./');
+  const pathIsLocal = fromPath.startsWith('./') || fromPath.startsWith('../');
   let htmlCounterpart;
   let stats;
   let extension;
@@ -293,10 +317,13 @@ async function getDependency(fromPath, relativeParent, srcPath, nodeModulesList,
         try { vendorPkg = JSON.parse(fileSystem.readFileSync(packageJson, 'utf8')) } catch (_) {}
         if (vendorPkg) {
           const mainDir = vendorPkg.main ? path.resolve(modulePath, path.dirname(vendorPkg.main)) : null;
-          rootAlias = (vendorPkg.aurelia && vendorPkg.aurelia.root && path.resolve(modulePath, vendorPkg.aurelia.root)) || mainDir;
           
-          if (rootAlias === modulePath)
-            rootAlias = null;
+          if (!rootAlias) {
+            rootAlias = (vendorPkg.aurelia && vendorPkg.aurelia.root && path.resolve(modulePath, vendorPkg.aurelia.root)) || mainDir;
+            
+            if (rootAlias === modulePath)
+              rootAlias = null;
+          }
           
           if (rootAlias && stats.isFile()) {
             webpackRequireString = './' + moduleName + '/' + path.relative(rootAlias, fullPath);
@@ -321,11 +348,22 @@ async function getDependency(fromPath, relativeParent, srcPath, nodeModulesList,
               for (let resource of vendorPkg.aurelia.resources) {
                 let resourcePath = resource instanceof Object ? resource.path : resource;
                 let useRootAlias = rootAlias;
-                if (resource.root) {
-                  let useRootAlias = path.resolve(modulePath, resource.root);
-                  if (useRootAlias === modulePath)
-                    useRootAlias = null;
+                // least important: package's global override
+                if (vendorPkg.aurelia.moduleRootOverride && vendorPkg.aurelia.moduleRootOverride[moduleName]) {
+                  useRootAlias = path.resolve(modulePath, vendorPkg.aurelia.moduleRootOverride[moduleName]);
                 }
+                // second least important: package resource's override
+                if (resource.root) {
+                  useRootAlias = path.resolve(modulePath, resource.root);
+                }
+                // most important: parent-most package's override
+                if (baseVendorPkg && baseVendorPkg.aurelia && baseVendorPkg.aurelia.moduleRootOverride && baseVendorPkg.aurelia.moduleRootOverride[moduleName]) {
+                  useRootAlias = path.resolve(modulePath, baseVendorPkg.aurelia.moduleRootOverride[moduleName]);
+                }
+                if (useRootAlias === modulePath) {
+                  useRootAlias = null;
+                }
+                
                 assign(dependencies, await getDependency(resourcePath, modulePath, modulePath, packagesOwnNodeModules ? nodeModulesList.concat(packagesOwnNodeModules) : nodeModulesList, moduleName, packageJson, isAsync || resource.async, bundleName || resource.bundle, useRootAlias));
               }
             }
@@ -337,7 +375,25 @@ async function getDependency(fromPath, relativeParent, srcPath, nodeModulesList,
   }
   
   if (!webpackPath) {
-    console.error('[' + (fromWithinModule ? '<' + fromWithinModule + '>' : path.relative(srcPath, requestedBy)) + '] wants to require "' + fromPath + '", which does not exist.')
+    const pathParts = fromPath.split('/');
+    if (!pathIsLocal && pathParts.length > 1 && rootAlias && rootAlias !== srcPath) {
+      // the path provided was without root, 
+      // lets try to correct it and re-run
+      
+      const moduleName = pathParts.shift();
+      let relativeRootAlias = path.relative(srcPath, rootAlias);
+      let relativeRootSplit = relativeRootAlias.split(path.sep);
+      while (relativeRootSplit[0] == 'node_modules') {
+        relativeRootSplit.shift(); // 'node_modules'
+        relativeRootSplit.shift(); // assert === moduleName
+      }
+      relativeRootAlias = relativeRootSplit.join('/');
+      const rootedFromPath = path.join(moduleName, relativeRootAlias, pathParts.join(path.sep));
+      if (rootedFromPath !== fromPath && !triedToCorrectPath) {
+        return await getDependency(rootedFromPath, relativeParent, srcPath, nodeModulesList, fromWithinModule, requestedBy, isAsync, bundleName, rootAlias, true);
+      }
+    }
+    console.error('[' + (fromWithinModule ? '<' + fromWithinModule + '>' : path.relative(srcPath, requestedBy)) + '] wants to require "' + fromPath + '", which does not exist.');
   } else {
     if (extension == ".html") {
       // if we were referred to .html, get dependencies recursively:
