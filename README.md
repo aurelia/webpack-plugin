@@ -44,39 +44,42 @@ The directory where the app source files are located. Defaults to './src'.
 
 The root project directory. Defaults to the directory from where webpack is called.
 
-*includeSubModules*
+## Module resource resolution
 
 Some Aurelia modules or plugins have more than 1 file that need to be resolved (for example, when a plugin also contains an html template).
-By default, only the main file of a module is loaded. Adding this option allows you include extra files in the bundles.
+By default, only the main file and module's static dependencies are loaded. 
 
-```javascript
-new AureliaWebpackPlugin({
-  includeSubModules: [
-    { moduleId: 'my-aurelia-plugin', include: /optional_regex/, exclude: /optional_regex/ }
-  ]
-})
-```
+Since there are cases that cannot be supported by statically analyzing files (e.g. it is possible to generate require paths dynamically), there's an additional way to declare external dependencies, or in case of Aurelia plugins, to declare internal dependencies by listing those additional resources in the `package.json` file. Listing these dependencies in your package.json allows you include extra files in the bundles.
 
-Every module that needs extra files to be included is represented by one object in the array.
-The *moduleId* field is required and the *include* and *exclude* fields are optional.
-
-> **Note**: internally, the includeSubModules feature is also used to resolve Aurelia's submodules in
-aurelia-templating-resources and aurelia-templating-router.
-
-*contextMap*
-
-By default, the plugin scans the dependencies in package.json and creates a map object with package name
-as the key and the relative location of the main file from the project root.
-```javascript
+```js
 {
-  "aurelia-bootstrapper": "node_modules/aurelia-bootstrapper/dist/commonjs/aurelia-bootstrapper.js",
-  "aurelia-framework": "node_modules/aurelia-framework/dist/commonjs/aurelia-framework.js"
   ...
+  "aurelia": {
+    "resources": [
+      "./src/some-resource.js",
+      "./src/another.html",
+      "./src/another-without-extension",
+      { "path": "external-module/file.html", async: true, bundle: "some-bundle" },
+      "aurelia-templating-resources/compose"
+    ],
+    // you may also override the root in case the file is located at a different place than as a child of main or module's root directory
+    "moduleRootOverride": {
+      "aurelia-templating-resources": "dist/es2015"
+    }
+  }
 }
 ```
-With the contextMap option, you can override this behavior and supply your own context map.
 
-### Example configuration: custom app directory (other than './src')
+The Webpack plugin will read that and know to include those files in the bundle.
+
+It'll be intelligent enough to resolve any further dependencies that those files and modules then required statically (regardless if they are JavaScript files, modules with their own `package.json` declarations or additional HTML resources). 
+As you can see it is also possible to specify that certain files should be lazy-loaded or bundled separately (if the bundle is specified in the configuration file). To achieve the same directly from templates, add the parameters `bundle="bundle-name"` and/or `async` (for lazy-loading) to either the `<require>` tag or to `<compose>` tag, when composing with static names. E.g.:
+
+```html
+<require from="./some-file.html" async bundle="other-bundle">
+```
+
+## Example configuration: custom app directory (other than './src')
 
 ```javascript
 var path = require('path');
@@ -90,34 +93,6 @@ var webpackConfig = {
   plugins: [
     new AureliaWebpackPlugin({
       src: path.resolve('./app')
-    })
-  ]
-}
-```
-
-### Example configuration: lazy loading of modules
-
-To enable lazy loading, you'll need to install webpack's bundle-loader:
-
-```
-npm install bundle-loader --save-dev
-```
-
-Now, you can enable lazy loading using the parameter `async`.
-
-```javascript
-var path = require('path');
-var AureliaWebpackPlugin = require('aurelia-webpack-plugin');
-var webpackConfig = {
-  entry: 'index.js',
-  output: {
-    path: 'dist',
-    filename: 'index_bundle.js'
-  },
-  plugins: [
-    new AureliaWebpackPlugin({
-      src: path.resolve('./src'),
-      async: true
     })
   ]
 }
