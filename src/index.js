@@ -7,7 +7,6 @@ class AureliaWebpackPlugin {
     options.root = options.root || path.dirname(module.parent.filename);
     options.src = options.src || path.resolve(options.root, 'src');
     options.resourceRegExp = options.resourceRegExp || /aurelia-loader-context/;
-    options.srcResolve = options.async ? 'bundle?lazy!' + options.src : options.src;
 
     this.options = options;
   }
@@ -17,21 +16,29 @@ class AureliaWebpackPlugin {
       cmf.plugin('before-resolve', (result, callback) => {
         if (!result) return callback();
         if (this.options.resourceRegExp.test(result.request)) {
-          if (typeof this.options.srcResolve !== 'undefined') {
-            result.request = this.options.srcResolve;
-          }
+          result.request = this.options.src;
         }
         return callback(null, result);
       });
       cmf.plugin('after-resolve', (result, callback) => {
         if (!result) return callback();
-        if (this.options.srcResolve.indexOf(result.resource, this.options.srcResolve.length - result.resource.length) !== -1) {
+        if (this.options.src.indexOf(result.resource, this.options.src.length - result.resource.length) !== -1) {
           const resolveDependencies = result.resolveDependencies;
           
           // substitute resolveDependencies method with an enhanced version:
           result.resolveDependencies = (fs, resource, recursive, regExp, callback) =>
             resolveDependencies(fs, resource, recursive, regExp, (error, dependencies) => {
               if (error) return callback(error);
+              
+              // 1. remove duplicates
+              // 2. remove .ts/.js files
+              const originalDependencies = dependencies.slice();
+              dependencies = [];
+              for (let dependency of originalDependencies) {
+                if (dependencies.findIndex(cDependency => cDependency.userRequest === dependency.userRequest) === -1
+                    && !dependency.userRequest.endsWith('.ts') && !dependency.userRequest.endsWith('.js'))
+                  dependencies.push(dependency);
+              }
 
               resolveTemplates.processAll(this.options).then(contextElements => {
                 for (let requireRequestPath of Object.keys(contextElements).reverse()) {
