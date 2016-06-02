@@ -149,9 +149,9 @@ async function resolveTemplate(htmlFilePath, srcPath, nodeModulesList, fromWithi
 function getPath(input, lazy, bundle) {
   const extension = path.extname(input);
   let output = '';
-  // for .css files force the request to the raw loader (https://github.com/aurelia/webpack-plugin/issues/11#issuecomment-212578861)
+  // for .css files force the request to the css loader (https://github.com/aurelia/webpack-plugin/issues/11#issuecomment-212578861)
   if (extension == ".css")
-    output += `!!raw!`;
+    output += `!!css!`;
   if (lazy || bundle)
     output += `bundle?`;
   if (lazy)
