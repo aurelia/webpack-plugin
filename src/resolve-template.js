@@ -58,8 +58,8 @@ async function processAll(options) {
     
     // try to load any resources explicitly defined in package.json:
     // this is done last so that bundle overrides will take over
-    if (baseVendorPkg.aurelia && baseVendorPkg.aurelia.resources) {
-      for (let resource of baseVendorPkg.aurelia.resources) {
+    if (baseVendorPkg.aurelia && baseVendorPkg.aurelia.build && baseVendorPkg.aurelia.build.resources) {
+      for (let resource of baseVendorPkg.aurelia.build.resources) {
         let fromPaths = resource instanceof Object ? [resource.path] : [resource];
         if (fromPaths[0] instanceof Array) {
           fromPaths = fromPaths[0];
@@ -67,8 +67,8 @@ async function processAll(options) {
         for (let fromPath of fromPaths) {
           let moduleName = fromPath.split(path.sep)[0];
           let rootAlias = resource.root ? path.resolve(options.root, 'node_modules', moduleName, resource.root) : undefined;
-          if (!rootAlias && baseVendorPkg.aurelia.moduleRootOverride && baseVendorPkg.aurelia.moduleRootOverride[moduleName]) {
-            rootAlias = path.resolve(options.root, 'node_modules', moduleName, baseVendorPkg.aurelia.moduleRootOverride[moduleName]);
+          if (!rootAlias && baseVendorPkg.aurelia.build.moduleRootOverride && baseVendorPkg.aurelia.build.moduleRootOverride[moduleName]) {
+            rootAlias = path.resolve(options.root, 'node_modules', moduleName, baseVendorPkg.aurelia.build.moduleRootOverride[moduleName]);
           }
           assign(dependencies, await getDependency(fromPath, options.src, options.src, [nodeModules], null, packageJson, options.lazy || resource.lazy, options.bundle || resource.bundle, rootAlias));
         }
@@ -353,21 +353,21 @@ async function getDependency(fromPath, relativeParent, srcPath, nodeModulesList,
               packagesOwnNodeModules = ownPath;
             } catch (_) {}
             
-            if (vendorPkg.aurelia && vendorPkg.aurelia.resources) {
-              for (let resource of vendorPkg.aurelia.resources) {
+            if (vendorPkg.aurelia && vendorPkg.aurelia.build && vendorPkg.aurelia.build.resources) {
+              for (let resource of vendorPkg.aurelia.build.resources) {
                 let resourcePath = resource instanceof Object ? resource.path : resource;
                 let useRootAlias = rootAlias;
                 // least important: package's global override
-                if (vendorPkg.aurelia.moduleRootOverride && vendorPkg.aurelia.moduleRootOverride[moduleName]) {
-                  useRootAlias = path.resolve(modulePath, vendorPkg.aurelia.moduleRootOverride[moduleName]);
+                if (vendorPkg.aurelia.build.moduleRootOverride && vendorPkg.aurelia.build.moduleRootOverride[moduleName]) {
+                  useRootAlias = path.resolve(modulePath, vendorPkg.aurelia.build.moduleRootOverride[moduleName]);
                 }
                 // second least important: package resource's override
                 if (resource.root) {
                   useRootAlias = path.resolve(modulePath, resource.root);
                 }
                 // most important: parent-most package's override
-                if (baseVendorPkg && baseVendorPkg.aurelia && baseVendorPkg.aurelia.moduleRootOverride && baseVendorPkg.aurelia.moduleRootOverride[moduleName]) {
-                  useRootAlias = path.resolve(modulePath, baseVendorPkg.aurelia.moduleRootOverride[moduleName]);
+                if (baseVendorPkg && baseVendorPkg.aurelia && baseVendorPkg.aurelia.build.moduleRootOverride && baseVendorPkg.aurelia.build.moduleRootOverride[moduleName]) {
+                  useRootAlias = path.resolve(modulePath, baseVendorPkg.aurelia.build.moduleRootOverride[moduleName]);
                 }
                 if (useRootAlias === modulePath) {
                   useRootAlias = null;

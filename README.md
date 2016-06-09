@@ -60,26 +60,28 @@ To see the ways resources can be declared inside `package.json` see the followin
 {
   ...
   "aurelia": {
-    "resources": [
-      // relative to your /src:
-      "some-resource.js",
-      "another.html",
-      "items/another-without-extension",
+    "build": {
+      "resources": [
+        // relative to your /src:
+        "some-resource.js",
+        "another.html",
+        "items/another-without-extension",
+        
+        // make the file and its dependencies lazy-load from a separate bundle:
+        { "path": "external-module/file.html", lazy: true, bundle: "some-bundle" },
+        { "path": [], lazy: true, bundle: "some-bundle" },
+        
+        // include external resource (and its module's dependencies)
+        "aurelia-templating-resources/compose"
+        
+        // include package (and its module's dependencies):
+        "bootstrap"
+      ],
       
-      // make the file and its dependencies lazy-load from a separate bundle:
-      { "path": "external-module/file.html", lazy: true, bundle: "some-bundle" },
-      { "path": [], lazy: true, bundle: "some-bundle" },
-      
-      // include external resource (and its module's dependencies)
-      "aurelia-templating-resources/compose"
-      
-      // include package (and its module's dependencies):
-      "bootstrap"
-    ],
-    
-    // you may also override package's root directory in case the file is located at a different place from either the child of main or module's root directory
-    "moduleRootOverride": {
-      "aurelia-templating-resources": "dist/es2015"
+      // you may also override package's root directory in case the file is located at a different place from either the child of main or module's root directory
+      "moduleRootOverride": {
+        "aurelia-templating-resources": "dist/es2015"
+      }
     }
   }
 }
