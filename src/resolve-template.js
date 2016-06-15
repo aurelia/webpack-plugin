@@ -1,9 +1,10 @@
-var path = require('path');
+var path = require('upath');
 var fileSystem = require('fs');
 var readdir = require('recursive-readdir');
 var assign = Object.assign || require('object.assign');
 var Promise = require('bluebird');
 var cheerio = require('cheerio');
+var pathSep = '/';
 
 /**
  * this global var is reset every run in case of circular dependencies between files
@@ -65,7 +66,7 @@ async function processAll(options) {
           fromPaths = fromPaths[0];
         }
         for (let fromPath of fromPaths) {
-          let moduleName = fromPath.split(path.sep)[0];
+          let moduleName = fromPath.split(pathSep)[0];
           let rootAlias = resource.root ? path.resolve(options.root, 'node_modules', moduleName, resource.root) : undefined;
           if (!rootAlias && baseVendorPkg.aurelia.build.moduleRootOverride && baseVendorPkg.aurelia.build.moduleRootOverride[moduleName]) {
             rootAlias = path.resolve(options.root, 'node_modules', moduleName, baseVendorPkg.aurelia.build.moduleRootOverride[moduleName]);
@@ -98,7 +99,7 @@ async function autoresolveTemplates(srcPath, nodeModules, isLazy, bundleName) {
  * 
  * @param  {string} htmlFilePath
  * @param  {string} srcPath
- * @param  {Array<string>} nodeModulesList
+ * @param  {array[]} nodeModulesList
  * @param  {string} fromWithinModule
  */
 async function resolveTemplate(htmlFilePath, srcPath, nodeModulesList, fromWithinModule, isParentLazy, bundleName, rootAlias) {
@@ -166,7 +167,7 @@ function getPath(input, lazy, bundle) {
 }
 
 function getPathWithoutExtension(input) {
-  return path.join(path.parse(input).dir, path.parse(input).name);
+  return path.trimExt(input);
 }
 
 /**
@@ -183,7 +184,7 @@ async function getDependency(fromPath, relativeParent, srcPath, nodeModulesList,
   const dependencies = {};
   const requestedByRelativeToSrc = path.relative(srcPath, requestedBy);
   
-  let split = requestedByRelativeToSrc.split(path.sep);
+  let split = requestedByRelativeToSrc.split(pathSep);
   if (split[0] == 'node_modules') {
     // handle edge case when adding htmlCounterpart
     nodeModulesList = nodeModulesList.concat([path.join(srcPath, 'node_modules')]);
@@ -194,7 +195,7 @@ async function getDependency(fromPath, relativeParent, srcPath, nodeModulesList,
   async function addDependency(webpackRequireString, webpackPath, htmlCounterpart, rootAlias, moduleName, modulePath) {
     if (/*filesProcessed.indexOf(webpackRequireString) == -1 && */webpackRequireString.indexOf('..') == -1) {
       dependencies[webpackRequireString] = webpackPath;
-      console.log((fromWithinModule ? '<' + fromWithinModule + '> ' + '[' + path.basename(requestedBy) : '[' + requestedByRelativeToSrc) + '] required "' + webpackRequireString + '" from "' + webpackPath.replace(optionsGlobal.root + path.sep, '') + '".')
+      console.log((fromWithinModule ? '<' + fromWithinModule + '> ' + '[' + path.basename(requestedBy) : '[' + requestedByRelativeToSrc) + '] required "' + webpackRequireString + '" from "' + webpackPath.replace(optionsGlobal.root + pathSep, '') + '".')
       filesProcessed.push(webpackRequireString);
     }
     
@@ -202,7 +203,7 @@ async function getDependency(fromPath, relativeParent, srcPath, nodeModulesList,
       let htmlWebpackRequireString = './' + getPathWithoutExtension(webpackRequireString) + '.html';
       
       dependencies[htmlWebpackRequireString] = getPath(htmlCounterpart, isLazy, bundleName);
-      console.log((fromWithinModule ? '<' + fromWithinModule + '> ' + '[' + path.basename(requestedBy) : '[' + requestedByRelativeToSrc) + '] required "' + htmlWebpackRequireString + '" from "' + htmlCounterpart.replace(optionsGlobal.root + path.sep, '') + '".');
+      console.log((fromWithinModule ? '<' + fromWithinModule + '> ' + '[' + path.basename(requestedBy) : '[' + requestedByRelativeToSrc) + '] required "' + htmlWebpackRequireString + '" from "' + htmlCounterpart.replace(optionsGlobal.root + pathSep, '') + '".');
 
       // TODO: tracking for recursive processing with last module precedence //
       // if (filesProcessed.indexOf(htmlWebpackRequireString) >= 0) return;
@@ -310,7 +311,7 @@ async function getDependency(fromPath, relativeParent, srcPath, nodeModulesList,
         
       } else if (stats.isFile()) {
         // require the file directly
-        moduleName = fromPath.split('/')[0];
+        moduleName = fromPath.split(pathSep)[0];
         modulePath = path.resolve(nodeModulesList[nodeModulesIndex], moduleName);
         
         webpackPath = getPath(fullPath, isLazy, bundleName);
@@ -384,14 +385,14 @@ async function getDependency(fromPath, relativeParent, srcPath, nodeModulesList,
   }
   
   if (!webpackPath) {
-    const pathParts = fromPath.split('/');
+    const pathParts = fromPath.split(pathSep);
     if (!pathIsLocal && pathParts.length > 1 && rootAlias && rootAlias !== srcPath) {
       // the path provided was without root, 
       // lets try to correct it and re-run
       
       const moduleName = pathParts.shift();
       let relativeRootAlias = path.relative(srcPath, rootAlias);
-      let relativeRootSplit = relativeRootAlias.split(path.sep);
+      let relativeRootSplit = relativeRootAlias.split(pathSep);
       if (relativeRootSplit[0] == '..') {
         // when importing local resources from package.json
         // the paths are relative to /src
@@ -404,7 +405,7 @@ async function getDependency(fromPath, relativeParent, srcPath, nodeModulesList,
       }
       relativeRootAlias = relativeRootSplit.join('/');
       
-      const rootedFromPath = path.join(moduleName, relativeRootAlias, pathParts.join(path.sep));
+      const rootedFromPath = path.join(moduleName, relativeRootAlias, pathParts.join(pathSep));
       if (rootedFromPath !== fromPath && !triedToCorrectPath) {
         return await getDependency(rootedFromPath, relativeParent, srcPath, nodeModulesList, fromWithinModule, requestedBy, isLazy, bundleName, rootAlias, true);
       }
