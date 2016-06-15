@@ -196,7 +196,7 @@ var processAll = function () {
 
           case 63:
             fromPath = _ref3;
-            _moduleName = fromPath.split(path.sep)[0];
+            _moduleName = fromPath.split(pathSep)[0];
             rootAlias = resource.root ? path.resolve(options.root, 'node_modules', _moduleName, resource.root) : undefined;
 
             if (!rootAlias && baseVendorPkg.aurelia.build.moduleRootOverride && baseVendorPkg.aurelia.build.moduleRootOverride[_moduleName]) {
@@ -422,7 +422,7 @@ var getDependency = function () {
               case 0:
                 if (webpackRequireString.indexOf('..') == -1) {
                   dependencies[webpackRequireString] = webpackPath;
-                  console.log((fromWithinModule ? '<' + fromWithinModule + '> ' + '[' + path.basename(requestedBy) : '[' + requestedByRelativeToSrc) + '] required "' + webpackRequireString + '" from "' + webpackPath.replace(optionsGlobal.root + path.sep, '') + '".');
+                  console.log((fromWithinModule ? '<' + fromWithinModule + '> ' + '[' + path.basename(requestedBy) : '[' + requestedByRelativeToSrc) + '] required "' + webpackRequireString + '" from "' + webpackPath.replace(optionsGlobal.root + pathSep, '') + '".');
                   filesProcessed.push(webpackRequireString);
                 }
 
@@ -435,7 +435,7 @@ var getDependency = function () {
 
 
                 dependencies[htmlWebpackRequireString] = getPath(htmlCounterpart, isLazy, bundleName);
-                console.log((fromWithinModule ? '<' + fromWithinModule + '> ' + '[' + path.basename(requestedBy) : '[' + requestedByRelativeToSrc) + '] required "' + htmlWebpackRequireString + '" from "' + htmlCounterpart.replace(optionsGlobal.root + path.sep, '') + '".');
+                console.log((fromWithinModule ? '<' + fromWithinModule + '> ' + '[' + path.basename(requestedBy) : '[' + requestedByRelativeToSrc) + '] required "' + htmlWebpackRequireString + '" from "' + htmlCounterpart.replace(optionsGlobal.root + pathSep, '') + '".');
 
                 filesProcessed.push(htmlWebpackRequireString);
 
@@ -467,7 +467,7 @@ var getDependency = function () {
           case 0:
             dependencies = {};
             requestedByRelativeToSrc = path.relative(srcPath, requestedBy);
-            split = requestedByRelativeToSrc.split(path.sep);
+            split = requestedByRelativeToSrc.split(pathSep);
 
             if (split[0] == 'node_modules') {
               nodeModulesList = nodeModulesList.concat([path.join(srcPath, 'node_modules')]);
@@ -607,7 +607,7 @@ var getDependency = function () {
               webpackPath = getPath(moduleName, isLazy, bundleName);
               webpackRequireString = './' + fromPath;
             } else if (stats.isFile()) {
-              moduleName = fromPath.split('/')[0];
+              moduleName = fromPath.split(pathSep)[0];
               modulePath = path.resolve(nodeModulesList[nodeModulesIndex], moduleName);
 
               webpackPath = getPath(fullPath, isLazy, bundleName);
@@ -760,7 +760,7 @@ var getDependency = function () {
               break;
             }
 
-            pathParts = fromPath.split('/');
+            pathParts = fromPath.split(pathSep);
 
             if (!(!pathIsLocal && pathParts.length > 1 && rootAlias && rootAlias !== srcPath)) {
               _context5.next = 111;
@@ -769,7 +769,7 @@ var getDependency = function () {
 
             _moduleName2 = pathParts.shift();
             relativeRootAlias = path.relative(srcPath, rootAlias);
-            relativeRootSplit = relativeRootAlias.split(path.sep);
+            relativeRootSplit = relativeRootAlias.split(pathSep);
 
             if (relativeRootSplit[0] == '..') {
               relativeRootSplit.shift();
@@ -780,7 +780,7 @@ var getDependency = function () {
             }
             relativeRootAlias = relativeRootSplit.join('/');
 
-            rootedFromPath = path.join(_moduleName2, relativeRootAlias, pathParts.join(path.sep));
+            rootedFromPath = path.join(_moduleName2, relativeRootAlias, pathParts.join(pathSep));
 
             if (!(rootedFromPath !== fromPath && !triedToCorrectPath)) {
               _context5.next = 111;
@@ -829,12 +829,13 @@ var getDependency = function () {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var path = require('path');
+var path = require('upath');
 var fileSystem = require('fs');
 var readdir = require('recursive-readdir');
 var assign = _assign2.default || require('object.assign');
 var Promise = require('bluebird');
 var cheerio = require('cheerio');
+var pathSep = '/';
 
 var filesProcessed = [];
 var modulesProcessed = [];
@@ -866,7 +867,7 @@ function getPath(input, lazy, bundle) {
 }
 
 function getPathWithoutExtension(input) {
-  return path.join(path.parse(input).dir, path.parse(input).name);
+  return path.trimExt(input);
 }
 
 module.exports = {

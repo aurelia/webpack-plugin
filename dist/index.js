@@ -14,7 +14,7 @@ var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var path = require('path');
+var path = require('upath');
 var ContextElementDependency = require('webpack/lib/dependencies/ContextElementDependency');
 var resolveTemplates = require('./resolve-template');
 
@@ -23,8 +23,8 @@ var AureliaWebpackPlugin = function () {
     var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
     (0, _classCallCheck3.default)(this, AureliaWebpackPlugin);
 
-    options.root = options.root || path.dirname(module.parent.filename);
-    options.src = options.src || path.resolve(options.root, 'src');
+    options.root = path.normalizeSafe(options.root) || path.dirname(module.parent.filename);
+    options.src = path.normalizeSafe(options.src) || path.resolve(options.root, 'src');
     options.resourceRegExp = options.resourceRegExp || /aurelia-loader-context/;
 
     this.options = options;
@@ -43,7 +43,8 @@ var AureliaWebpackPlugin = function () {
       });
       cmf.plugin('after-resolve', function (result, callback) {
         if (!result) return callback();
-        if (_this.options.src.indexOf(result.resource, _this.options.src.length - result.resource.length) !== -1) {
+        var resourcePath = path.normalizeSafe(result.resource);
+        if (_this.options.src.indexOf(resourcePath, _this.options.src.length - resourcePath.length) !== -1) {
           (function () {
             var resolveDependencies = result.resolveDependencies;
 
@@ -116,6 +117,9 @@ var AureliaWebpackPlugin = function () {
                   return callback(null, dependencies);
                 }, function (error) {
                   console.error('Error processing templates', error.message);
+                  console.error('-----------------------');
+                  console.error(error);
+                  console.error('-----------------------');
                   return callback(error);
                 });
               });
