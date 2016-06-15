@@ -4,8 +4,8 @@ var resolveTemplates = require('./resolve-template');
 
 class AureliaWebpackPlugin {
   constructor(options = {}) {
-    options.root = path.normalizeSafe(options.root) || path.dirname(module.parent.filename);
-    options.src = path.normalizeSafe(options.src) || path.resolve(options.root, 'src');
+    options.root = options.root ? path.normalizeSafe(options.root) : path.dirname(module.parent.filename);
+    options.src = options.src ? path.normalizeSafe(options.src) : path.resolve(options.root, 'src');
     options.resourceRegExp = options.resourceRegExp || /aurelia-loader-context/;
 
     this.options = options;
