@@ -23,8 +23,8 @@ var AureliaWebpackPlugin = function () {
     var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
     (0, _classCallCheck3.default)(this, AureliaWebpackPlugin);
 
-    options.root = path.normalizeSafe(options.root) || path.dirname(module.parent.filename);
-    options.src = path.normalizeSafe(options.src) || path.resolve(options.root, 'src');
+    options.root = options.root ? path.normalizeSafe(options.root) : path.dirname(module.parent.filename);
+    options.src = options.src ? path.normalizeSafe(options.src) : path.resolve(options.root, 'src');
     options.resourceRegExp = options.resourceRegExp || /aurelia-loader-context/;
 
     this.options = options;
