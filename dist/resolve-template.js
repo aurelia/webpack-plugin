@@ -34,13 +34,6 @@ var processAll = function () {
             dependencies = {};
             nodeModules = path.join(options.root, 'node_modules');
             packageJson = path.join(options.root, 'package.json');
-            _context.t0 = dependencies;
-            _context.next = 9;
-            return autoresolveTemplates(options.src, nodeModules, options.lazy, options.bundle);
-
-          case 9:
-            _context.t1 = _context.sent;
-            assign(_context.t0, _context.t1);
 
 
             if (!baseVendorPkg) {
@@ -49,13 +42,21 @@ var processAll = function () {
               } catch (_) {}
             }
 
+            _context.t0 = dependencies;
+            _context.next = 10;
+            return autoresolveTemplates(options.src, nodeModules, options.lazy, options.bundle);
+
+          case 10:
+            _context.t1 = _context.sent;
+            assign(_context.t0, _context.t1);
+
             if (!baseVendorPkg) {
-              _context.next = 76;
+              _context.next = 80;
               break;
             }
 
             if (!baseVendorPkg.dependencies) {
-              _context.next = 37;
+              _context.next = 39;
               break;
             }
 
@@ -72,7 +73,7 @@ var processAll = function () {
               break;
             }
 
-            return _context.abrupt('break', 37);
+            return _context.abrupt('break', 39);
 
           case 18:
             _ref = _iterator[_i++];
@@ -87,74 +88,81 @@ var processAll = function () {
               break;
             }
 
-            return _context.abrupt('break', 37);
+            return _context.abrupt('break', 39);
 
           case 24:
             _ref = _i.value;
 
           case 25:
             moduleName = _ref;
+
+            if (!(modulesProcessed.indexOf(moduleName) === -1)) {
+              _context.next = 37;
+              break;
+            }
+
+            modulesProcessed.push(moduleName);
             vendorPath = path.resolve(options.root, 'node_modules', moduleName);
             vendorPkgPath = path.resolve(vendorPath, 'package.json');
             vendorPkg = JSON.parse(fileSystem.readFileSync(vendorPkgPath, 'utf8'));
 
             if (!(vendorPkg.browser || vendorPkg.main)) {
-              _context.next = 35;
+              _context.next = 37;
               break;
             }
 
             _context.t2 = dependencies;
-            _context.next = 33;
+            _context.next = 35;
             return getDependency(moduleName, options.root, options.root, [nodeModules], null, packageJson, options.lazy, options.bundle, undefined, undefined, true);
 
-          case 33:
+          case 35:
             _context.t3 = _context.sent;
             assign(_context.t2, _context.t3);
 
-          case 35:
+          case 37:
             _context.next = 15;
             break;
 
-          case 37:
+          case 39:
             if (!(baseVendorPkg.aurelia && baseVendorPkg.aurelia.build && baseVendorPkg.aurelia.build.resources)) {
-              _context.next = 76;
+              _context.next = 80;
               break;
             }
 
             _iterator2 = baseVendorPkg.aurelia.build.resources, _isArray2 = Array.isArray(_iterator2), _i2 = 0, _iterator2 = _isArray2 ? _iterator2 : (0, _getIterator3.default)(_iterator2);
 
-          case 39:
+          case 41:
             if (!_isArray2) {
-              _context.next = 45;
+              _context.next = 47;
               break;
             }
 
             if (!(_i2 >= _iterator2.length)) {
-              _context.next = 42;
+              _context.next = 44;
               break;
             }
 
-            return _context.abrupt('break', 76);
+            return _context.abrupt('break', 80);
 
-          case 42:
+          case 44:
             _ref2 = _iterator2[_i2++];
-            _context.next = 49;
+            _context.next = 51;
             break;
 
-          case 45:
+          case 47:
             _i2 = _iterator2.next();
 
             if (!_i2.done) {
-              _context.next = 48;
+              _context.next = 50;
               break;
             }
 
-            return _context.abrupt('break', 76);
+            return _context.abrupt('break', 80);
 
-          case 48:
+          case 50:
             _ref2 = _i2.value;
 
-          case 49:
+          case 51:
             resource = _ref2;
             fromPaths = resource instanceof Object ? [resource.path] : [resource];
 
@@ -163,65 +171,72 @@ var processAll = function () {
             }
             _iterator3 = fromPaths, _isArray3 = Array.isArray(_iterator3), _i3 = 0, _iterator3 = _isArray3 ? _iterator3 : (0, _getIterator3.default)(_iterator3);
 
-          case 53:
+          case 55:
             if (!_isArray3) {
-              _context.next = 59;
+              _context.next = 61;
               break;
             }
 
             if (!(_i3 >= _iterator3.length)) {
-              _context.next = 56;
+              _context.next = 58;
               break;
             }
 
-            return _context.abrupt('break', 74);
+            return _context.abrupt('break', 78);
 
-          case 56:
+          case 58:
             _ref3 = _iterator3[_i3++];
-            _context.next = 63;
+            _context.next = 65;
             break;
 
-          case 59:
+          case 61:
             _i3 = _iterator3.next();
 
             if (!_i3.done) {
-              _context.next = 62;
+              _context.next = 64;
               break;
             }
 
-            return _context.abrupt('break', 74);
+            return _context.abrupt('break', 78);
 
-          case 62:
+          case 64:
             _ref3 = _i3.value;
 
-          case 63:
+          case 65:
             fromPath = _ref3;
             _moduleName = fromPath.split(pathSep)[0];
+
+            if (!(modulesProcessed.indexOf(_moduleName) === -1)) {
+              _context.next = 76;
+              break;
+            }
+
+            modulesProcessed.push(_moduleName);
             rootAlias = resource.root ? path.resolve(options.root, 'node_modules', _moduleName, resource.root) : undefined;
 
             if (!rootAlias && baseVendorPkg.aurelia.build.moduleRootOverride && baseVendorPkg.aurelia.build.moduleRootOverride[_moduleName]) {
               rootAlias = path.resolve(options.root, 'node_modules', _moduleName, baseVendorPkg.aurelia.build.moduleRootOverride[_moduleName]);
             }
             _context.t4 = dependencies;
-            _context.next = 70;
+            _context.next = 74;
             return getDependency(fromPath, options.src, options.src, [nodeModules], null, packageJson, options.lazy || resource.lazy, options.bundle || resource.bundle, rootAlias);
 
-          case 70:
+          case 74:
             _context.t5 = _context.sent;
             assign(_context.t4, _context.t5);
 
-          case 72:
-            _context.next = 53;
-            break;
-
-          case 74:
-            _context.next = 39;
-            break;
-
           case 76:
+            _context.next = 55;
+            break;
+
+          case 78:
+            _context.next = 41;
+            break;
+
+          case 80:
             return _context.abrupt('return', dependencies);
 
-          case 77:
+          case 81:
           case 'end':
             return _context.stop();
         }
@@ -558,12 +573,12 @@ var getDependency = function () {
             return addDependency(webpackRequireString, webpackPath, htmlCounterpart, rootAlias);
 
           case 41:
-            _context5.next = 97;
+            _context5.next = 102;
             break;
 
           case 43:
             if (pathIsLocal) {
-              _context5.next = 97;
+              _context5.next = 102;
               break;
             }
 
@@ -594,7 +609,7 @@ var getDependency = function () {
             }
 
             if (!stats) {
-              _context5.next = 97;
+              _context5.next = 102;
               break;
             }
 
@@ -614,17 +629,8 @@ var getDependency = function () {
               webpackRequireString = './' + fromPath;
             }
 
-            if (doNotAdd) {
-              _context5.next = 53;
-              break;
-            }
-
-            _context5.next = 53;
-            return addDependency(webpackRequireString, webpackPath, htmlCounterpart, rootAlias, moduleName, modulePath);
-
-          case 53:
             if (!(moduleName && modulePath)) {
-              _context5.next = 97;
+              _context5.next = 99;
               break;
             }
 
@@ -644,11 +650,26 @@ var getDependency = function () {
 
 
             if (!rootAlias) {
-              rootAlias = vendorPkg.aurelia && vendorPkg.aurelia.root && path.resolve(modulePath, vendorPkg.aurelia.root) || mainDir;
+              if (vendorPkg.aurelia && vendorPkg.aurelia.build && vendorPkg.aurelia.build.root) {
+                rootAlias = path.resolve(modulePath, vendorPkg.aurelia.build.root);
+              } else if (baseVendorPkg && baseVendorPkg.aurelia && baseVendorPkg.aurelia.build && baseVendorPkg.aurelia.build.moduleRootOverride && baseVendorPkg.aurelia.build.moduleRootOverride[moduleName]) {
+                rootAlias = path.resolve(srcPath, baseVendorPkg.aurelia.build.moduleRootOverride[moduleName]);
+              } else {
+                rootAlias = mainDir;
+              }
 
               if (rootAlias === modulePath) rootAlias = null;
             }
 
+            if (doNotAdd) {
+              _context5.next = 60;
+              break;
+            }
+
+            _context5.next = 60;
+            return addDependency(webpackRequireString, webpackPath, htmlCounterpart, rootAlias, moduleName, modulePath);
+
+          case 60:
             if (!(rootAlias && stats.isFile())) {
               _context5.next = 68;
               break;
@@ -674,6 +695,8 @@ var getDependency = function () {
               break;
             }
 
+            modulesProcessed.push(modulePath);
+
             try {
               ownPath = path.resolve(modulePath, 'node_modules');
 
@@ -682,44 +705,44 @@ var getDependency = function () {
             } catch (_) {}
 
             if (!(vendorPkg.aurelia && vendorPkg.aurelia.build && vendorPkg.aurelia.build.resources)) {
-              _context5.next = 96;
+              _context5.next = 97;
               break;
             }
 
             _iterator6 = vendorPkg.aurelia.build.resources, _isArray6 = Array.isArray(_iterator6), _i6 = 0, _iterator6 = _isArray6 ? _iterator6 : (0, _getIterator3.default)(_iterator6);
 
-          case 72:
+          case 73:
             if (!_isArray6) {
-              _context5.next = 78;
+              _context5.next = 79;
               break;
             }
 
             if (!(_i6 >= _iterator6.length)) {
-              _context5.next = 75;
+              _context5.next = 76;
               break;
             }
 
-            return _context5.abrupt('break', 96);
+            return _context5.abrupt('break', 97);
 
-          case 75:
+          case 76:
             _ref6 = _iterator6[_i6++];
-            _context5.next = 82;
+            _context5.next = 83;
             break;
 
-          case 78:
+          case 79:
             _i6 = _iterator6.next();
 
             if (!_i6.done) {
-              _context5.next = 81;
+              _context5.next = 82;
               break;
             }
 
-            return _context5.abrupt('break', 96);
-
-          case 81:
-            _ref6 = _i6.value;
+            return _context5.abrupt('break', 97);
 
           case 82:
+            _ref6 = _i6.value;
+
+          case 83:
             resource = _ref6;
             resourcePath = resource instanceof Object ? resource.path : resource;
             useRootAlias = rootAlias;
@@ -740,30 +763,40 @@ var getDependency = function () {
             }
 
             _context5.t0 = dependencies;
-            _context5.next = 92;
+            _context5.next = 93;
             return getDependency(resourcePath, modulePath, modulePath, packagesOwnNodeModules ? nodeModulesList.concat(packagesOwnNodeModules) : nodeModulesList, moduleName, packageJson, isLazy || resource.lazy, bundleName || resource.bundle, useRootAlias);
 
-          case 92:
+          case 93:
             _context5.t1 = _context5.sent;
             assign(_context5.t0, _context5.t1);
 
-          case 94:
-            _context5.next = 72;
+          case 95:
+            _context5.next = 73;
             break;
 
-          case 96:
-            modulesProcessed.push(modulePath);
-
           case 97:
+            _context5.next = 102;
+            break;
+
+          case 99:
+            if (doNotAdd) {
+              _context5.next = 102;
+              break;
+            }
+
+            _context5.next = 102;
+            return addDependency(webpackRequireString, webpackPath, htmlCounterpart, rootAlias, moduleName, modulePath);
+
+          case 102:
             if (webpackPath) {
-              _context5.next = 114;
+              _context5.next = 119;
               break;
             }
 
             pathParts = fromPath.split(pathSep);
 
             if (!(!pathIsLocal && pathParts.length > 1 && rootAlias && rootAlias !== srcPath)) {
-              _context5.next = 111;
+              _context5.next = 116;
               break;
             }
 
@@ -783,39 +816,39 @@ var getDependency = function () {
             rootedFromPath = path.join(_moduleName2, relativeRootAlias, pathParts.join(pathSep));
 
             if (!(rootedFromPath !== fromPath && !triedToCorrectPath)) {
-              _context5.next = 111;
+              _context5.next = 116;
               break;
             }
 
-            _context5.next = 110;
+            _context5.next = 115;
             return getDependency(rootedFromPath, relativeParent, srcPath, nodeModulesList, fromWithinModule, requestedBy, isLazy, bundleName, rootAlias, true);
 
-          case 110:
+          case 115:
             return _context5.abrupt('return', _context5.sent);
 
-          case 111:
+          case 116:
             console.error('[' + (fromWithinModule ? '<' + fromWithinModule + '>' : path.relative(srcPath, requestedBy)) + '] wants to require "' + fromPath + '", which does not exist.');
-            _context5.next = 120;
+            _context5.next = 125;
             break;
 
-          case 114:
+          case 119:
             if (!(extension == ".html")) {
-              _context5.next = 120;
+              _context5.next = 125;
               break;
             }
 
             _context5.t2 = dependencies;
-            _context5.next = 118;
+            _context5.next = 123;
             return resolveTemplate(fullPath, modulePath || srcPath, packagesOwnNodeModules ? nodeModulesList.concat(packagesOwnNodeModules) : nodeModulesList, moduleName || fromWithinModule, isLazy, bundleName, rootAlias);
 
-          case 118:
+          case 123:
             _context5.t3 = _context5.sent;
             assign(_context5.t2, _context5.t3);
 
-          case 120:
+          case 125:
             return _context5.abrupt('return', dependencies);
 
-          case 121:
+          case 126:
           case 'end':
             return _context5.stop();
         }
