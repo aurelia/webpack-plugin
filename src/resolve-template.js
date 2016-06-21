@@ -199,6 +199,8 @@ async function getDependency(fromPath, relativeParent, srcPath, nodeModulesList,
   }
   
   async function addDependency(webpackRequireString, webpackPath, htmlCounterpart, rootAlias, moduleName, modulePath) {
+    webpackRequireString = path.normalizeSafe(webpackRequireString);
+
     if (/*filesProcessed.indexOf(webpackRequireString) == -1 && */webpackRequireString.indexOf('..') == -1) {
       dependencies[webpackRequireString] = webpackPath;
       console.log((fromWithinModule ? '<' + fromWithinModule + '> ' + '[' + path.basename(requestedBy) : '[' + requestedByRelativeToSrc) + '] required "' + webpackRequireString + '" from "' + webpackPath.replace(optionsGlobal.root + pathSep, '') + '".')
@@ -206,7 +208,7 @@ async function getDependency(fromPath, relativeParent, srcPath, nodeModulesList,
     }
     
     if (htmlCounterpart) {
-      let htmlWebpackRequireString = './' + getPathWithoutExtension(webpackRequireString) + '.html';
+      let htmlWebpackRequireString = getPathWithoutExtension(webpackRequireString) + '.html';
       
       dependencies[htmlWebpackRequireString] = getPath(htmlCounterpart, isLazy, bundleName);
       console.log((fromWithinModule ? '<' + fromWithinModule + '> ' + '[' + path.basename(requestedBy) : '[' + requestedByRelativeToSrc) + '] required "' + htmlWebpackRequireString + '" from "' + htmlCounterpart.replace(optionsGlobal.root + pathSep, '') + '".');
