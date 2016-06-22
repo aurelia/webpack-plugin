@@ -267,8 +267,14 @@ function getResourcesOfPackage(resources = {}, packagePath = undefined, relative
         let fromPaths = Array.isArray(resource.path) ? resource.path : [resource.path];
         for (let fromPath of fromPaths) {
           debug(`<${externalModule || path.basename(packagePath)}> [resolving] '${fromPath}'`);
-          if (externalModule && fromPath.indexOf('.') !== 0)
-            fromPath = fixRelativeFromPath(fromPath, undefined, undefined, externalModule);
+          
+          if (externalModule) {
+            if (fromPath.indexOf('.') !== 0) // origin unsure, could be external //
+              fromPath = fixRelativeFromPath(fromPath, undefined, undefined, externalModule);
+            else // we know it will be local from within the module
+              fromPath = path.join(externalModule, fromPath);
+          }
+            
           processFromPath(resources, fromPath, resource, packagePath, relativeToDir, overrideBlock);
         }
       }

@@ -39,6 +39,7 @@ var filesExpectedToLoad = [
   'node_modules/external-3/dist/commonjs/sub/resource-4.js',
   'node_modules/external-3/dist/commonjs/sub/resource-5.html',
   'node_modules/external-3/dist/commonjs/sub/resource-6.js',
+  'aurelia-framework',
   'node_modules/aurelia-templating-resources/dist/commonjs/compose.js',
   'node_modules/aurelia-templating-resources/dist/commonjs/compose.html',
   'node_modules/aurelia-templating-resources/dist/commonjs/compose.js',
@@ -87,6 +88,7 @@ var expectedRequireStrings = [
   'external-3/sub/resource-4.js',
   'external-3/sub/resource-5.html',
   'external-3/dist/commonjs/sub/resource-6.js',
+  'aurelia-framework',
   'aurelia-templating-resources/compose',
   'aurelia-templating-resources/compose.html',
   'aurelia-templating-resources/compose.js',
@@ -126,8 +128,8 @@ describe('Dependency resolution', function () {
       filesLoaded.push(resolved[key].source.replace(__dirname + path.sep, ''));
     }
     
-    // console.log(requireStrings)
-    // console.log(filesLoaded)
+    console.log(requireStrings)
+    console.log(filesLoaded)
     
     assert.sameMembers(requireStrings, expectedRequireStrings);
     assert.sameMembers(filesLoaded, filesExpectedToLoad);
