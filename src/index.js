@@ -1,6 +1,41 @@
 var path = require('upath');
 var ContextElementDependency = require('webpack/lib/dependencies/ContextElementDependency');
-var resolveTemplates = require('./resolve-template');
+var resolveTemplates = require('./build-resources');
+
+function getPath(resolvedResource) {
+  let input = resolvedResource.source;
+  let lazy = resolvedResource.lazy;
+  let bundle = resolvedResource.bundle;
+
+  const extension = path.extname(input);
+  let output = '';
+
+  // for .css files force the request to the appropriate css loader (https://github.com/aurelia/webpack-plugin/issues/11#issuecomment-212578861)
+  switch (extension) {
+    case ".css":
+      output += `!!css!`;
+      break;
+    case ".scss":
+      output += `!!sass!`;
+      break;
+    case ".less":
+      output += `!!less!`;
+      break;
+  }
+
+  if (lazy || bundle)
+    output += `bundle?`;
+  if (lazy)
+    output += `lazy`;
+  if (lazy && bundle)
+    output += `&`;
+  if (bundle)
+    output += `name=${bundle}`;
+  if (lazy || bundle)
+    output += `!`;
+
+  return `${output}${input}`;
+}
 
 class AureliaWebpackPlugin {
   constructor(options = {}) {
@@ -43,9 +78,12 @@ class AureliaWebpackPlugin {
 
               resolveTemplates.processAll(this.options).then(contextElements => {
                 for (let requireRequestPath of Object.keys(contextElements).reverse()) {
-                  let webpackRequestPath = contextElements[requireRequestPath];
-                  let newDependency = new ContextElementDependency(webpackRequestPath, requireRequestPath);
-                  newDependency.optional = true;
+                  let resource = contextElements[requireRequestPath];
+                  let newDependency = new ContextElementDependency(getPath(resource), path.joinSafe('./', requireRequestPath));
+                  if (resource.hasOwnProperty('optional'))
+                    newDependency.optional = !!resource.optional;
+                  else
+                    newDependency.optional = true;
                   let previouslyAdded = dependencies.findIndex(dependency => dependency.userRequest === requireRequestPath);
                   if (previouslyAdded > -1) {
                     dependencies[previouslyAdded] = newDependency;
