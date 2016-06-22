@@ -266,10 +266,9 @@ function getResourcesOfPackage(resources = {}, packagePath = undefined, relative
         resource = resource instanceof Object && !Array.isArray(resource) ? resource : { path: resource };
         let fromPaths = Array.isArray(resource.path) ? resource.path : [resource.path];
         for (let fromPath of fromPaths) {
-          if (externalModule) {
-            fromPath = path.join(externalModule, fromPath);
-          }
           debug(`<${externalModule || path.basename(packagePath)}> [resolving] '${fromPath}'`);
+          if (externalModule && fromPath.indexOf('.') !== 0)
+            fromPath = fixRelativeFromPath(fromPath, undefined, undefined, externalModule);
           processFromPath(resources, fromPath, resource, packagePath, relativeToDir, overrideBlock);
         }
       }
