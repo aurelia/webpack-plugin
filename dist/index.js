@@ -16,7 +16,36 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 var path = require('upath');
 var ContextElementDependency = require('webpack/lib/dependencies/ContextElementDependency');
-var resolveTemplates = require('./resolve-template');
+var resolveTemplates = require('./build-resources');
+
+function getPath(resolvedResource) {
+  var input = resolvedResource.source;
+  var lazy = resolvedResource.lazy;
+  var bundle = resolvedResource.bundle;
+
+  var extension = path.extname(input);
+  var output = '';
+
+  switch (extension) {
+    case ".css":
+      output += '!!css!';
+      break;
+    case ".scss":
+      output += '!!sass!';
+      break;
+    case ".less":
+      output += '!!less!';
+      break;
+  }
+
+  if (lazy || bundle) output += 'bundle?';
+  if (lazy) output += 'lazy';
+  if (lazy && bundle) output += '&';
+  if (bundle) output += 'name=' + bundle;
+  if (lazy || bundle) output += '!';
+
+  return '' + output + input;
+}
 
 var AureliaWebpackPlugin = function () {
   function AureliaWebpackPlugin() {
@@ -93,9 +122,9 @@ var AureliaWebpackPlugin = function () {
 
                     var requireRequestPath = _ref2;
 
-                    var webpackRequestPath = contextElements[requireRequestPath];
-                    var newDependency = new ContextElementDependency(webpackRequestPath, requireRequestPath);
-                    newDependency.optional = true;
+                    var resource = contextElements[requireRequestPath];
+                    var newDependency = new ContextElementDependency(getPath(resource), path.joinSafe('./', requireRequestPath));
+                    if (resource.hasOwnProperty('optional')) newDependency.optional = !!resource.optional;else newDependency.optional = true;
                     var previouslyAdded = dependencies.findIndex(function (dependency) {
                       return dependency.userRequest === requireRequestPath;
                     });
