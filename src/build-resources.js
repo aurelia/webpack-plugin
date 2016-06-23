@@ -104,7 +104,7 @@ function getPackageAureliaResources(packageJson) {
 
 function getPackageMainDir(packagePath) {
   const packageJson = getPackageJson(packagePath);
-  const packageMain = packageJson.main || packageJson.browser;
+  const packageMain = packageJson.aurelia && packageJson.aurelia.main && packageJson.aurelia.main['native-modules'] || packageJson.main || packageJson.browser;
   return packageMain ? path.dirname(path.join(packagePath, packageMain)) : null;
 }
 
@@ -283,10 +283,24 @@ function getResourcesOfPackage(resources = {}, packagePath = undefined, relative
     // recursively load resources of all 'dependencies' defined in package.json:
     if (packageJson.dependencies) {
       for (let moduleName of Object.getOwnPropertyNames(packageJson.dependencies)) {
-        let modulePathIndex = moduleNames.indexOf(moduleName);
+        const modulePathIndex = moduleNames.indexOf(moduleName);
         if (modulePathIndex !== -1) {
-          let modulePath = modulePaths[modulePathIndex];
+          const modulePath = modulePaths[modulePathIndex];
           getResourcesOfPackage(resources, modulePath, undefined, undefined /* might add defaults from plugin config */, moduleName);
+        }
+      }
+
+      if (!externalModule) {
+        // iterate again, now to add modules themselves if not yet added:
+        for (let moduleName of Object.getOwnPropertyNames(packageJson.dependencies)) {
+          const modulePathIndex = moduleNames.indexOf(moduleName);
+          if (modulePathIndex !== -1) {
+            const modulePath = modulePaths[modulePathIndex];
+            // add the module itself
+            if (!resources[moduleName] && getPackageMainDir(modulePath)) {
+              resources[moduleName] = { path: moduleName, source: moduleName, moduleName, modulePath };
+            }
+          }
         }
       }
     }
