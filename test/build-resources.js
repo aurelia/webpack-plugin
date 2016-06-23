@@ -2,8 +2,7 @@ var assert = require('chai').assert;
 var path = require('path');
 var fs = require('fs');
 process.env.NODE_ENV = 'test';
-// process.env.DEBUG = 'webpack-plugin';
-var resolve = require('../dist/build-resources');
+var resolve = require('../src/build-resources');
 
 var filesExpectedToLoad = [
   'src/resources/local-resource.js',

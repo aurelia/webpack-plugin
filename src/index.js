@@ -78,8 +78,10 @@ class AureliaWebpackPlugin {
 
               resolveTemplates.processAll(this.options).then(contextElements => {
                 for (let requireRequestPath of Object.keys(contextElements).reverse()) {
+                  // ensure we have './' at the beginning of the request path
+                  requireRequestPath = path.joinSafe('./', requireRequestPath);
                   let resource = contextElements[requireRequestPath];
-                  let newDependency = new ContextElementDependency(getPath(resource), path.joinSafe('./', requireRequestPath));
+                  let newDependency = new ContextElementDependency(getPath(resource), requireRequestPath);
                   if (resource.hasOwnProperty('optional'))
                     newDependency.optional = !!resource.optional;
                   else
