@@ -32,7 +32,7 @@ function getFilesRecursively(targetDir, extension) {
   return new Promise((resolve, reject) => 
     readdir(targetDir, [(file, stats) => 
       path.extname(file) !== extension && !stats.isDirectory()
-    ], (error, files) => error ? reject(error) : resolve(files)));
+    ], (error, files) => error ? reject(error) : resolve(files.map(file => path.normalize(file)))));
 }
 
 /**
@@ -49,7 +49,7 @@ export async function processAll(options) {
   debugDetail(`starting resolution: ${options.root}`);
 
   if (modulePaths.length === 0) {
-    modulePaths = await installedLocalModulePaths();
+    modulePaths = (await installedLocalModulePaths()).map(line => path.normalize(line));
     moduleNames = modulePaths
       .map(line => {
         const split = line.split('/node_modules/');
@@ -328,6 +328,7 @@ function fixRelativeFromPath(fromPath, realSrcPath, realParentPath, externalModu
   } else {
     // if starts with './' then relative to the template, else relative to '/src'
     if (fromPath.indexOf('.') == 0) {
+      debugDetail(`fixing relative path: ${fromPath} | relative dir: ${path.relative(realSrcPath, realParentPath)}`)
       fromPath = path.joinSafe('./', path.relative(realSrcPath, realParentPath), fromPath);
     }
     return externalModule ? path.join(externalModule, fromPath) : fromPath;
