@@ -37,6 +37,13 @@ function getPath(resolvedResource) {
   return `${output}${input}`;
 }
 
+function handleError(error) {
+  console.error('Error processing templates', error.message);
+  console.error('-----------------------');
+  console.error(error);
+  console.error('-----------------------');
+}
+
 class AureliaWebpackPlugin {
   constructor(options = {}) {
     options.root = options.root ? path.normalizeSafe(options.root) : path.dirname(module.parent.filename);
@@ -78,29 +85,30 @@ class AureliaWebpackPlugin {
 
               resolveTemplates.processAll(this.options).then(contextElements => {
                 for (let requireRequestPath of Object.keys(contextElements).reverse()) {
-                  // ensure we have './' at the beginning of the request path
-                  requireRequestPath = path.joinSafe('./', requireRequestPath);
-                  let resource = contextElements[requireRequestPath];
-                  let newDependency = new ContextElementDependency(getPath(resource), requireRequestPath);
-                  if (resource.hasOwnProperty('optional'))
-                    newDependency.optional = !!resource.optional;
-                  else
-                    newDependency.optional = true;
-                  let previouslyAdded = dependencies.findIndex(dependency => dependency.userRequest === requireRequestPath);
-                  if (previouslyAdded > -1) {
-                    dependencies[previouslyAdded] = newDependency;
-                  } else {
-                    dependencies.push(newDependency);
+                  try {
+                    const resource = contextElements[requireRequestPath];
+                    // ensure we have './' at the beginning of the request path
+                    requireRequestPath = path.joinSafe('./', requireRequestPath);
+                    let newDependency = new ContextElementDependency(getPath(resource), requireRequestPath);
+                    if (resource.hasOwnProperty('optional'))
+                      newDependency.optional = !!resource.optional;
+                    else
+                      newDependency.optional = true;
+                    let previouslyAdded = dependencies.findIndex(dependency => dependency.userRequest === requireRequestPath);
+                    if (previouslyAdded > -1) {
+                      dependencies[previouslyAdded] = newDependency;
+                    } else {
+                      dependencies.push(newDependency);
+                    }
+                  } catch (e) {
+                    handleError(e);
                   }
                   // TODO: optional filtering of context (things we don't want to require)
                 }
                 
                 return callback(null, dependencies);
-              }, error => {
-                console.error('Error processing templates', error.message);
-                console.error('-----------------------');
-                console.error(error);
-                console.error('-----------------------');      
+              }, (e) => {
+                handleError(e);
                 return callback(error);
               });
             });
