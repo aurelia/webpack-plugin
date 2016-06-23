@@ -24,8 +24,8 @@ let moduleNames = [];
 
 function installedLocalModulePaths() {
   return execa('npm', ['ls', '--parseable'], { cwd: optionsGlobal.root })
-    .then(res => res.stdout.split('\n').filter((line, i) => i !== 0))
-    .catch(res => res.stdout.split('\n').filter((line, i) => i !== 0));
+    .then(res => res.stdout.split('\n').filter((line, i) => i !== 0 && !!line))
+    .catch(res => res.stdout.split('\n').filter((line, i) => i !== 0 && !!line));
 }
 
 function getFilesRecursively(targetDir, extension) {
@@ -49,7 +49,8 @@ export async function processAll(options) {
   debugDetail(`starting resolution: ${options.root}`);
 
   if (modulePaths.length === 0) {
-    modulePaths = (await installedLocalModulePaths()).map(line => path.normalize(line));
+    modulePaths = (await installedLocalModulePaths())
+      .map(line => path.normalize(line));
     moduleNames = modulePaths
       .map(line => {
         const split = line.split('/node_modules/');
@@ -328,7 +329,7 @@ function fixRelativeFromPath(fromPath, realSrcPath, realParentPath, externalModu
   } else {
     // if starts with './' then relative to the template, else relative to '/src'
     if (fromPath.indexOf('.') == 0) {
-      debugDetail(`fixing relative path: ${fromPath} | relative dir: ${path.relative(realSrcPath, realParentPath)}`)
+      // debugDetail(`fixing relative path: ${fromPath} | relative dir: ${path.relative(realSrcPath, realParentPath)}`)
       fromPath = path.joinSafe('./', path.relative(realSrcPath, realParentPath), fromPath);
     }
     return externalModule ? path.join(externalModule, fromPath) : fromPath;
