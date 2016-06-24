@@ -42,7 +42,7 @@ var processAll = exports.processAll = function () {
             debugDetail('starting resolution: ' + options.root);
 
             if (!(modulePaths.length === 0)) {
-              _context.next = 11;
+              _context.next = 12;
               break;
             }
 
@@ -50,14 +50,18 @@ var processAll = exports.processAll = function () {
             return installedLocalModulePaths();
 
           case 9:
-            modulePaths = _context.sent;
+            _context.t0 = function (line) {
+              return path.normalize(line);
+            };
+
+            modulePaths = _context.sent.map(_context.t0);
 
             moduleNames = modulePaths.map(function (line) {
               var split = line.split('/node_modules/');
               return split[split.length - 1];
             });
 
-          case 11:
+          case 12:
 
             debugDetail(moduleNames);
             debugDetail(modulePaths);
@@ -68,13 +72,13 @@ var processAll = exports.processAll = function () {
             } catch (_) {}
 
             getResourcesOfPackage(dependencies, options.root, path.relative(options.root, options.src));
-            _context.next = 17;
+            _context.next = 18;
             return autoresolveTemplates(dependencies, options.root, options.src);
 
-          case 17:
+          case 18:
             return _context.abrupt('return', dependencies);
 
-          case 18:
+          case 19:
           case 'end':
             return _context.stop();
         }
@@ -88,7 +92,7 @@ var processAll = exports.processAll = function () {
 
 var autoresolveTemplates = function () {
   var ref = (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee2(resources, packagePath, srcPath) {
-    var templates, srcRelativeToRoot, _iterator5, _isArray5, _i5, _ref5, htmlFilePath, templateResources, _iterator6, _isArray6, _i6, _ref6, resource;
+    var templates, srcRelativeToRoot, _iterator6, _isArray6, _i6, _ref6, htmlFilePath, templateResources, _iterator7, _isArray7, _i7, _ref7, resource;
 
     return _regenerator2.default.wrap(function _callee2$(_context2) {
       while (1) {
@@ -100,15 +104,15 @@ var autoresolveTemplates = function () {
           case 2:
             templates = _context2.sent;
             srcRelativeToRoot = path.relative(packagePath, srcPath);
-            _iterator5 = templates, _isArray5 = Array.isArray(_iterator5), _i5 = 0, _iterator5 = _isArray5 ? _iterator5 : (0, _getIterator3.default)(_iterator5);
+            _iterator6 = templates, _isArray6 = Array.isArray(_iterator6), _i6 = 0, _iterator6 = _isArray6 ? _iterator6 : (0, _getIterator3.default)(_iterator6);
 
           case 5:
-            if (!_isArray5) {
+            if (!_isArray6) {
               _context2.next = 11;
               break;
             }
 
-            if (!(_i5 >= _iterator5.length)) {
+            if (!(_i6 >= _iterator6.length)) {
               _context2.next = 8;
               break;
             }
@@ -116,14 +120,14 @@ var autoresolveTemplates = function () {
             return _context2.abrupt('break', 34);
 
           case 8:
-            _ref5 = _iterator5[_i5++];
+            _ref6 = _iterator6[_i6++];
             _context2.next = 15;
             break;
 
           case 11:
-            _i5 = _iterator5.next();
+            _i6 = _iterator6.next();
 
-            if (!_i5.done) {
+            if (!_i6.done) {
               _context2.next = 14;
               break;
             }
@@ -131,20 +135,20 @@ var autoresolveTemplates = function () {
             return _context2.abrupt('break', 34);
 
           case 14:
-            _ref5 = _i5.value;
+            _ref6 = _i6.value;
 
           case 15:
-            htmlFilePath = _ref5;
+            htmlFilePath = _ref6;
             templateResources = resolveTemplateResources(htmlFilePath, srcPath);
-            _iterator6 = templateResources, _isArray6 = Array.isArray(_iterator6), _i6 = 0, _iterator6 = _isArray6 ? _iterator6 : (0, _getIterator3.default)(_iterator6);
+            _iterator7 = templateResources, _isArray7 = Array.isArray(_iterator7), _i7 = 0, _iterator7 = _isArray7 ? _iterator7 : (0, _getIterator3.default)(_iterator7);
 
           case 18:
-            if (!_isArray6) {
+            if (!_isArray7) {
               _context2.next = 24;
               break;
             }
 
-            if (!(_i6 >= _iterator6.length)) {
+            if (!(_i7 >= _iterator7.length)) {
               _context2.next = 21;
               break;
             }
@@ -152,14 +156,14 @@ var autoresolveTemplates = function () {
             return _context2.abrupt('break', 32);
 
           case 21:
-            _ref6 = _iterator6[_i6++];
+            _ref7 = _iterator7[_i7++];
             _context2.next = 28;
             break;
 
           case 24:
-            _i6 = _iterator6.next();
+            _i7 = _iterator7.next();
 
-            if (!_i6.done) {
+            if (!_i7.done) {
               _context2.next = 27;
               break;
             }
@@ -167,10 +171,10 @@ var autoresolveTemplates = function () {
             return _context2.abrupt('break', 32);
 
           case 27:
-            _ref6 = _i6.value;
+            _ref7 = _i7.value;
 
           case 28:
-            resource = _ref6;
+            resource = _ref7;
 
             processFromPath(resources, resource.path, resource, packagePath, srcRelativeToRoot);
 
@@ -217,11 +221,11 @@ var moduleNames = [];
 function installedLocalModulePaths() {
   return execa('npm', ['ls', '--parseable'], { cwd: optionsGlobal.root }).then(function (res) {
     return res.stdout.split('\n').filter(function (line, i) {
-      return i !== 0;
+      return i !== 0 && !!line;
     });
   }).catch(function (res) {
     return res.stdout.split('\n').filter(function (line, i) {
-      return i !== 0;
+      return i !== 0 && !!line;
     });
   });
 }
@@ -231,7 +235,9 @@ function getFilesRecursively(targetDir, extension) {
     return readdir(targetDir, [function (file, stats) {
       return path.extname(file) !== extension && !stats.isDirectory();
     }], function (error, files) {
-      return error ? reject(error) : resolve(files);
+      return error ? reject(error) : resolve(files.map(function (file) {
+        return path.normalize(file);
+      }));
     });
   });
 }
@@ -276,7 +282,7 @@ function getPackageAureliaResources(packageJson) {
 
 function getPackageMainDir(packagePath) {
   var packageJson = getPackageJson(packagePath);
-  var packageMain = packageJson.main || packageJson.browser;
+  var packageMain = packageJson.aurelia && packageJson.aurelia.main && packageJson.aurelia.main['native-modules'] || packageJson.main || packageJson.browser;
   return packageMain ? path.dirname(path.join(packagePath, packageMain)) : null;
 }
 
@@ -490,12 +496,38 @@ function getResourcesOfPackage() {
           _ref4 = _i4.value;
         }
 
-        var moduleName = _ref4;
+        var _moduleName = _ref4;
 
-        var modulePathIndex = moduleNames.indexOf(moduleName);
-        if (modulePathIndex !== -1) {
-          var modulePath = modulePaths[modulePathIndex];
-          getResourcesOfPackage(resources, modulePath, undefined, undefined, moduleName);
+        var _modulePathIndex = moduleNames.indexOf(_moduleName);
+        if (_modulePathIndex !== -1) {
+          var _modulePath = modulePaths[_modulePathIndex];
+          getResourcesOfPackage(resources, _modulePath, undefined, undefined, _moduleName);
+        }
+      }
+
+      if (!externalModule) {
+        for (var _iterator5 = (0, _getOwnPropertyNames2.default)(packageJson.dependencies), _isArray5 = Array.isArray(_iterator5), _i5 = 0, _iterator5 = _isArray5 ? _iterator5 : (0, _getIterator3.default)(_iterator5);;) {
+          var _ref5;
+
+          if (_isArray5) {
+            if (_i5 >= _iterator5.length) break;
+            _ref5 = _iterator5[_i5++];
+          } else {
+            _i5 = _iterator5.next();
+            if (_i5.done) break;
+            _ref5 = _i5.value;
+          }
+
+          var moduleName = _ref5;
+
+          var modulePathIndex = moduleNames.indexOf(moduleName);
+          if (modulePathIndex !== -1) {
+            var modulePath = modulePaths[modulePathIndex];
+
+            if (!resources[moduleName] && getPackageMainDir(modulePath)) {
+              resources[moduleName] = { path: moduleName, source: moduleName, moduleName: moduleName, modulePath: modulePath };
+            }
+          }
         }
       }
     }

@@ -47,6 +47,13 @@ function getPath(resolvedResource) {
   return '' + output + input;
 }
 
+function handleError(error) {
+  console.error('Error processing templates', error.message);
+  console.error('-----------------------');
+  console.error(error);
+  console.error('-----------------------');
+}
+
 var AureliaWebpackPlugin = function () {
   function AureliaWebpackPlugin() {
     var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
@@ -122,16 +129,22 @@ var AureliaWebpackPlugin = function () {
 
                     var requireRequestPath = _ref2;
 
-                    var resource = contextElements[requireRequestPath];
-                    var newDependency = new ContextElementDependency(getPath(resource), path.joinSafe('./', requireRequestPath));
-                    if (resource.hasOwnProperty('optional')) newDependency.optional = !!resource.optional;else newDependency.optional = true;
-                    var previouslyAdded = dependencies.findIndex(function (dependency) {
-                      return dependency.userRequest === requireRequestPath;
-                    });
-                    if (previouslyAdded > -1) {
-                      dependencies[previouslyAdded] = newDependency;
-                    } else {
-                      dependencies.push(newDependency);
+                    try {
+                      var _resource = contextElements[requireRequestPath];
+
+                      requireRequestPath = path.joinSafe('./', requireRequestPath);
+                      var newDependency = new ContextElementDependency(getPath(_resource), requireRequestPath);
+                      if (_resource.hasOwnProperty('optional')) newDependency.optional = !!_resource.optional;else newDependency.optional = true;
+                      var previouslyAdded = dependencies.findIndex(function (dependency) {
+                        return dependency.userRequest === requireRequestPath;
+                      });
+                      if (previouslyAdded > -1) {
+                        dependencies[previouslyAdded] = newDependency;
+                      } else {
+                        dependencies.push(newDependency);
+                      }
+                    } catch (e) {
+                      handleError(e);
                     }
                   };
 
@@ -144,11 +157,8 @@ var AureliaWebpackPlugin = function () {
                   }
 
                   return callback(null, dependencies);
-                }, function (error) {
-                  console.error('Error processing templates', error.message);
-                  console.error('-----------------------');
-                  console.error(error);
-                  console.error('-----------------------');
+                }, function (e) {
+                  handleError(e);
                   return callback(error);
                 });
               });
