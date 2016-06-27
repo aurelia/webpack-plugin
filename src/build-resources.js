@@ -22,10 +22,16 @@ let moduleRootOverride = {};
 let modulePaths = [];
 let moduleNames = [];
 
+function installedRootModulePaths() {
+  return fileSystem.readdirSync(path.join(optionsGlobal.root, 'node_modules'))
+    .filter(dir => !(/^\./.test(dir)))
+    .map(dir => path.resolve(optionsGlobal.root, 'node_modules', dir));
+}
+
 function installedLocalModulePaths() {
   return execa('npm', ['ls', '--parseable'], { cwd: optionsGlobal.root })
-    .then(res => res.stdout.split('\n').filter((line, i) => i !== 0 && !!line))
-    .catch(res => res.stdout.split('\n').filter((line, i) => i !== 0 && !!line));
+    .then(res => installedRootModulePaths().concat(res.stdout.split('\n').filter((line, i) => i !== 0 && !!line)))
+    .catch(res => installedRootModulePaths().concat(res.stdout.split('\n').filter((line, i) => i !== 0 && !!line)));
 }
 
 function getFilesRecursively(targetDir, extension) {
