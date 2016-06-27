@@ -218,15 +218,23 @@ var moduleRootOverride = {};
 var modulePaths = [];
 var moduleNames = [];
 
+function installedRootModulePaths() {
+  return fileSystem.readdirSync(path.join(optionsGlobal.root, 'node_modules')).filter(function (dir) {
+    return !/^\./.test(dir);
+  }).map(function (dir) {
+    return path.resolve(optionsGlobal.root, 'node_modules', dir);
+  });
+}
+
 function installedLocalModulePaths() {
   return execa('npm', ['ls', '--parseable'], { cwd: optionsGlobal.root }).then(function (res) {
-    return res.stdout.split('\n').filter(function (line, i) {
+    return installedRootModulePaths().concat(res.stdout.split('\n').filter(function (line, i) {
       return i !== 0 && !!line;
-    });
+    }));
   }).catch(function (res) {
-    return res.stdout.split('\n').filter(function (line, i) {
+    return installedRootModulePaths().concat(res.stdout.split('\n').filter(function (line, i) {
       return i !== 0 && !!line;
-    });
+    }));
   });
 }
 
@@ -417,8 +425,8 @@ function processFromPath(resources, fromPath, resource, packagePath, relativeToD
       resources[fromPathCss] = (0, _assign2.default)({}, resource, realPath, overrideBlock || {});
     }
   } else {
-      console.error('Unable to resolve', fromPath);
-    }
+    console.error('Unable to resolve', fromPath);
+  }
 }
 
 function getResourcesOfPackage() {
@@ -539,11 +547,11 @@ function fixRelativeFromPath(fromPath, realSrcPath, realParentPath, externalModu
   if (modulePathIndex !== -1) {
     return fromPath;
   } else {
-      if (fromPath.indexOf('.') == 0) {
-        fromPath = path.joinSafe('./', path.relative(realSrcPath, realParentPath), fromPath);
-      }
-      return externalModule ? path.join(externalModule, fromPath) : fromPath;
+    if (fromPath.indexOf('.') == 0) {
+      fromPath = path.joinSafe('./', path.relative(realSrcPath, realParentPath), fromPath);
     }
+    return externalModule ? path.join(externalModule, fromPath) : fromPath;
+  }
 }
 
 function resolveTemplateResources(htmlFilePath, srcPath, externalModule) {
