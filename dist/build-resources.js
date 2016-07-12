@@ -425,8 +425,8 @@ function processFromPath(resources, fromPath, resource, packagePath, relativeToD
       resources[fromPathCss] = (0, _assign2.default)({}, resource, realPath, overrideBlock || {});
     }
   } else {
-    console.error('Unable to resolve', fromPath);
-  }
+      console.error('Unable to resolve', fromPath);
+    }
 }
 
 function getResourcesOfPackage() {
@@ -547,11 +547,11 @@ function fixRelativeFromPath(fromPath, realSrcPath, realParentPath, externalModu
   if (modulePathIndex !== -1) {
     return fromPath;
   } else {
-    if (fromPath.indexOf('.') == 0) {
-      fromPath = path.joinSafe('./', path.relative(realSrcPath, realParentPath), fromPath);
+      if (fromPath.indexOf('.') == 0) {
+        fromPath = path.joinSafe('./', path.relative(realSrcPath, realParentPath), fromPath);
+      }
+      return externalModule ? path.join(externalModule, fromPath) : fromPath;
     }
-    return externalModule ? path.join(externalModule, fromPath) : fromPath;
-  }
 }
 
 function resolveTemplateResources(htmlFilePath, srcPath, externalModule) {

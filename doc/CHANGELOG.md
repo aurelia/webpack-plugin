@@ -1,3 +1,13 @@
+<a name="1.0.0-beta.4.0.1"></a>
+# [1.0.0-beta.4.0.1](https://github.com/aurelia/webpack-plugin/compare/1.0.0-beta.4.0.0...v1.0.0-beta.4.0.1) (2016-07-12)
+
+
+### Bug Fixes
+
+* **build-resources:** Fix module resolution for symlinks ([4a5536d](https://github.com/aurelia/webpack-plugin/commit/4a5536d))
+
+
+
 <a name="1.0.0-beta.4.0.0"></a>
 # [1.0.0-beta.4.0.0](https://github.com/aurelia/webpack-plugin/compare/1.0.0-beta.3.0.0...v1.0.0-beta.4.0.0) (2016-06-24)
 
