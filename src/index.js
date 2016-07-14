@@ -16,10 +16,13 @@ function getPath(resolvedResource) {
       output += `!!css!`;
       break;
     case ".scss":
-      output += `!!sass!`;
+      output += `!!css!sass!`;
       break;
     case ".less":
-      output += `!!less!`;
+      output += `!!css!less!`;
+      break;
+    case ".styl":
+      output += `!!css!stylus!`;
       break;
   }
 
