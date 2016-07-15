@@ -1,44 +1,7 @@
-var path = require('upath');
-var ContextElementDependency = require('webpack/lib/dependencies/ContextElementDependency');
-var resolveTemplates = require('./build-resources');
-
-function getPath(resolvedResource) {
-  let input = resolvedResource.source;
-  let lazy = resolvedResource.lazy;
-  let bundle = resolvedResource.bundle;
-
-  const extension = path.extname(input);
-  let output = '';
-
-  // for .css files force the request to the appropriate css loader (https://github.com/aurelia/webpack-plugin/issues/11#issuecomment-212578861)
-  switch (extension) {
-    case ".css":
-      output += `!!css!`;
-      break;
-    case ".scss":
-      output += `!!css!sass!`;
-      break;
-    case ".less":
-      output += `!!css!less!`;
-      break;
-    case ".styl":
-      output += `!!css!stylus!`;
-      break;
-  }
-
-  if (lazy || bundle)
-    output += `bundle?`;
-  if (lazy)
-    output += `lazy`;
-  if (lazy && bundle)
-    output += `&`;
-  if (bundle)
-    output += `name=${bundle}`;
-  if (lazy || bundle)
-    output += `!`;
-
-  return `${output}${input}`;
-}
+const path = require('upath');
+const ContextElementDependency = require('webpack/lib/dependencies/ContextElementDependency');
+const resolveTemplates = require('./build-resources');
+const debug = require('debug')('webpack-plugin');
 
 function handleError(error) {
   console.error('Error processing templates', error.message);
@@ -52,8 +15,41 @@ class AureliaWebpackPlugin {
     options.root = options.root ? path.normalizeSafe(options.root) : path.dirname(module.parent.filename);
     options.src = options.src ? path.normalizeSafe(options.src) : path.resolve(options.root, 'src');
     options.resourceRegExp = options.resourceRegExp || /aurelia-loader-context/;
+    options.customViewLoaders = Object.assign({
+      '.css': ['css'],
+      '.scss': ['css', 'sass'],
+      '.less': ['css', 'less'],
+      '.styl': ['css', 'stylus'],
+    }, options.customViewLoaders || {});
 
     this.options = options;
+  }
+
+  getPath(resolvedResource) {
+    let input = resolvedResource.source;
+    let lazy = resolvedResource.lazy;
+    let bundle = resolvedResource.bundle;
+
+    const extension = path.extname(input);
+    let output = '';
+
+    // for .css files force the request to the appropriate css loader (https://github.com/aurelia/webpack-plugin/issues/11#issuecomment-212578861)
+    if (this.options.customViewLoaders[extension]) {
+      output += '!!' + this.options.customViewLoaders[extension].join('!') + '!';
+    }
+
+    if (lazy || bundle)
+      output += `bundle?`;
+    if (lazy)
+      output += `lazy`;
+    if (lazy && bundle)
+      output += `&`;
+    if (bundle)
+      output += `name=${bundle}`;
+    if (lazy || bundle)
+      output += `!`;
+
+    return `${output}${input}`;
   }
   
   apply(compiler) {
