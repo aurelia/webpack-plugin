@@ -85,10 +85,10 @@ function ensurePathHasExtension(fullPath) {
 
   try { stats = fileSystem.statSync(fullPathTest) } catch (_) {}
   
-  if (!stats)
+  if (!stats || stats.isDirectory())
     try { stats = fileSystem.statSync(fullPathTest = fullPath + '.js') } catch (_) {}
   
-  if (!stats)
+  if (!stats || stats.isDirectory())
     try { stats = fileSystem.statSync(fullPathTest = fullPath + '.ts') } catch (_) {}
   
   if (stats && stats.isFile()) {
