@@ -59,18 +59,49 @@ class AureliaWebpackPlugin {
   }
   
   apply(compiler) {
-    compiler.plugin('context-module-factory', cmf => {
+    const options = this.options;
+    const self = this;
+
+    compiler.plugin('run', function(compiler, callback) {
+      debug('run');
+      resolveTemplates.processAll(options).then(contextElements => {
+        compiler.__aureliaContextElements = contextElements;
+        debug('finished run: got contextElements');
+        callback();
+      }, (e) => {
+        handleError(e);
+        return callback(error);
+      });
+    });
+
+    compiler.plugin('watch-run', function(watching, callback) {
+      resolveTemplates.processAll(options).then(contextElements => {
+        watching.compiler.__aureliaContextElements = contextElements;
+        debug('finished watch-run: got contextElements');
+        callback();
+      }, (e) => {
+        handleError(e);
+        return callback(error);
+      });
+    });
+
+    compiler.plugin('context-module-factory', function (cmf) {
+      var contextElements = compiler.__aureliaContextElements;
+      debug('context-module-factory');
+      
       cmf.plugin('before-resolve', (result, callback) => {
         if (!result) return callback();
-        if (this.options.resourceRegExp.test(result.request)) {
-          result.request = this.options.src;
+        if (self.options.resourceRegExp.test(result.request)) {
+          result.request = self.options.src;
         }
         return callback(null, result);
       });
+
       cmf.plugin('after-resolve', (result, callback) => {
         if (!result) return callback();
+
         const resourcePath = path.normalizeSafe(result.resource);
-        if (this.options.src.indexOf(resourcePath, this.options.src.length - resourcePath.length) !== -1) {
+        if (self.options.src.indexOf(resourcePath, self.options.src.length - resourcePath.length) !== -1) {
           const resolveDependencies = result.resolveDependencies;
           
           // substitute resolveDependencies method with an enhanced version:
@@ -88,37 +119,74 @@ class AureliaWebpackPlugin {
                   dependencies.push(dependency);
               }
 
-              resolveTemplates.processAll(this.options).then(contextElements => {
-                for (let requireRequestPath of Object.keys(contextElements).reverse()) {
-                  try {
-                    const resource = contextElements[requireRequestPath];
-                    // ensure we have './' at the beginning of the request path
-                    requireRequestPath = path.joinSafe('./', requireRequestPath);
-                    let newDependency = new ContextElementDependency(getPath(resource), requireRequestPath);
-                    if (resource.hasOwnProperty('optional'))
-                      newDependency.optional = !!resource.optional;
-                    else
-                      newDependency.optional = true;
-                    let previouslyAdded = dependencies.findIndex(dependency => dependency.userRequest === requireRequestPath);
-                    if (previouslyAdded > -1) {
-                      dependencies[previouslyAdded] = newDependency;
-                    } else {
-                      dependencies.push(newDependency);
-                    }
-                  } catch (e) {
-                    handleError(e);
+              for (let requireRequestPath of Object.keys(contextElements).reverse()) {
+                try {
+                  const resource = contextElements[requireRequestPath];
+                  // ensure we have './' at the beginning of the request path
+                  requireRequestPath = path.joinSafe('./', requireRequestPath);
+                  let newDependency = new ContextElementDependency(self.getPath(resource), requireRequestPath);
+                  if (resource.hasOwnProperty('optional'))
+                    newDependency.optional = !!resource.optional;
+                  else
+                    newDependency.optional = true;
+                  let previouslyAdded = dependencies.findIndex(dependency => dependency.userRequest === requireRequestPath);
+                  if (previouslyAdded > -1) {
+                    dependencies[previouslyAdded] = newDependency;
+                  } else {
+                    dependencies.push(newDependency);
                   }
-                  // TODO: optional filtering of context (things we don't want to require)
+                } catch (e) {
+                  handleError(e);
                 }
-                
-                return callback(null, dependencies);
-              }, (e) => {
-                handleError(e);
-                return callback(error);
-              });
+                // TODO: optional filtering of context (things we don't want to require)
+              }
+              
+              return callback(null, dependencies);
             });
         }
         return callback(null, result);
+      });
+    });
+
+    /**
+     * used to inject Aurelia's Origin to all build resources
+     */
+    compiler.plugin('compilation', function(compilation) {
+      debug('compilation');
+      const contextElements = compiler.__aureliaContextElements;
+      let paths = [];
+      try {
+        paths = Object.getOwnPropertyNames(contextElements);
+      } catch (e) {
+        console.error('No context elements');
+      }
+
+      compilation.plugin('normal-module-loader', function(loaderContext, module) {
+        // this is where all the modules are loaded
+        // one by one, no dependencies are created yet
+        if (typeof module.resource == 'string' && /\.(js|ts)x?$/i.test(module.resource)) {
+          let moduleId;
+          if (module.resource.startsWith(options.src)) {
+            moduleId = path.relative(options.src, module.resource);
+          }
+          if (!moduleId && typeof module.userRequest == 'string') {
+            moduleId = paths.find(originPath => contextElements[originPath].source === module.userRequest);
+            if (moduleId) {
+              moduleId = path.normalize(moduleId);
+            }
+          }
+          if (!moduleId && typeof module.rawRequest == 'string' && !module.rawRequest.startsWith('.')) {
+            // requested module:
+            let index = paths.indexOf(module.rawRequest);
+            if (index >= 0) {
+              moduleId = module.rawRequest;
+            }
+          }
+          if (moduleId) {
+            const originLoader = path.join(__dirname, 'origin-loader.js') + '?' + JSON.stringify({ moduleId });
+            module.loaders.unshift(originLoader);
+          }
+        }
       });
     });
   }
