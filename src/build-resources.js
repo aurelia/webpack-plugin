@@ -1,13 +1,13 @@
 'use strict';
-var path = require('upath');
-var fileSystem = require('fs');
-var readdir = require('recursive-readdir');
-var assign = Object.assign || require('object.assign');
-var Promise = require('bluebird');
-var cheerio = require('cheerio');
-var execa = require('execa');
-var debug = require('debug')('webpack-plugin');
-var debugDetail = require('debug')('webpack-plugin/details');
+const path = require('upath');
+const fileSystem = require('fs');
+const readdir = require('recursive-readdir');
+const assign = Object.assign || require('object.assign');
+const Promise = require('bluebird');
+const cheerio = require('cheerio');
+const execa = require('execa');
+const debug = require('debug')('webpack-plugin');
+const debugDetail = require('debug')('webpack-plugin/details');
 
 /**
  * this global var is reset every run in case of circular dependencies between files
