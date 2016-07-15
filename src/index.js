@@ -22,6 +22,12 @@ class AureliaWebpackPlugin {
       '.styl': ['css', 'stylus'],
     }, options.customViewLoaders || {});
 
+    if (options.includeSubModules || options.contextMap) {
+      console.error('WARNING: You are passing a depracated option "includeSubModules" / "contextMap" to aurelia-webpack-plugin.');
+      console.error('         Please migrate your config to use aurelia.build.resources inside of your package.json.');
+      console.error('         For more information see: https://github.com/aurelia/skeleton-navigation/blob/master/skeleton-typescript-webpack/README.md#resource-and-bundling-configuration');
+    }
+
     this.options = options;
   }
 
