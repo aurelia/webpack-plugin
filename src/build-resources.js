@@ -42,8 +42,22 @@ function getFilesRecursively(targetDir, extension) {
 }
 
 /**
+ * Static dependency analyzer + build resources resolver.
  * Recursively adds dependencies declared in the package and in all of its .html templates.
  * @param {{ root: string, src: string }} options
+ * 
+ * @description It returns a Promise of an Object with a list of dependencies, where the keys are the require names and values are Objects containing:
+ *
+ * ```js
+ * {
+ *   path, // required path/resource (full src-relative string)
+ *   source, // path to the target file
+ *   bundle, // name of the bundle specified (optional)
+ *   lazy, // whether the user asked for lazy loading
+ *   moduleName, // name of the module (if path required from under an external module)
+ *   modulePath, // path of the module (like above)
+ * }
+ * ```
  */
 export async function processAll(options) {
   modulesProcessed = [];
