@@ -6,9 +6,9 @@ module.exports = function(source, map) {
   this.cacheable();
 
   const newSource = source + `
-import {Origin} from 'aurelia-metadata';
+import {Origin as __au_o__} from 'aurelia-metadata';
 for (var exportName in module.exports) {
-  Origin.set(module.exports[exportName], new Origin(${JSON.stringify(moduleId)}, exportName));
+  __au_o__.set(module.exports[exportName], new __au_o__(${JSON.stringify(moduleId)}, exportName));
 }`;
 
   this.callback(null, newSource, map);
