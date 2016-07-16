@@ -6,10 +6,8 @@ module.exports = function(source, map) {
   this.cacheable();
 
   const newSource = source + `
-import {Origin as __au_o__} from 'aurelia-metadata';
-for (var exportName in module.exports) {
-  __au_o__.set(module.exports[exportName], new __au_o__(${JSON.stringify(moduleId)}, exportName));
-}`;
+import {ensureOriginOnExports as __au_ensure__} from 'aurelia-loader-webpack';
+__au_ensure__(module.exports, ${JSON.stringify(moduleId)});`;
 
   this.callback(null, newSource, map);
 
