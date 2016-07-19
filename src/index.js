@@ -151,7 +151,7 @@ class AureliaWebpackPlugin {
     /**
      * used to inject Aurelia's Origin to all build resources
      */
-    compiler.plugin('compilation', function(compilation) {
+    compiler.plugin('compilation', function (compilation) {
       debug('compilation');
       const contextElements = compiler.__aureliaContextElements;
       let paths = [];
@@ -161,32 +161,82 @@ class AureliaWebpackPlugin {
         console.error('No context elements');
       }
 
-      compilation.plugin('normal-module-loader', function(loaderContext, module) {
-        // this is where all the modules are loaded
-        // one by one, no dependencies are created yet
-        if (typeof module.resource == 'string' && /\.(js|ts)x?$/i.test(module.resource)) {
-          let moduleId;
-          if (module.resource.startsWith(options.src)) {
-            moduleId = path.relative(options.src, module.resource);
-          }
-          if (!moduleId && typeof module.userRequest == 'string') {
-            moduleId = paths.find(originPath => contextElements[originPath].source === module.userRequest);
-            if (moduleId) {
-              moduleId = path.normalize(moduleId);
-            }
-          }
-          if (!moduleId && typeof module.rawRequest == 'string' && !module.rawRequest.startsWith('.')) {
-            // requested module:
-            let index = paths.indexOf(module.rawRequest);
-            if (index >= 0) {
-              moduleId = module.rawRequest;
-            }
-          }
-          if (moduleId) {
-            const originLoader = path.join(__dirname, 'origin-loader.js') + '?' + JSON.stringify({ moduleId });
-            module.loaders.unshift(originLoader);
+      function customWebpackRequire(moduleId) {
+        // Check if module is in cache
+        if(installedModules[moduleId])
+          return installedModules[moduleId].exports;
+
+        // Create a new module (and put it into the cache)
+        var module = installedModules[moduleId] = {
+          i: moduleId,
+          l: false,
+          exports: {}
+        };
+
+        // Try adding .js / .ts
+        if (!modules[moduleId] && typeof moduleId === 'string') {
+          var newModuleId;
+          if (modules[newModuleId = moduleId + '.js'] || modules[newModuleId = moduleId + '.ts']) {
+            moduleId = newModuleId;
+            // alias also installedModules:
+            installedModules[moduleId] = module;
           }
         }
+
+        // Execute the module function
+        modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
+
+        // Flag the module as loaded
+        module.l = true;
+
+        // Return the exports of the module
+        return module.exports;
+      }
+
+      compilation.mainTemplate.plugin('require', function(source, chunk, hash) {
+        let newSourceArray = customWebpackRequire.toString().split('\n');
+        newSourceArray.pop(); // remove header 'function... {'
+        newSourceArray.shift(); // remove footer '}'
+        return newSourceArray.join('\n');
+      });
+
+      compilation.plugin('before-module-ids', function (modules) {
+        modules.forEach((module) => {
+          if (module.id !== null) {
+            return;
+          }
+
+          if (typeof module.resource == 'string') {
+            let moduleId;
+            
+            if (module.resource.startsWith(options.src)) {
+              // paths inside SRC
+              let relativeToSrc = path.relative(options.src, module.resource);
+              moduleId = relativeToSrc;
+            }
+            if (!moduleId && typeof module.userRequest == 'string') {
+              // paths resolved as build resources
+              let matchingModuleIds = paths
+                .filter(originPath => contextElements[originPath].source === module.userRequest)
+                .map(originPath => path.normalize(originPath));
+
+              if (matchingModuleIds.length) {
+                matchingModuleIds.sort((a, b) => b.length - a.length);
+                moduleId = matchingModuleIds[0];
+              }
+            }
+            if (!moduleId && typeof module.rawRequest == 'string' && module.rawRequest.indexOf('.') !== 0) {
+              // requested modules from node_modules:
+              let index = paths.indexOf(module.rawRequest);
+              if (index >= 0) {
+                moduleId = module.rawRequest;
+              }
+            }
+            if (moduleId) {
+              module.id = moduleId;
+            }
+          }
+        });
       });
     });
   }
