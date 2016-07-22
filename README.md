@@ -114,3 +114,13 @@ var webpackConfig = {
   ]
 }
 ```
+
+## Declaring build resources in plugins
+
+Plugins also can define build resources that are always loaded with your plugin. For those resources that are optional, it's recommended to instruct your users to declare those in the `package.json` of their app, so they don't unnecessairly bundle files they don't use.
+
+In a plugin, the paths specified as build resources can be resolved as one of the following:
+- relative to the root directory of the module
+- relative to the parent directory of `main` (so that if your `main` is set to `dist/index.js` then you can specify relative to `dist`)
+- let the user decide by overriding the root directory of your package, by adding a key-value pair alias as a key of `aurelia.build.moduleRootOverride` in their `package.json`, where the `key`is the module/plugin name and value is the path, relative to root of the plugin
+- **SUBJECT TO CHANGE**: specify a custom `main` which contains your code with JS modules (with `import`, `exports`) by declaring `aurelia.main.native-modules` entry in your plugin's `package.json` and write resources relative to the root directory of that `main`. We'll eventually want to standardize when an official method of using modules in Node is decided upon. To support a similar `main` field for `modules`, support [this proposal](https://github.com/dherman/defense-of-dot-js/blob/master/proposal.md). 
