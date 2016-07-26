@@ -13,25 +13,43 @@ const debugDetail = require('debug')('webpack-plugin/details');
  * this global var is reset every run in case of circular dependencies between files
  */
 let modulesProcessed = [];
-/**
- * this is used for displaying logs only
- */
-let optionsGlobal = {};
 let baseVendorPkg;
 let moduleRootOverride = {};
 let modulePaths = [];
 let moduleNames = [];
 
-function installedRootModulePaths() {
-  return fileSystem.readdirSync(path.join(optionsGlobal.root, 'node_modules'))
-    .filter(dir => !(/^\./.test(dir)))
-    .map(dir => path.resolve(optionsGlobal.root, 'node_modules', dir));
+function installedRootModulePaths(moduleDir, ensurePackageJson = true) {
+  let rootModules = fileSystem.readdirSync(moduleDir)
+    .filter(dir => !(/^\./.test(dir)));
+  
+  let scoped = rootModules
+    .filter(dir => dir.indexOf('@') === 0);
+  
+  rootModules = rootModules
+    .filter(dir => dir.indexOf('@') !== 0)
+    .map(dir => path.resolve(moduleDir, dir));
+  
+  scoped.forEach(dir => {
+    rootModules = rootModules.concat(installedRootModulePaths(path.resolve(moduleDir, dir), false));
+  });
+  
+  if (ensurePackageJson) {
+    // ensure package.json exists:
+    rootModules = rootModules
+      .filter(dir => {
+        let stats;
+        try { stats = fileSystem.statSync(path.join(dir, 'package.json')) } catch (_) {}
+        return stats && stats.isFile();
+      });
+  }
+  
+  return rootModules;
 }
 
-function installedLocalModulePaths() {
-  return execa('npm', ['ls', '--parseable'], { cwd: optionsGlobal.root })
-    .then(res => installedRootModulePaths().concat(res.stdout.split('\n').filter((line, i) => i !== 0 && !!line)))
-    .catch(res => installedRootModulePaths().concat(res.stdout.split('\n').filter((line, i) => i !== 0 && !!line)));
+function installedLocalModulePaths(options) {
+  return execa('npm', ['ls', '--parseable'], { cwd: options.root })
+    .then(res => installedRootModulePaths(path.join(options.root, 'node_modules')).concat(res.stdout.split('\n').filter((line, i) => i !== 0 && !!line)))
+    .catch(res => installedRootModulePaths(path.join(options.root, 'node_modules')).concat(res.stdout.split('\n').filter((line, i) => i !== 0 && !!line)));
 }
 
 function getFilesRecursively(targetDir, extension) {
@@ -61,7 +79,6 @@ function getFilesRecursively(targetDir, extension) {
  */
 export async function processAll(options) {
   modulesProcessed = [];
-  optionsGlobal = options;
   const dependencies = {};
   const nodeModules = path.join(options.root, 'node_modules');
   const packageJson = path.join(options.root, 'package.json');
@@ -69,7 +86,7 @@ export async function processAll(options) {
   debugDetail(`starting resolution: ${options.root}`);
 
   if (modulePaths.length === 0) {
-    modulePaths = (await installedLocalModulePaths())
+    modulePaths = (await installedLocalModulePaths(options))
       .map(line => path.normalize(line));
     moduleNames = modulePaths
       .map(line => {
@@ -125,7 +142,11 @@ function getPackageAureliaResources(packageJson) {
 
 function getPackageMainDir(packagePath) {
   const packageJson = getPackageJson(packagePath);
-  const packageMain = packageJson && packageJson.aurelia && packageJson.aurelia.main && packageJson.aurelia.main['native-modules'] || packageJson.main || packageJson.browser;
+  if (!packageJson) {
+    console.error('Unable to read the file: ' + packagePath);
+    return null;
+  }
+  const packageMain = packageJson.aurelia && packageJson.aurelia.main && packageJson.aurelia.main['native-modules'] || packageJson.main || packageJson.browser;
   return packageMain ? path.dirname(path.join(packagePath, packageMain)) : null;
 }
 
@@ -146,6 +167,13 @@ function getRealModulePath(fromPath) {
   let fromPathSplit = fromPath.split('/');
   let moduleName = fromPathSplit.shift();
   let modulePathIndex = moduleNames.indexOf(moduleName);
+  
+  if (modulePathIndex === -1 && fromPathSplit.length > 0) {
+    // the module might be scoped, let's see:
+    moduleName += `/${fromPathSplit.shift()}`;
+    modulePathIndex = moduleNames.indexOf(moduleName);
+  }
+  
   let modulePath;
   if (modulePathIndex !== -1) {
     modulePath = modulePaths[modulePathIndex];
@@ -341,11 +369,10 @@ async function autoresolveTemplates(resources, packagePath, srcPath) {
 }
 
 function fixRelativeFromPath(fromPath, realSrcPath, realParentPath, externalModule) {
-  let modulePathIndex = moduleNames.indexOf(fromPath.split('/')[0]);
-  if (modulePathIndex !== -1) {
+  let fromPathSplit = fromPath.split('/');
+  if (moduleNames.indexOf(fromPathSplit[0]) !== -1 || moduleNames.indexOf(path.join(fromPathSplit[0], fromPathSplit[1])) !== -1) {
     // already a module reference, non-relative, leave as-is:
     return fromPath;
-    // let modulePath = modulePaths[modulePathIndex];
   } else {
     // if starts with './' then relative to the template, else relative to '/src'
     if (fromPath.indexOf('.') == 0) {
