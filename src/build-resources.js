@@ -383,6 +383,8 @@ function fixRelativeFromPath(fromPath, realSrcPath, realParentPath, externalModu
   }
 }
 
+const templateStringRegex = /\${.+}/;
+
 /**
  * Generates key-value dependency pairs of:
  * - <require from="paths">
@@ -402,6 +404,7 @@ function resolveTemplateResources(htmlFilePath, srcPath, externalModule) {
   const requireTags = $('require');
   requireTags.each(index => {
     const fromPath = requireTags[index].attribs.from;
+    if (templateStringRegex.test(fromPath)) return;
     const isLazy = requireTags[index].attribs.hasOwnProperty('lazy');
     const bundle = requireTags[index].attribs.bundle;
     if (fromPath)
@@ -412,6 +415,7 @@ function resolveTemplateResources(htmlFilePath, srcPath, externalModule) {
   const viewModelRequests = $('[view-model]');
   viewModelRequests.each(index => {
     const fromPath = viewModelRequests[index].attribs['view-model'];
+    if (templateStringRegex.test(fromPath)) return;
     const isLazy = viewModelRequests[index].attribs.hasOwnProperty('lazy');
     const bundle = viewModelRequests[index].attribs.bundle;
     if (fromPath)
@@ -422,6 +426,7 @@ function resolveTemplateResources(htmlFilePath, srcPath, externalModule) {
   const viewRequests = $('[view]');
   viewRequests.each(index => {
     const fromPath = viewRequests[index].attribs.view;
+    if (templateStringRegex.test(fromPath)) return;
     const isLazy = viewRequests[index].attribs.hasOwnProperty('lazy');
     const bundle = viewRequests[index].attribs.bundle;
     if (fromPath)
