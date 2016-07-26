@@ -125,7 +125,11 @@ function getPackageAureliaResources(packageJson) {
 
 function getPackageMainDir(packagePath) {
   const packageJson = getPackageJson(packagePath);
-  const packageMain = packageJson && packageJson.aurelia && packageJson.aurelia.main && packageJson.aurelia.main['native-modules'] || packageJson.main || packageJson.browser;
+  if (!packageJson) {
+    console.error('Unable to read the file: ' + packagePath);
+    return null;
+  }
+  const packageMain = packageJson.aurelia && packageJson.aurelia.main && packageJson.aurelia.main['native-modules'] || packageJson.main || packageJson.browser;
   return packageMain ? path.dirname(path.join(packagePath, packageMain)) : null;
 }
 
