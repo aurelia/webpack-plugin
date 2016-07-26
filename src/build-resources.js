@@ -120,12 +120,12 @@ function getPackageJson(packagePath) {
 }
 
 function getPackageAureliaResources(packageJson) {
-  return packageJson.aurelia && packageJson.aurelia.build && packageJson.aurelia.build.resources || [];
+  return packageJson && packageJson.aurelia && packageJson.aurelia.build && packageJson.aurelia.build.resources || [];
 }
 
 function getPackageMainDir(packagePath) {
   const packageJson = getPackageJson(packagePath);
-  const packageMain = packageJson.aurelia && packageJson.aurelia.main && packageJson.aurelia.main['native-modules'] || packageJson.main || packageJson.browser;
+  const packageMain = packageJson && packageJson.aurelia && packageJson.aurelia.main && packageJson.aurelia.main['native-modules'] || packageJson.main || packageJson.browser;
   return packageMain ? path.dirname(path.join(packagePath, packageMain)) : null;
 }
 
