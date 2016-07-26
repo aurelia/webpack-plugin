@@ -352,11 +352,10 @@ async function autoresolveTemplates(resources, packagePath, srcPath) {
 }
 
 function fixRelativeFromPath(fromPath, realSrcPath, realParentPath, externalModule) {
-  let modulePathIndex = moduleNames.indexOf(fromPath.split('/')[0]);
-  if (modulePathIndex !== -1) {
+  let fromPathSplit = fromPath.split('/');
+  if (moduleNames.indexOf(fromPathSplit[0]) !== -1 || moduleNames.indexOf(path.join(fromPathSplit[0], fromPathSplit[1])) !== -1) {
     // already a module reference, non-relative, leave as-is:
     return fromPath;
-    // let modulePath = modulePaths[modulePathIndex];
   } else {
     // if starts with './' then relative to the template, else relative to '/src'
     if (fromPath.indexOf('.') == 0) {
