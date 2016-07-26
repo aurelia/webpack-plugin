@@ -30,7 +30,7 @@ function installedRootModulePaths(moduleDir, ensurePackageJson = true) {
     .map(dir => path.resolve(moduleDir, dir));
   
   scoped.forEach(dir => {
-    rootModules = rootModules.concat(installedRootModulePaths(dir, false));
+    rootModules = rootModules.concat(installedRootModulePaths(path.resolve(moduleDir, dir), false));
   });
   
   if (ensurePackageJson) {
