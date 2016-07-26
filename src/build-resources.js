@@ -146,6 +146,13 @@ function getRealModulePath(fromPath) {
   let fromPathSplit = fromPath.split('/');
   let moduleName = fromPathSplit.shift();
   let modulePathIndex = moduleNames.indexOf(moduleName);
+  
+  if (modulePathIndex === -1 && fromPathSplit.length > 0) {
+    // the module might be scoped, let's see:
+    moduleName += `/${fromPathSplit.shift()}`;
+    modulePathIndex = moduleNames.indexOf(moduleName);
+  }
+  
   let modulePath;
   if (modulePathIndex !== -1) {
     modulePath = modulePaths[modulePathIndex];
