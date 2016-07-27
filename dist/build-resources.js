@@ -33,7 +33,6 @@ var processAll = exports.processAll = function () {
         switch (_context.prev = _context.next) {
           case 0:
             modulesProcessed = [];
-            optionsGlobal = options;
             dependencies = {};
             nodeModules = path.join(options.root, 'node_modules');
             packageJson = path.join(options.root, 'package.json');
@@ -42,14 +41,14 @@ var processAll = exports.processAll = function () {
             debugDetail('starting resolution: ' + options.root);
 
             if (!(modulePaths.length === 0)) {
-              _context.next = 12;
+              _context.next = 11;
               break;
             }
 
-            _context.next = 9;
-            return installedLocalModulePaths();
+            _context.next = 8;
+            return installedLocalModulePaths(options);
 
-          case 9:
+          case 8:
             _context.t0 = function (line) {
               return path.normalize(line);
             };
@@ -61,7 +60,7 @@ var processAll = exports.processAll = function () {
               return split[split.length - 1];
             });
 
-          case 12:
+          case 11:
 
             debugDetail(moduleNames);
             debugDetail(modulePaths);
@@ -72,20 +71,20 @@ var processAll = exports.processAll = function () {
             } catch (_) {}
 
             getResourcesOfPackage(dependencies, options.root, path.relative(options.root, options.src));
-            _context.next = 18;
+            _context.next = 17;
             return autoresolveTemplates(dependencies, options.root, options.src);
 
-          case 18:
+          case 17:
             return _context.abrupt('return', dependencies);
 
-          case 19:
+          case 18:
           case 'end':
             return _context.stop();
         }
       }
     }, _callee, this);
   }));
-  return function processAll(_x) {
+  return function processAll(_x2) {
     return ref.apply(this, arguments);
   };
 }();
@@ -193,7 +192,7 @@ var autoresolveTemplates = function () {
       }
     }, _callee2, this);
   }));
-  return function autoresolveTemplates(_x7, _x8, _x9) {
+  return function autoresolveTemplates(_x8, _x9, _x10) {
     return ref.apply(this, arguments);
   };
 }();
@@ -211,28 +210,52 @@ var debug = require('debug')('webpack-plugin');
 var debugDetail = require('debug')('webpack-plugin/details');
 
 var modulesProcessed = [];
-
-var optionsGlobal = {};
 var baseVendorPkg = void 0;
 var moduleRootOverride = {};
 var modulePaths = [];
 var moduleNames = [];
 
-function installedRootModulePaths() {
-  return fileSystem.readdirSync(path.join(optionsGlobal.root, 'node_modules')).filter(function (dir) {
+function installedRootModulePaths(moduleDir) {
+  var ensurePackageJson = arguments.length <= 1 || arguments[1] === undefined ? true : arguments[1];
+
+  var rootModules = fileSystem.readdirSync(moduleDir).filter(function (dir) {
     return !/^\./.test(dir);
-  }).map(function (dir) {
-    return path.resolve(optionsGlobal.root, 'node_modules', dir);
   });
+
+  var scoped = rootModules.filter(function (dir) {
+    return dir.indexOf('@') === 0;
+  });
+
+  rootModules = rootModules.filter(function (dir) {
+    return dir.indexOf('@') !== 0;
+  }).map(function (dir) {
+    return path.resolve(moduleDir, dir);
+  });
+
+  scoped.forEach(function (dir) {
+    rootModules = rootModules.concat(installedRootModulePaths(path.resolve(moduleDir, dir), false));
+  });
+
+  if (ensurePackageJson) {
+    rootModules = rootModules.filter(function (dir) {
+      var stats = void 0;
+      try {
+        stats = fileSystem.statSync(path.join(dir, 'package.json'));
+      } catch (_) {}
+      return stats && stats.isFile();
+    });
+  }
+
+  return rootModules;
 }
 
-function installedLocalModulePaths() {
-  return execa('npm', ['ls', '--parseable'], { cwd: optionsGlobal.root }).then(function (res) {
-    return installedRootModulePaths().concat(res.stdout.split('\n').filter(function (line, i) {
+function installedLocalModulePaths(options) {
+  return execa('npm', ['ls', '--parseable'], { cwd: options.root }).then(function (res) {
+    return installedRootModulePaths(path.join(options.root, 'node_modules')).concat(res.stdout.split('\n').filter(function (line, i) {
       return i !== 0 && !!line;
     }));
   }).catch(function (res) {
-    return installedRootModulePaths().concat(res.stdout.split('\n').filter(function (line, i) {
+    return installedRootModulePaths(path.join(options.root, 'node_modules')).concat(res.stdout.split('\n').filter(function (line, i) {
       return i !== 0 && !!line;
     }));
   });
@@ -260,11 +283,11 @@ function ensurePathHasExtension(fullPath) {
     stats = fileSystem.statSync(fullPathTest);
   } catch (_) {}
 
-  if (!stats) try {
+  if (!stats || stats.isDirectory()) try {
     stats = fileSystem.statSync(fullPathTest = fullPath + '.js');
   } catch (_) {}
 
-  if (!stats) try {
+  if (!stats || stats.isDirectory()) try {
     stats = fileSystem.statSync(fullPathTest = fullPath + '.ts');
   } catch (_) {}
 
@@ -285,11 +308,15 @@ function getPackageJson(packagePath) {
 }
 
 function getPackageAureliaResources(packageJson) {
-  return packageJson.aurelia && packageJson.aurelia.build && packageJson.aurelia.build.resources || [];
+  return packageJson && packageJson.aurelia && packageJson.aurelia.build && packageJson.aurelia.build.resources || [];
 }
 
 function getPackageMainDir(packagePath) {
   var packageJson = getPackageJson(packagePath);
+  if (!packageJson) {
+    console.error('Unable to read the file: ' + packagePath);
+    return null;
+  }
   var packageMain = packageJson.aurelia && packageJson.aurelia.main && packageJson.aurelia.main['native-modules'] || packageJson.main || packageJson.browser;
   return packageMain ? path.dirname(path.join(packagePath, packageMain)) : null;
 }
@@ -309,6 +336,12 @@ function getRealModulePath(fromPath) {
   var fromPathSplit = fromPath.split('/');
   var moduleName = fromPathSplit.shift();
   var modulePathIndex = moduleNames.indexOf(moduleName);
+
+  if (modulePathIndex === -1 && fromPathSplit.length > 0) {
+    moduleName += '/' + fromPathSplit.shift();
+    modulePathIndex = moduleNames.indexOf(moduleName);
+  }
+
   var modulePath = void 0;
   if (modulePathIndex !== -1) {
     modulePath = modulePaths[modulePathIndex];
@@ -543,16 +576,18 @@ function getResourcesOfPackage() {
 }
 
 function fixRelativeFromPath(fromPath, realSrcPath, realParentPath, externalModule) {
-  var modulePathIndex = moduleNames.indexOf(fromPath.split('/')[0]);
-  if (modulePathIndex !== -1) {
+  var fromPathSplit = fromPath.split('/');
+  if (moduleNames.indexOf(fromPathSplit[0]) !== -1 || moduleNames.indexOf(path.join(fromPathSplit[0], fromPathSplit[1])) !== -1) {
     return fromPath;
   } else {
-      if (fromPath.indexOf('.') == 0) {
-        fromPath = path.joinSafe('./', path.relative(realSrcPath, realParentPath), fromPath);
-      }
-      return externalModule ? path.join(externalModule, fromPath) : fromPath;
+    if (fromPath.indexOf('.') == 0) {
+      fromPath = path.joinSafe('./', path.relative(realSrcPath, realParentPath), fromPath);
     }
+    return externalModule ? path.join(externalModule, fromPath) : fromPath;
+  }
 }
+
+var templateStringRegex = /\${.+}/;
 
 function resolveTemplateResources(htmlFilePath, srcPath, externalModule) {
   var html = fileSystem.readFileSync(htmlFilePath);
@@ -563,6 +598,7 @@ function resolveTemplateResources(htmlFilePath, srcPath, externalModule) {
   var requireTags = $('require');
   requireTags.each(function (index) {
     var fromPath = requireTags[index].attribs.from;
+    if (templateStringRegex.test(fromPath)) return;
     var isLazy = requireTags[index].attribs.hasOwnProperty('lazy');
     var bundle = requireTags[index].attribs.bundle;
     if (fromPath) resources.push({ path: fixRelativeFromPath(fromPath, srcPath, relativeParent, externalModule), lazy: isLazy, bundle: bundle });
@@ -571,6 +607,7 @@ function resolveTemplateResources(htmlFilePath, srcPath, externalModule) {
   var viewModelRequests = $('[view-model]');
   viewModelRequests.each(function (index) {
     var fromPath = viewModelRequests[index].attribs['view-model'];
+    if (templateStringRegex.test(fromPath)) return;
     var isLazy = viewModelRequests[index].attribs.hasOwnProperty('lazy');
     var bundle = viewModelRequests[index].attribs.bundle;
     if (fromPath) resources.push({ path: fixRelativeFromPath(fromPath, srcPath, relativeParent, externalModule), lazy: isLazy, bundle: bundle });
@@ -579,6 +616,7 @@ function resolveTemplateResources(htmlFilePath, srcPath, externalModule) {
   var viewRequests = $('[view]');
   viewRequests.each(function (index) {
     var fromPath = viewRequests[index].attribs.view;
+    if (templateStringRegex.test(fromPath)) return;
     var isLazy = viewRequests[index].attribs.hasOwnProperty('lazy');
     var bundle = viewRequests[index].attribs.bundle;
     if (fromPath) resources.push({ path: fixRelativeFromPath(fromPath, srcPath, relativeParent, externalModule), lazy: isLazy, bundle: bundle });
