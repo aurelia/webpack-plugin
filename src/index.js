@@ -235,7 +235,7 @@ class AureliaWebpackPlugin {
                 }
               }
             }
-            if (moduleId) {
+            if (moduleId && !modules.find(m => m.id === moduleId)) {
               module.id = moduleId;
             }
           }
