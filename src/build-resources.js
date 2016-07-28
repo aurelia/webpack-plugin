@@ -370,7 +370,7 @@ async function autoresolveTemplates(resources, packagePath, srcPath) {
 
 function fixRelativeFromPath(fromPath, realSrcPath, realParentPath, externalModule) {
   let fromPathSplit = fromPath.split('/');
-  if (moduleNames.indexOf(fromPathSplit[0]) !== -1 || moduleNames.indexOf(path.join(fromPathSplit[0], fromPathSplit[1])) !== -1) {
+  if (moduleNames.indexOf(fromPathSplit[0]) !== -1 || (fromPathSplit.length > 1 && moduleNames.indexOf(path.join(fromPathSplit[0], fromPathSplit[1])) !== -1)) {
     // already a module reference, non-relative, leave as-is:
     return fromPath;
   } else {
