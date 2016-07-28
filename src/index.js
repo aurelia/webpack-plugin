@@ -14,6 +14,7 @@ class AureliaWebpackPlugin {
   constructor(options = {}) {
     options.root = options.root ? path.normalizeSafe(options.root) : path.dirname(module.parent.filename);
     options.src = options.src ? path.normalizeSafe(options.src) : path.resolve(options.root, 'src');
+    options.nameExternalModules = options.nameExternalModules == undefined || options.nameExternalModules == true;
     options.resourceRegExp = options.resourceRegExp || /aurelia-loader-context/;
     options.customViewLoaders = Object.assign({
       '.css': ['css'],
@@ -214,22 +215,24 @@ class AureliaWebpackPlugin {
               let relativeToSrc = path.relative(options.src, module.resource);
               moduleId = relativeToSrc;
             }
-            if (!moduleId && typeof module.userRequest == 'string') {
-              // paths resolved as build resources
-              let matchingModuleIds = paths
-                .filter(originPath => contextElements[originPath].source === module.userRequest)
-                .map(originPath => path.normalize(originPath));
+            if (options.nameExternalModules) {
+              if (!moduleId && typeof module.userRequest == 'string') {
+                // paths resolved as build resources
+                let matchingModuleIds = paths
+                  .filter(originPath => contextElements[originPath].source === module.userRequest)
+                  .map(originPath => path.normalize(originPath));
 
-              if (matchingModuleIds.length) {
-                matchingModuleIds.sort((a, b) => b.length - a.length);
-                moduleId = matchingModuleIds[0];
+                if (matchingModuleIds.length) {
+                  matchingModuleIds.sort((a, b) => b.length - a.length);
+                  moduleId = matchingModuleIds[0];
+                }
               }
-            }
-            if (!moduleId && typeof module.rawRequest == 'string' && module.rawRequest.indexOf('.') !== 0) {
-              // requested modules from node_modules:
-              let index = paths.indexOf(module.rawRequest);
-              if (index >= 0) {
-                moduleId = module.rawRequest;
+              if (!moduleId && typeof module.rawRequest == 'string' && module.rawRequest.indexOf('.') !== 0) {
+                // requested modules from node_modules:
+                let index = paths.indexOf(module.rawRequest);
+                if (index >= 0) {
+                  moduleId = module.rawRequest;
+                }
               }
             }
             if (moduleId) {
