@@ -15,6 +15,7 @@ class AureliaWebpackPlugin {
     options.root = options.root ? path.normalizeSafe(options.root) : path.dirname(module.parent.filename);
     options.src = options.src ? path.normalizeSafe(options.src) : path.resolve(options.root, 'src');
     options.nameExternalModules = options.nameExternalModules == undefined || options.nameExternalModules == true;
+    options.nameLocalModules = options.nameLocalModules == undefined || options.nameLocalModules == true;
     options.resourceRegExp = options.resourceRegExp || /aurelia-loader-context/;
     options.customViewLoaders = Object.assign({
       '.css': ['css'],
@@ -210,10 +211,12 @@ class AureliaWebpackPlugin {
           if (typeof module.resource == 'string') {
             let moduleId;
             
-            if (module.resource.startsWith(options.src)) {
-              // paths inside SRC
-              let relativeToSrc = path.relative(options.src, module.resource);
-              moduleId = relativeToSrc;
+            if (options.nameLocalModules) {
+              if (module.resource.startsWith(options.src)) {
+                // paths inside SRC
+                let relativeToSrc = path.relative(options.src, module.resource);
+                moduleId = relativeToSrc;
+              }
             }
             if (options.nameExternalModules) {
               if (!moduleId && typeof module.userRequest == 'string') {
