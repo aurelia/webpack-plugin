@@ -41,6 +41,8 @@ var AureliaWebpackPlugin = function () {
 
     options.root = options.root ? path.normalizeSafe(options.root) : path.dirname(module.parent.filename);
     options.src = options.src ? path.normalizeSafe(options.src) : path.resolve(options.root, 'src');
+    options.nameExternalModules = options.nameExternalModules == undefined || options.nameExternalModules == true;
+    options.nameLocalModules = options.nameLocalModules == undefined || options.nameLocalModules == true;
     options.resourceRegExp = options.resourceRegExp || /aurelia-loader-context/;
     options.customViewLoaders = (0, _assign2.default)({
       '.css': ['css'],
@@ -255,35 +257,43 @@ var AureliaWebpackPlugin = function () {
           }
 
           if (typeof module.resource == 'string') {
-            var moduleId = void 0;
+            (function () {
+              var moduleId = void 0;
 
-            if (module.resource.startsWith(options.src)) {
-              var relativeToSrc = path.relative(options.src, module.resource);
-              moduleId = relativeToSrc;
-            }
-            if (!moduleId && typeof module.userRequest == 'string') {
-              var matchingModuleIds = paths.filter(function (originPath) {
-                return contextElements[originPath].source === module.userRequest;
-              }).map(function (originPath) {
-                return path.normalize(originPath);
-              });
+              if (options.nameLocalModules) {
+                if (module.resource.startsWith(options.src)) {
+                  var relativeToSrc = path.relative(options.src, module.resource);
+                  moduleId = relativeToSrc;
+                }
+              }
+              if (options.nameExternalModules) {
+                if (!moduleId && typeof module.userRequest == 'string') {
+                  var matchingModuleIds = paths.filter(function (originPath) {
+                    return contextElements[originPath].source === module.userRequest;
+                  }).map(function (originPath) {
+                    return path.normalize(originPath);
+                  });
 
-              if (matchingModuleIds.length) {
-                matchingModuleIds.sort(function (a, b) {
-                  return b.length - a.length;
-                });
-                moduleId = matchingModuleIds[0];
+                  if (matchingModuleIds.length) {
+                    matchingModuleIds.sort(function (a, b) {
+                      return b.length - a.length;
+                    });
+                    moduleId = matchingModuleIds[0];
+                  }
+                }
+                if (!moduleId && typeof module.rawRequest == 'string' && module.rawRequest.indexOf('.') !== 0) {
+                  var index = paths.indexOf(module.rawRequest);
+                  if (index >= 0) {
+                    moduleId = module.rawRequest;
+                  }
+                }
               }
-            }
-            if (!moduleId && typeof module.rawRequest == 'string' && module.rawRequest.indexOf('.') !== 0) {
-              var index = paths.indexOf(module.rawRequest);
-              if (index >= 0) {
-                moduleId = module.rawRequest;
+              if (moduleId && !modules.find(function (m) {
+                return m.id === moduleId;
+              })) {
+                module.id = moduleId;
               }
-            }
-            if (moduleId) {
-              module.id = moduleId;
-            }
+            })();
           }
         });
       });

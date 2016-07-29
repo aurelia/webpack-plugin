@@ -1,3 +1,20 @@
+<a name="1.0.1"></a>
+## [1.0.1](https://github.com/aurelia/webpack-plugin/compare/1.0.0...v1.0.1) (2016-07-29)
+
+
+### Bug Fixes
+
+* **build-resources:** fix a regression caused by scoping support ([d7dec55](https://github.com/aurelia/webpack-plugin/commit/d7dec55))
+* **index:** do not reassign moduleId when one with the same name exists already ([fddd9e1](https://github.com/aurelia/webpack-plugin/commit/fddd9e1))
+
+
+### Features
+
+* **index:** add the option 'nameLocalModules' for manually disabling moduleId remapping ([2f9c89a](https://github.com/aurelia/webpack-plugin/commit/2f9c89a))
+* **index:** make naming external modules optional ([af1a745](https://github.com/aurelia/webpack-plugin/commit/af1a745))
+
+
+
 <a name="1.0.0"></a>
 # [1.0.0](https://github.com/aurelia/webpack-plugin/compare/1.0.0-beta.4.0.1...v1.0.0) (2016-07-27)
 

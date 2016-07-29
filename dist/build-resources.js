@@ -577,7 +577,7 @@ function getResourcesOfPackage() {
 
 function fixRelativeFromPath(fromPath, realSrcPath, realParentPath, externalModule) {
   var fromPathSplit = fromPath.split('/');
-  if (moduleNames.indexOf(fromPathSplit[0]) !== -1 || moduleNames.indexOf(path.join(fromPathSplit[0], fromPathSplit[1])) !== -1) {
+  if (moduleNames.indexOf(fromPathSplit[0]) !== -1 || fromPathSplit.length > 1 && moduleNames.indexOf(path.join(fromPathSplit[0], fromPathSplit[1])) !== -1) {
     return fromPath;
   } else {
     if (fromPath.indexOf('.') == 0) {
