@@ -20,6 +20,7 @@ class AureliaWebpackPlugin {
     options.customViewLoaders = Object.assign({
       '.css': ['css'],
       '.scss': ['css', 'sass'],
+      '.sass': ['css', 'sass'],
       '.less': ['css', 'less'],
       '.styl': ['css', 'stylus'],
     }, options.customViewLoaders || {});
