@@ -36,6 +36,7 @@
     "debug": "^2.2.0",
     "execa": "^0.4.0",
     "loader-utils": "^0.2.15",
+    "matcher": "^0.1.2",
     "object.assign": "^4.0.4",
     "recursive-readdir": "^2.0.0",
     "upath": "^0.2.0"

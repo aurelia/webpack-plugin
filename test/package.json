@@ -10,7 +10,8 @@
   "dependencies": {
     "aurelia-framework": "^1.0.0-beta.1.1.1",
     "aurelia-bootstrapper": "^1.0.0-beta.1.0.0",
-    "aurelia-templating-resources": "^1.0.0-beta.1.1.0"
+    "aurelia-templating-resources": "^1.0.0-beta.1.1.0",
+    "yargs": "^6.0.0"
   },
   "devDependencies": {
   },
@@ -22,7 +23,8 @@
         "external-3",
         "external-3/sub/resource-4",
         "external-3/sub/resource-5.html"
-      ]
+      ],
+      "depFilter": "aurelia-*"
     }
   }
 }

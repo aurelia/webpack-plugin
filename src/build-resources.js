@@ -6,6 +6,7 @@ const assign = Object.assign || require('object.assign');
 const Promise = require('bluebird');
 const cheerio = require('cheerio');
 const execa = require('execa');
+const matcher = require('matcher');
 const debug = require('debug')('webpack-plugin');
 const debugDetail = require('debug')('webpack-plugin/details');
 
@@ -138,6 +139,20 @@ function getPackageJson(packagePath) {
 
 function getPackageAureliaResources(packageJson) {
   return packageJson && packageJson.aurelia && packageJson.aurelia.build && packageJson.aurelia.build.resources || [];
+}
+
+function getPackageAureliaDepFilter(packageJson) {
+  return packageJson && packageJson.aurelia && packageJson.aurelia.build && packageJson.aurelia.build.depFilter;
+}
+
+function filterDepNames(names, filter) {
+  if (!filter) {
+    return names;
+  }
+  if (!Array.isArray(filter)) {
+    filter = [filter];
+  }
+  return matcher(names, filter);
 }
 
 function getPackageMainDir(packagePath) {
@@ -331,7 +346,11 @@ function getResourcesOfPackage(resources = {}, packagePath = undefined, relative
 
     // recursively load resources of all 'dependencies' defined in package.json:
     if (packageJson.dependencies) {
-      for (let moduleName of Object.getOwnPropertyNames(packageJson.dependencies)) {
+      let depNames = filterDepNames(
+        Object.getOwnPropertyNames(packageJson.dependencies),
+        getPackageAureliaDepFilter(packageJson)
+      );
+      for (let moduleName of depNames) {
         const modulePathIndex = moduleNames.indexOf(moduleName);
         if (modulePathIndex !== -1) {
           const modulePath = modulePaths[modulePathIndex];
@@ -341,7 +360,7 @@ function getResourcesOfPackage(resources = {}, packagePath = undefined, relative
 
       if (!externalModule) {
         // iterate again, now to add modules themselves if not yet added:
-        for (let moduleName of Object.getOwnPropertyNames(packageJson.dependencies)) {
+        for (let moduleName of depNames) {
           const modulePathIndex = moduleNames.indexOf(moduleName);
           if (modulePathIndex !== -1) {
             const modulePath = modulePaths[modulePathIndex];
