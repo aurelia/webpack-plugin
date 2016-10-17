@@ -141,18 +141,18 @@ function getPackageAureliaResources(packageJson) {
   return packageJson && packageJson.aurelia && packageJson.aurelia.build && packageJson.aurelia.build.resources || [];
 }
 
-function getPackageAureliaDepFilter(packageJson) {
-  return packageJson && packageJson.aurelia && packageJson.aurelia.build && packageJson.aurelia.build.depFilter;
+function getPackageAureliaIncludeDependencies(packageJson) {
+  return packageJson && packageJson.aurelia && packageJson.aurelia.build && packageJson.aurelia.build.includeDependencies;
 }
 
-function filterDepNames(names, filter) {
-  if (!filter) {
+function filterDepNames(names, patterns) {
+  if (!patterns) {
     return names;
   }
-  if (!Array.isArray(filter)) {
-    filter = [filter];
+  if (!Array.isArray(patterns)) {
+    patterns = [patterns];
   }
-  return matcher(names, filter);
+  return matcher(names, patterns);
 }
 
 function getPackageMainDir(packagePath) {
@@ -348,7 +348,7 @@ function getResourcesOfPackage(resources = {}, packagePath = undefined, relative
     if (packageJson.dependencies) {
       let depNames = filterDepNames(
         Object.getOwnPropertyNames(packageJson.dependencies),
-        getPackageAureliaDepFilter(packageJson)
+        getPackageAureliaIncludeDependencies(packageJson)
       );
       for (let moduleName of depNames) {
         const modulePathIndex = moduleNames.indexOf(moduleName);

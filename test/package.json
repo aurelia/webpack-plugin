@@ -24,7 +24,7 @@
         "external-3/sub/resource-4",
         "external-3/sub/resource-5.html"
       ],
-      "depFilter": "aurelia-*"
+      "includeDependencies": "aurelia-*"
     }
   }
 }

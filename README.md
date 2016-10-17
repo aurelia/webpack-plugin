@@ -49,7 +49,7 @@ The root project directory. Defaults to the directory from where webpack is call
 Module resource resolution is what makes Aurelia's Loader and Dependency Injection work. It's what translates require paths to places in the bundle or external files that are loaded asynchronously.
 
 Some Aurelia modules or plugins have more than 1 file that need to be resolved (for example, when a plugin also contains an html template).
-By default, the whole `src` folder their static dependencies are loaded into the loader's context.
+By default, the whole `src` folder and their static dependencies (by default, but see [includeDependencies](#includeDependencies)) are loaded into the loader's context.
 If you wish to make resources available for dynamic use, you need to explicitly `<require>` them either in your `.html` resources or from the `package.json` file.
 
 Since there are cases that cannot be supported by statically analyzing files (e.g. it is possible to generate require paths dynamically), there's an additional way to declare external dependencies, or in case of Aurelia plugins, to declare internal dependencies by listing those additional resources in the `package.json` file. Listing these dependencies in your package.json allows you include extra files in the bundles.
@@ -95,6 +95,37 @@ As you can see in the example above, it is also possible to specify that certain
 ```html
 <require from="./some-file.html" lazy bundle="other-bundle">
 ```
+
+<a name="includeDependencies"></a>
+### includeDependencies
+
+By default, all static dependencies (as listed in `package.json` under `dependencies`) are pulled into context recursively. This works fine for simple setups, but if your project also contains some node.js code (e.g. server stuff), there may be dependencies on packages which should not go into the client-bundle, because not
+only they are superfluous, but even may break bundling, if they in turn depend on node-only modules (e.g. `'fs'`).
+
+So you can narrow down these included packages by specifying `includeDependencies` in your `package.json` file. That value can contain a single glob-pattern (possibly negated by a preceding `!`) or an array of such patterns (see [matcher](https://www.npmjs.com/package/matcher) for details).
+
+Example:
+```json
+{
+  ...
+  "dependencies": {
+    ...
+    "aurelia-templating-router": "^1.0.0",
+    "yargs": "^6.0.0"
+  },
+  "aurelia": {
+    "build": {
+      "resources": [
+        ...
+      ],
+      "includeDependencies": "aurelia-*"
+    }
+  }
+}
+```
+
+Now only packages starting with `"aurelia-"` are pulled into the bundle, preventing `'yargs'` from slipping in.
+In this example the same result could be achieved by specifying `"includeDependencies": "!yargs"`.
 
 ## Example configuration: custom app directory (other than './src')
 
