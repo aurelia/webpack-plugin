@@ -18,11 +18,11 @@ class AureliaWebpackPlugin {
     options.nameLocalModules = options.nameLocalModules == undefined || options.nameLocalModules == true;
     options.resourceRegExp = options.resourceRegExp || /aurelia-loader-context/;
     options.customViewLoaders = Object.assign({
-      '.css': ['css'],
-      '.scss': ['css', 'sass'],
-      '.sass': ['css', 'sass'],
-      '.less': ['css', 'less'],
-      '.styl': ['css', 'stylus'],
+      '.css': ['css-loader'],
+      '.scss': ['css-loader', 'sass-loader'],
+      '.sass': ['css-loader', 'sass-loader'],
+      '.less': ['css-loader', 'less-loader'],
+      '.styl': ['css-loader', 'stylus-loader'],
     }, options.customViewLoaders || {});
 
     if (options.includeSubModules || options.contextMap) {
