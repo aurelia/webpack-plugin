@@ -1,3 +1,19 @@
+<a name="1.2.0"></a>
+# [1.2.0](https://github.com/aurelia/webpack-plugin/compare/1.1.0...v1.2.0) (2016-12-12)
+
+
+### Bug Fixes
+
+* **index:** fix for webpack@>=2.1.0.beta.27 ([472558f](https://github.com/aurelia/webpack-plugin/commit/472558f))
+
+
+### Features
+
+* **build-resources:** add an option to filter 'dependencies' ([38a3049](https://github.com/aurelia/webpack-plugin/commit/38a3049))
+* **index:** add .sass to default viewLoaders ([2bf0efe](https://github.com/aurelia/webpack-plugin/commit/2bf0efe))
+
+
+
 <a name="1.1.0"></a>
 # [1.1.0](https://github.com/aurelia/webpack-plugin/compare/1.0.0...v1.1.0) (2016-07-29)
 
