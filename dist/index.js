@@ -45,10 +45,11 @@ var AureliaWebpackPlugin = function () {
     options.nameLocalModules = options.nameLocalModules == undefined || options.nameLocalModules == true;
     options.resourceRegExp = options.resourceRegExp || /aurelia-loader-context/;
     options.customViewLoaders = (0, _assign2.default)({
-      '.css': ['css'],
-      '.scss': ['css', 'sass'],
-      '.less': ['css', 'less'],
-      '.styl': ['css', 'stylus']
+      '.css': ['css-loader'],
+      '.scss': ['css-loader', 'sass-loader'],
+      '.sass': ['css-loader', 'sass-loader'],
+      '.less': ['css-loader', 'less-loader'],
+      '.styl': ['css-loader', 'stylus-loader']
     }, options.customViewLoaders || {});
 
     if (options.includeSubModules || options.contextMap) {

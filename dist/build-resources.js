@@ -206,6 +206,7 @@ var assign = _assign2.default || require('object.assign');
 var Promise = require('bluebird');
 var cheerio = require('cheerio');
 var execa = require('execa');
+var matcher = require('matcher');
 var debug = require('debug')('webpack-plugin');
 var debugDetail = require('debug')('webpack-plugin/details');
 
@@ -309,6 +310,20 @@ function getPackageJson(packagePath) {
 
 function getPackageAureliaResources(packageJson) {
   return packageJson && packageJson.aurelia && packageJson.aurelia.build && packageJson.aurelia.build.resources || [];
+}
+
+function getPackageAureliaIncludeDependencies(packageJson) {
+  return packageJson && packageJson.aurelia && packageJson.aurelia.build && packageJson.aurelia.build.includeDependencies;
+}
+
+function filterDepNames(names, patterns) {
+  if (!patterns) {
+    return names;
+  }
+  if (!Array.isArray(patterns)) {
+    patterns = [patterns];
+  }
+  return matcher(names, patterns);
 }
 
 function getPackageMainDir(packagePath) {
@@ -525,7 +540,8 @@ function getResourcesOfPackage() {
     }
 
     if (packageJson.dependencies) {
-      for (var _iterator4 = (0, _getOwnPropertyNames2.default)(packageJson.dependencies), _isArray4 = Array.isArray(_iterator4), _i4 = 0, _iterator4 = _isArray4 ? _iterator4 : (0, _getIterator3.default)(_iterator4);;) {
+      var depNames = filterDepNames((0, _getOwnPropertyNames2.default)(packageJson.dependencies), getPackageAureliaIncludeDependencies(packageJson));
+      for (var _iterator4 = depNames, _isArray4 = Array.isArray(_iterator4), _i4 = 0, _iterator4 = _isArray4 ? _iterator4 : (0, _getIterator3.default)(_iterator4);;) {
         var _ref4;
 
         if (_isArray4) {
@@ -547,7 +563,7 @@ function getResourcesOfPackage() {
       }
 
       if (!externalModule) {
-        for (var _iterator5 = (0, _getOwnPropertyNames2.default)(packageJson.dependencies), _isArray5 = Array.isArray(_iterator5), _i5 = 0, _iterator5 = _isArray5 ? _iterator5 : (0, _getIterator3.default)(_iterator5);;) {
+        for (var _iterator5 = depNames, _isArray5 = Array.isArray(_iterator5), _i5 = 0, _iterator5 = _isArray5 ? _iterator5 : (0, _getIterator3.default)(_iterator5);;) {
           var _ref5;
 
           if (_isArray5) {
