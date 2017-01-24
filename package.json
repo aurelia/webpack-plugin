@@ -1,6 +1,6 @@
 {
   "name": "aurelia-webpack-plugin",
-  "version": "1.2.2",
+  "version": "2.0.0-rc.1",
   "description": "A plugin for webpack that enables bundling Aurelia applications.",
   "keywords": [
     "aurelia",
@@ -19,65 +19,32 @@
     },
     {
       "name": "Bazyli Brzóska <bazyli.brzoska@gmail.com> (https://invent.life)"
+    },
+    {
+      "name": "Joel Dumas"
     }
   ],
   "main": "dist/index.js",
+  "files": [ "dist" ],
   "scripts": {
-    "test": "mocha test --compilers js:babel-core/register"
+    "build": "tsc"
   },
   "repository": {
     "type": "git",
     "url": "http://github.com/aurelia/webpack-plugin"
   },
   "dependencies": {
-    "babel-runtime": "^6.11.6",
-    "bluebird": "^3.4.1",
-    "cheerio": "^0.20.0",
-    "debug": "^2.2.0",
-    "execa": "^0.4.0",
-    "loader-utils": "^0.2.15",
-    "matcher": "^0.1.2",
-    "object.assign": "^4.0.4",
-    "recursive-readdir": "^2.0.0",
-    "upath": "^0.2.0"
+    "bundle-loader": "^0.5.4",
+    "html-loader": "^0.4.4",
+    "minimatch": "^3.0.3"
   },
   "peerDependencies": {
-    "webpack": ">=1.12.0 || >=2.0.0-beta || >=2.1.0-beta || >= 2.2.0-rc || >= 2.2.0"
+    "webpack": ">= 2.2.0"
   },
   "devDependencies": {
-    "aurelia-tools": "^0.2.4",
-    "babel-dts-generator": "^0.6.1",
-    "babel-eslint": "^6.1.2",
-    "babel-plugin-syntax-async-functions": "^6.8.0",
-    "babel-plugin-syntax-flow": "^6.8.0",
-    "babel-plugin-transform-decorators-legacy": "^1.3.4",
-    "babel-plugin-transform-es2015-modules-commonjs": "^6.11.5",
-    "babel-plugin-transform-flow-strip-types": "^6.8.0",
-    "babel-plugin-transform-runtime": "^6.9.0",
-    "babel-preset-es2015": "^6.9.0",
-    "babel-preset-es2015-loose": "^7.0.0",
-    "babel-preset-stage-1": "^6.5.0",
-    "chai": "^3.5.0",
-    "del": "^2.2.1",
-    "gulp": "^3.9.1",
-    "gulp-babel": "^6.1.2",
-    "gulp-bump": "^2.2.0",
-    "gulp-concat": "^2.6.0",
-    "gulp-conventional-changelog": "^1.1.0",
-    "gulp-eslint": "^3.0.1",
-    "gulp-insert": "^0.5.0",
-    "gulp-rename": "^1.2.2",
-    "gulp-typedoc": "^2.0.0",
-    "gulp-typedoc-extractor": "0.0.8",
-    "mocha": "^2.5.3",
-    "require-dir": "^0.3.0",
-    "rimraf": "^2.5.4",
-    "run-sequence": "^1.2.2",
-    "through2": "^2.0.1",
-    "typedoc": "^0.4.4",
-    "vinyl": "^1.1.1",
-    "vinyl-paths": "^2.1.0",
-    "yargs": "^4.8.1"
+    "@types/minimatch": "^2.0.29",
+    "@types/node": "^7.0.1",
+    "typescript": "^2.1.5"   
   },
   "aurelia": {
     "documentation": {
