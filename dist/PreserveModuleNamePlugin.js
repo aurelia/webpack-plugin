@@ -10,14 +10,16 @@ class PreserveModuleNamePlugin {
     apply(compiler) {
         compiler.plugin("compilation", compilation => {
             compilation.plugin("before-module-ids", modules => {
-                let { modules: roots, extensions } = compilation.options.resolve;
+                let { modules: roots, extensions, alias } = compilation.options.resolve;
                 roots = roots.map(x => path.resolve(x));
                 const normalizers = extensions.map(x => new RegExp(x.replace(/\./g, "\\.") + "$", "i"));
                 for (let module of getPreservedModules(modules)) {
                     let relative = fixNodeModule(module, modules) ||
-                        makeModuleRelative(roots, module.resource);
+                        makeModuleRelative(roots, module.resource) ||
+                        aliasRelative(alias, module.resource);
+                    // TODO: we should probably report an error if we can't figure out a name for an Aurelia dependency.
                     if (!relative)
-                        continue; // An absolute resource that is not in any module folder? Ignore.
+                        continue;
                     // Remove default extensions 
                     normalizers.forEach(n => relative = relative.replace(n, ""));
                     // Keep "async!" in front of code splits proxies, they are used by aurelia-loader
@@ -34,10 +36,31 @@ exports.PreserveModuleNamePlugin = PreserveModuleNamePlugin;
 function getPreservedModules(modules) {
     return new Set(modules.filter(m => m.reasons.some(r => r.dependency[exports.preserveModuleName])));
 }
+function aliasRelative(aliases, resource) {
+    // We consider that aliases point to local folder modules.
+    // For example: `"my-lib": "../my-lib/src"`.
+    // Basically we try to make the resource relative to the alias target,
+    // and if it works we build the id from the alias name.
+    // So file `../my-lib/src/index.js` becomes `my-lib/index.js`.
+    // Note that this only works with aliases pointing to folders, not files.
+    // To have a "default" file in the folder, the following construct works:
+    // alias: { "mod$": "src/index.js", "mod": "src" }
+    if (!aliases)
+        return null;
+    for (let name in aliases) {
+        let root = path.resolve(aliases[name]);
+        let relative = path.relative(root, resource);
+        if (relative.startsWith(".."))
+            continue;
+        name = name.replace(/\$$/, ""); // A trailing $ indicates an exact match in webpack
+        return relative ? name + "/" + relative : name;
+    }
+    return null;
+}
 function makeModuleRelative(roots, resource) {
     for (let root of roots) {
         let relative = path.relative(root, resource);
-        if (!relative.startsWith('..'))
+        if (!relative.startsWith(".."))
             return relative;
     }
     return null;

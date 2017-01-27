@@ -96,6 +96,7 @@ declare namespace Webpack {
       rules?: { test?: RegExp; use: string | string[] }[];
     };
     resolve: {
+      alias: { [key: string]: string };
       modules: string[];
       extensions: string[];
       plugins: Object[];
