@@ -3,6 +3,7 @@ export interface Options {
     includeAll: boolean;
     aureliaApp?: string;
     aureliaConfig: string | string[];
+    pal?: string;
     dist: string;
     noHtmlLoader: boolean;
     noModulePathResolve: boolean;
@@ -12,6 +13,6 @@ export interface Options {
 }
 export declare class AureliaPlugin {
     options: Options;
-    constructor(options?: {});
+    constructor(options?: Partial<Options>);
     apply(compiler: Webpack.Compiler): void;
 }

@@ -13,6 +13,7 @@ export interface Options {
   
   aureliaApp?: string;
   aureliaConfig: string | string[];
+  pal?: string;
   dist: string;
   noHtmlLoader: boolean;
   noModulePathResolve: boolean;
@@ -24,7 +25,7 @@ export interface Options {
 export class AureliaPlugin {
   options: Options;
 
-  constructor(options = {}) {
+  constructor(options: Partial<Options> = {}) {
     this.options = Object.assign({
       includeAll: false,  // or folder, e.g. "src"
 
@@ -103,8 +104,10 @@ export class AureliaPlugin {
       // Adds some dependencies that are not documented by `PLATFORM.moduleName`
       new ModuleDependenciesPlugin({
         "aurelia-bootstrapper": [
-          opts.aureliaApp,                // entry point
-          getPAL(compiler.options.target) // PAL for target
+          opts.aureliaApp,    // entry point
+          "pal" in opts ?     // PAL for target
+              opts.pal : 
+              getPAL(compiler.options.target) 
         ],
         // `aurelia-framework` exposes configuration helpers like `.standardConfiguration()`,
         // that load plugins, but we can't know if they are actually used or not.
@@ -139,7 +142,7 @@ function getPAL(target: string) {
   switch (target) {
     case "web": return "aurelia-pal-browser";
     case "webworker": return "aurelia-pal-worker";
-    default: return "aurelia-pal-node";
+    default: return "aurelia-pal-nodejs";
   }
 }
 

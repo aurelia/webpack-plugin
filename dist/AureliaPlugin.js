@@ -78,7 +78,9 @@ class AureliaPlugin {
         new ModuleDependenciesPlugin_1.ModuleDependenciesPlugin({
             "aurelia-bootstrapper": [
                 opts.aureliaApp,
-                getPAL(compiler.options.target) // PAL for target
+                "pal" in opts ?
+                    opts.pal :
+                    getPAL(compiler.options.target)
             ],
             // `aurelia-framework` exposes configuration helpers like `.standardConfiguration()`,
             // that load plugins, but we can't know if they are actually used or not.
@@ -112,7 +114,7 @@ function getPAL(target) {
     switch (target) {
         case "web": return "aurelia-pal-browser";
         case "webworker": return "aurelia-pal-worker";
-        default: return "aurelia-pal-node";
+        default: return "aurelia-pal-nodejs";
     }
 }
 const configModules = {};
