@@ -72,8 +72,10 @@ function fixNodeModule(module, allModules) {
     // Webpack is going to look for `main` in `project.json` to find where the main file actually is.
     // And this can of course be configured differently with `resolve.alias`, `resolve.mainFields` & co.
     // Our best hope is that the file was not required as a relative path, then we can just preserve that.
-    if (!module.rawRequest.startsWith("."))
-        return module.rawRequest;
+    // We just need to be careful with loaders (e.g. async!)
+    let request = removeLoaders(module.rawRequest);
+    if (!request.startsWith("."))
+        return request;
     // Otherwise we need to build the relative path from the module root, which as explained above is hard to find.
     // Ideally we could use webpack resolvers, but they are currently async-only, which can't be used in before-modules-id
     // See https://github.com/webpack/webpack/issues/1634
@@ -81,8 +83,12 @@ function fixNodeModule(module, allModules) {
     // Note that the negative lookahead (?!.*node_modules) ensures that we only match the last node_modules/ folder in the path,
     // in case the package was located in a sub-node_modules (which can occur in special circumstances).
     let name = /\bnode_modules[\\/](?!.*\bnode_modules\b)([^\\/]*)/i.exec(module.resource)[1];
-    let entry = allModules.find(m => m.rawRequest === name);
+    let entry = allModules.find(m => removeLoaders(m.rawRequest) === name);
     if (!entry)
         throw new Error("PreserveModuleNamePlugin: Unable to find root of module " + name);
     return name + "/" + path.relative(path.dirname(entry.resource), module.resource);
+}
+function removeLoaders(request) {
+    let lastBang = request.lastIndexOf("!");
+    return lastBang < 0 ? request : request.substr(lastBang + 1);
 }
