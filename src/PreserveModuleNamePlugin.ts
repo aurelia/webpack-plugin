@@ -78,7 +78,7 @@ function fixNodeModule(module: Webpack.Module, allModules: Webpack.Module[]) {
   
   // Our best hope is that the file was not required as a relative path, then we can just preserve that.
   // We just need to be careful with loaders (e.g. async!)
-  let request = removeLoaders(module.rawRequest);  
+  let request = removeLoaders(module.rawRequest)!;  // we assume that Aurelia dependencies always have a rawRequest
   if (!request.startsWith(".")) return request;
 
   // Otherwise we need to build the relative path from the module root, which as explained above is hard to find.
@@ -93,7 +93,10 @@ function fixNodeModule(module: Webpack.Module, allModules: Webpack.Module[]) {
   return name + "/" + path.relative(path.dirname(entry.resource), module.resource);
 }
 
-function removeLoaders(request: string) {
+function removeLoaders(request: string | undefined) {
+  // We have to be careful, as it seems that in the allModules.find() call above
+  // some modules might have m.rawRequst === undefined
+  if (!request) return request;
   let lastBang = request.lastIndexOf("!");
   return lastBang < 0 ? request : request.substr(lastBang + 1);
 }
