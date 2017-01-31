@@ -8,6 +8,7 @@ function loader(content) {
             const attrs = loader.attributes[tag];
             return attrs && attrs.includes(attr);
         })
+            .filter(attr => !/(^|[^\\])\$\{/.test(attr.value))
             .map(attr => attr.value);
     return content;
 }

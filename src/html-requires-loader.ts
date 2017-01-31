@@ -9,6 +9,8 @@ function loader(this: Webpack.Loader, content: string) {
       const attrs = loader.attributes[tag];
       return attrs && attrs.includes(attr);
     })
+    // Ignore values that contain interpolated values
+    .filter(attr => !/(^|[^\\])\$\{/.test(attr.value))
     .map(attr => attr.value);
   return content;
 }
