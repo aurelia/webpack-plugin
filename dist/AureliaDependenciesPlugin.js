@@ -42,6 +42,7 @@ class ParserPlugin {
         //    _aureliaPal.PLATFORM.moduleName("id");    
         parser.plugin("evaluate MemberExpression", (expr) => {
             if (expr.property.name === "moduleName" &&
+                expr.object.type === "MemberExpression" &&
                 expr.object.property.name === "PLATFORM") {
                 return new BasicEvaluatedExpression().setIdentifier("PLATFORM.moduleName").setRange(expr.range);
             }
