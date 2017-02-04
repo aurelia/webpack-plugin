@@ -5,6 +5,9 @@ export interface Options {
     aureliaConfig: string | string[];
     pal?: string;
     dist: string;
+    features: {
+        svg?: boolean;
+    };
     noHtmlLoader: boolean;
     noModulePathResolve: boolean;
     moduleMethods: string[];

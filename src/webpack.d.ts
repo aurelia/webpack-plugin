@@ -159,6 +159,12 @@ declare namespace Webpack {
   }
 }
 
+declare module "webpack" {
+  export class DefinePlugin {
+    constructor(hash: any);
+  }
+}
+
 declare module "webpack/lib/dependencies/NullDependency" {
   class NullDependencyTemplate {
   }

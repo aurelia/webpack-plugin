@@ -1,3 +1,4 @@
+import { DefinePlugin } from "webpack";
 import { AureliaDependenciesPlugin } from "./AureliaDependenciesPlugin";
 import { ConventionDependenciesPlugin, Convention } from "./ConventionDependenciesPlugin";
 import { DistPlugin } from "./DistPlugin";
@@ -15,6 +16,9 @@ export interface Options {
   aureliaConfig: string | string[];
   pal?: string;
   dist: string;
+  features: {
+    svg?: boolean;
+  },
   noHtmlLoader: boolean;
   noModulePathResolve: boolean;
   moduleMethods: string[];
@@ -32,6 +36,7 @@ export class AureliaPlugin {
       aureliaApp: "main",
       aureliaConfig: ["standard", "developmentLogging"],
       dist: "native-modules",
+      features: { },
       moduleMethods: [],
       noHtmlLoader: false,
       noModulePathResolve: false,
@@ -39,10 +44,15 @@ export class AureliaPlugin {
       viewsExtensions: ".html",
     },
     options);
+
+    this.options.features = Object.assign({
+      svg: true,        
+    }, options.features);
   }
 
   apply(compiler: Webpack.Compiler) {
     const opts = this.options;
+    const features = opts.features;
 
     // Make sure the loaders are easy to load at the root like `aurelia-webpack-plugin/html-resource-loader`
     let resolveLoader = compiler.options.resolveLoader;
@@ -50,6 +60,12 @@ export class AureliaPlugin {
     alias["aurelia-webpack-plugin"] = "aurelia-webpack-plugin/dist";
     // Our async! loader is in fact just bundle-loader!.
     alias["async"] = "bundle-loader";
+
+    // Uses DefinePlugin to cut out optional features    
+    let defines: any = Object.create(null);
+    if (!features.svg) defines.FEATURE_NO_SVG = "true";
+    if (Object.keys(defines).length > 0) 
+      compiler.apply(new DefinePlugin(defines));
 
     if (opts.dist) {
       // This plugin enables easy switching to a different module distribution (default for Aurelia is dist/commonjs).
