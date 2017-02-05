@@ -48,7 +48,7 @@ class AureliaWebpackPlugin {
     }
 
     if (lazy || bundle)
-      output += `bundle?`;
+      output += `bundle-loader?`;
     if (lazy)
       output += `lazy`;
     if (lazy && bundle)
