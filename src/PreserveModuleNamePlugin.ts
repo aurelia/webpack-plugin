@@ -38,7 +38,8 @@ export class PreserveModuleNamePlugin {
 
 function getPreservedModules(modules: Webpack.Module[]) {
   return new Set(
-    modules.filter(m => m.reasons.some(r => r.dependency[preserveModuleName]))
+    modules.filter(m => m.reasons.some(r => r.dependency[preserveModuleName]) 
+                     || m[preserveModuleName])  // See ConventionDependenciesPlugin
   );
 }
 

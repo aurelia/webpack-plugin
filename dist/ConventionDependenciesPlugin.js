@@ -1,5 +1,6 @@
 "use strict";
 const BaseIncludePlugin_1 = require("./BaseIncludePlugin");
+const PreserveModuleNamePlugin_1 = require("./PreserveModuleNamePlugin");
 const minimatch = require("minimatch");
 const path = require("path");
 class ConventionDependenciesPlugin extends BaseIncludePlugin_1.BaseIncludePlugin {
@@ -31,6 +32,13 @@ class ConventionDependenciesPlugin extends BaseIncludePlugin_1.BaseIncludePlugin
                     const probe = c(file);
                     compilation.inputFileSystem.statSync(probe); // Check if file exists
                     addDependency(probe);
+                    // If the module has a conventional dependency, make sure we preserve its name as well.
+                    // This solves the pattern where a VM is statically loaded, e.g. `import { ViewModel } from "x"`
+                    // and then passed to Aurelia, e.g. with `aurelia-dialog`.
+                    // At this point Aurelia must determine the origin of the module to be able to look for 
+                    // a conventional view, and so the module name must be preserved although it's never loaded 
+                    // by `aurelia-loader`. See also aurelia/metadata#51.
+                    parser.state.current[PreserveModuleNamePlugin_1.preserveModuleName] = true;
                 }
                 catch (ex) { }
             }

@@ -34,7 +34,9 @@ class PreserveModuleNamePlugin {
 exports.PreserveModuleNamePlugin = PreserveModuleNamePlugin;
 ;
 function getPreservedModules(modules) {
-    return new Set(modules.filter(m => m.reasons.some(r => r.dependency[exports.preserveModuleName])));
+    return new Set(modules.filter(m => m.reasons.some(r => r.dependency[exports.preserveModuleName])
+        || m[exports.preserveModuleName]) // See ConventionDependenciesPlugin
+    );
 }
 function aliasRelative(aliases, resource) {
     // We consider that aliases point to local folder modules.
