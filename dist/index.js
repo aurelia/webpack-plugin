@@ -73,7 +73,7 @@ var AureliaWebpackPlugin = function () {
       output += '!!' + this.options.customViewLoaders[extension].join('!') + '!';
     }
 
-    if (lazy || bundle) output += 'bundle?';
+    if (lazy || bundle) output += 'bundle-loader?';
     if (lazy) output += 'lazy';
     if (lazy && bundle) output += '&';
     if (bundle) output += 'name=' + bundle;

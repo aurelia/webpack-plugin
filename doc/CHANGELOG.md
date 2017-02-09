@@ -1,3 +1,10 @@
+<a name="1.2.1"></a>
+## [1.2.1](https://github.com/aurelia/webpack-plugin/compare/1.2.0...v1.2.1) (2017-02-09)
+
+### Bug Fixes
+
+* "Can't resolve 'bundle'" issue
+
 <a name="1.2.0"></a>
 # [1.2.0](https://github.com/aurelia/webpack-plugin/compare/1.1.0...v1.2.0) (2016-12-12)
 
