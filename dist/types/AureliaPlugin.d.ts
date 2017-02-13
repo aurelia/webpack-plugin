@@ -7,6 +7,7 @@ export interface Options {
     dist: string;
     features: {
         svg?: boolean;
+        unparser?: boolean;
     };
     noHtmlLoader: boolean;
     noModulePathResolve: boolean;

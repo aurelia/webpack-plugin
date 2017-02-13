@@ -25,6 +25,7 @@ class AureliaPlugin {
         }, options);
         this.options.features = Object.assign({
             svg: true,
+            unparser: true,
         }, options.features);
     }
     apply(compiler) {
@@ -40,6 +41,8 @@ class AureliaPlugin {
         let defines = Object.create(null);
         if (!features.svg)
             defines.FEATURE_NO_SVG = "true";
+        if (!features.unparser)
+            defines.FEATURE_NO_UNPARSER = "true";
         if (Object.keys(defines).length > 0)
             compiler.apply(new webpack_1.DefinePlugin(defines));
         if (opts.dist) {

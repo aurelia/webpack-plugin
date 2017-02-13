@@ -18,6 +18,7 @@ export interface Options {
   dist: string;
   features: {
     svg?: boolean;
+    unparser?: boolean;
   },
   noHtmlLoader: boolean;
   noModulePathResolve: boolean;
@@ -46,7 +47,8 @@ export class AureliaPlugin {
     options);
 
     this.options.features = Object.assign({
-      svg: true,        
+      svg: true,
+      unparser: true,
     }, options.features);
   }
 
@@ -64,6 +66,7 @@ export class AureliaPlugin {
     // Uses DefinePlugin to cut out optional features    
     let defines: any = Object.create(null);
     if (!features.svg) defines.FEATURE_NO_SVG = "true";
+    if (!features.unparser) defines.FEATURE_NO_UNPARSER = "true";
     if (Object.keys(defines).length > 0) 
       compiler.apply(new DefinePlugin(defines));
 
