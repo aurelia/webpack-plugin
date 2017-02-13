@@ -26,6 +26,7 @@ class AureliaPlugin {
         this.options.features = Object.assign({
             svg: true,
             unparser: true,
+            polyfills: "es2015",
         }, options.features);
     }
     apply(compiler) {
@@ -43,6 +44,7 @@ class AureliaPlugin {
             defines.FEATURE_NO_SVG = "true";
         if (!features.unparser)
             defines.FEATURE_NO_UNPARSER = "true";
+        definePolyfills(defines, features.polyfills);
         if (Object.keys(defines).length > 0)
             compiler.apply(new webpack_1.DefinePlugin(defines));
         if (opts.dist) {
@@ -160,4 +162,16 @@ function getConfigModules(config) {
     if (i >= 0)
         config.splice(i, 1, "defaultBindingLanguage", "defaultResources", "eventAggregator");
     return config.map(c => configModules[c]);
+}
+function definePolyfills(defines, polyfills) {
+    if (polyfills === "es2015")
+        return;
+    defines.FEATURE_NO_ES2015 = "true";
+    if (polyfills === "es2016")
+        return;
+    defines.FEATURE_NO_ES2016 = "true";
+    if (polyfills === "esnext")
+        return;
+    defines.FEATURE_NO_ESNEXT = "true";
+    // "none" or invalid option.
 }

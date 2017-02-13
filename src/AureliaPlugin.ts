@@ -9,6 +9,8 @@ import { PreserveExportsPlugin } from "./PreserveExportsPlugin";
 import { PreserveModuleNamePlugin } from "./PreserveModuleNamePlugin";
 import { SubFolderPlugin } from "./SubFolderPlugin";
 
+export type Polyfills = "es2015" | "es2016" | "esnext" | "none";
+
 export interface Options {
   includeAll: boolean;
   
@@ -19,6 +21,7 @@ export interface Options {
   features: {
     svg?: boolean;
     unparser?: boolean;
+    polyfills?: Polyfills;
   },
   noHtmlLoader: boolean;
   noModulePathResolve: boolean;
@@ -49,6 +52,7 @@ export class AureliaPlugin {
     this.options.features = Object.assign({
       svg: true,
       unparser: true,
+      polyfills: <"es2015">"es2015",
     }, options.features);
   }
 
@@ -67,6 +71,7 @@ export class AureliaPlugin {
     let defines: any = Object.create(null);
     if (!features.svg) defines.FEATURE_NO_SVG = "true";
     if (!features.unparser) defines.FEATURE_NO_UNPARSER = "true";
+    definePolyfills(defines, features.polyfills!);
     if (Object.keys(defines).length > 0) 
       compiler.apply(new DefinePlugin(defines));
 
@@ -192,4 +197,14 @@ function getConfigModules(config: string | string[]) {
   if (i >= 0) config.splice(i, 1, "defaultBindingLanguage", "defaultResources", "eventAggregator");
 
   return config.map(c => configModules[c]);
+}
+
+function definePolyfills(defines: any, polyfills: Polyfills) {
+  if (polyfills === "es2015") return;
+  defines.FEATURE_NO_ES2015 = "true";
+  if (polyfills === "es2016") return;
+  defines.FEATURE_NO_ES2016 = "true";
+  if (polyfills === "esnext") return;
+  defines.FEATURE_NO_ESNEXT = "true";
+  // "none" or invalid option.
 }

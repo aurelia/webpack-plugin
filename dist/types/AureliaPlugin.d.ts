@@ -1,4 +1,5 @@
 import { Convention } from "./ConventionDependenciesPlugin";
+export declare type Polyfills = "es2015" | "es2016" | "esnext" | "none";
 export interface Options {
     includeAll: boolean;
     aureliaApp?: string;
@@ -8,6 +9,7 @@ export interface Options {
     features: {
         svg?: boolean;
         unparser?: boolean;
+        polyfills?: Polyfills;
     };
     noHtmlLoader: boolean;
     noModulePathResolve: boolean;
