@@ -36,7 +36,7 @@ function handleError(error) {
 
 var AureliaWebpackPlugin = function () {
   function AureliaWebpackPlugin() {
-    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
     (0, _classCallCheck3.default)(this, AureliaWebpackPlugin);
 
     options.root = options.root ? path.normalizeSafe(options.root) : path.dirname(module.parent.filename);
@@ -126,82 +126,84 @@ var AureliaWebpackPlugin = function () {
 
         var resourcePath = path.normalizeSafe(result.resource);
         if (self.options.src.indexOf(resourcePath, self.options.src.length - resourcePath.length) !== -1) {
-          var resolveDependencies = result.resolveDependencies;
+          (function () {
+            var resolveDependencies = result.resolveDependencies;
 
-          result.resolveDependencies = function (fs, resource, recursive, regExp, callback) {
-            return resolveDependencies(fs, resource, recursive, regExp, function (error, dependencies) {
-              if (error) return callback(error);
+            result.resolveDependencies = function (fs, resource, recursive, regExp, callback) {
+              return resolveDependencies(fs, resource, recursive, regExp, function (error, dependencies) {
+                if (error) return callback(error);
 
-              var originalDependencies = dependencies.slice();
-              dependencies = [];
+                var originalDependencies = dependencies.slice();
+                dependencies = [];
 
-              var _loop = function _loop() {
-                if (_isArray) {
-                  if (_i >= _iterator.length) return 'break';
-                  _ref = _iterator[_i++];
-                } else {
-                  _i = _iterator.next();
-                  if (_i.done) return 'break';
-                  _ref = _i.value;
-                }
-
-                var dependency = _ref;
-
-                if (dependencies.findIndex(function (cDependency) {
-                  return cDependency.userRequest === dependency.userRequest;
-                }) === -1 && !dependency.userRequest.endsWith('.ts') && !dependency.userRequest.endsWith('.js')) dependencies.push(dependency);
-              };
-
-              for (var _iterator = originalDependencies, _isArray = Array.isArray(_iterator), _i = 0, _iterator = _isArray ? _iterator : (0, _getIterator3.default)(_iterator);;) {
-                var _ref;
-
-                var _ret = _loop();
-
-                if (_ret === 'break') break;
-              }
-
-              var _loop2 = function _loop2() {
-                if (_isArray2) {
-                  if (_i2 >= _iterator2.length) return 'break';
-                  _ref2 = _iterator2[_i2++];
-                } else {
-                  _i2 = _iterator2.next();
-                  if (_i2.done) return 'break';
-                  _ref2 = _i2.value;
-                }
-
-                var requireRequestPath = _ref2;
-
-                try {
-                  var _resource = contextElements[requireRequestPath];
-
-                  requireRequestPath = path.joinSafe('./', requireRequestPath);
-                  var newDependency = new ContextElementDependency(self.getPath(_resource), requireRequestPath);
-                  if (_resource.hasOwnProperty('optional')) newDependency.optional = !!_resource.optional;else newDependency.optional = true;
-                  var previouslyAdded = dependencies.findIndex(function (dependency) {
-                    return dependency.userRequest === requireRequestPath;
-                  });
-                  if (previouslyAdded > -1) {
-                    dependencies[previouslyAdded] = newDependency;
+                var _loop = function _loop() {
+                  if (_isArray) {
+                    if (_i >= _iterator.length) return 'break';
+                    _ref = _iterator[_i++];
                   } else {
-                    dependencies.push(newDependency);
+                    _i = _iterator.next();
+                    if (_i.done) return 'break';
+                    _ref = _i.value;
                   }
-                } catch (e) {
-                  handleError(e);
+
+                  var dependency = _ref;
+
+                  if (dependencies.findIndex(function (cDependency) {
+                    return cDependency.userRequest === dependency.userRequest;
+                  }) === -1 && !dependency.userRequest.endsWith('.ts') && !dependency.userRequest.endsWith('.js')) dependencies.push(dependency);
+                };
+
+                for (var _iterator = originalDependencies, _isArray = Array.isArray(_iterator), _i = 0, _iterator = _isArray ? _iterator : (0, _getIterator3.default)(_iterator);;) {
+                  var _ref;
+
+                  var _ret2 = _loop();
+
+                  if (_ret2 === 'break') break;
                 }
-              };
 
-              for (var _iterator2 = (0, _keys2.default)(contextElements).reverse(), _isArray2 = Array.isArray(_iterator2), _i2 = 0, _iterator2 = _isArray2 ? _iterator2 : (0, _getIterator3.default)(_iterator2);;) {
-                var _ref2;
+                var _loop2 = function _loop2() {
+                  if (_isArray2) {
+                    if (_i2 >= _iterator2.length) return 'break';
+                    _ref2 = _iterator2[_i2++];
+                  } else {
+                    _i2 = _iterator2.next();
+                    if (_i2.done) return 'break';
+                    _ref2 = _i2.value;
+                  }
 
-                var _ret2 = _loop2();
+                  var requireRequestPath = _ref2;
 
-                if (_ret2 === 'break') break;
-              }
+                  try {
+                    var _resource = contextElements[requireRequestPath];
 
-              return callback(null, dependencies);
-            });
-          };
+                    requireRequestPath = path.joinSafe('./', requireRequestPath);
+                    var newDependency = new ContextElementDependency(self.getPath(_resource), requireRequestPath);
+                    if (_resource.hasOwnProperty('optional')) newDependency.optional = !!_resource.optional;else newDependency.optional = true;
+                    var previouslyAdded = dependencies.findIndex(function (dependency) {
+                      return dependency.userRequest === requireRequestPath;
+                    });
+                    if (previouslyAdded > -1) {
+                      dependencies[previouslyAdded] = newDependency;
+                    } else {
+                      dependencies.push(newDependency);
+                    }
+                  } catch (e) {
+                    handleError(e);
+                  }
+                };
+
+                for (var _iterator2 = (0, _keys2.default)(contextElements).reverse(), _isArray2 = Array.isArray(_iterator2), _i2 = 0, _iterator2 = _isArray2 ? _iterator2 : (0, _getIterator3.default)(_iterator2);;) {
+                  var _ref2;
+
+                  var _ret3 = _loop2();
+
+                  if (_ret3 === 'break') break;
+                }
+
+                return callback(null, dependencies);
+              });
+            };
+          })();
         }
         return callback(null, result);
       });
@@ -256,41 +258,43 @@ var AureliaWebpackPlugin = function () {
           }
 
           if (typeof module.resource == 'string') {
-            var moduleId = void 0;
+            (function () {
+              var moduleId = void 0;
 
-            if (options.nameLocalModules) {
-              if (path.normalize(module.resource).startsWith(options.src)) {
-                var relativeToSrc = path.relative(options.src, module.resource);
-                moduleId = relativeToSrc;
+              if (options.nameLocalModules) {
+                if (module.resource.startsWith(options.src)) {
+                  var relativeToSrc = path.relative(options.src, module.resource);
+                  moduleId = relativeToSrc;
+                }
               }
-            }
-            if (options.nameExternalModules) {
-              if (!moduleId && typeof module.userRequest == 'string') {
-                var matchingModuleIds = paths.filter(function (originPath) {
-                  return contextElements[originPath].source === path.normalize(module.userRequest);
-                }).map(function (originPath) {
-                  return path.normalize(originPath);
-                });
-
-                if (matchingModuleIds.length) {
-                  matchingModuleIds.sort(function (a, b) {
-                    return b.length - a.length;
+              if (options.nameExternalModules) {
+                if (!moduleId && typeof module.userRequest == 'string') {
+                  var matchingModuleIds = paths.filter(function (originPath) {
+                    return contextElements[originPath].source === module.userRequest;
+                  }).map(function (originPath) {
+                    return path.normalize(originPath);
                   });
-                  moduleId = matchingModuleIds[0];
+
+                  if (matchingModuleIds.length) {
+                    matchingModuleIds.sort(function (a, b) {
+                      return b.length - a.length;
+                    });
+                    moduleId = matchingModuleIds[0];
+                  }
+                }
+                if (!moduleId && typeof module.rawRequest == 'string' && module.rawRequest.indexOf('.') !== 0) {
+                  var index = paths.indexOf(module.rawRequest);
+                  if (index >= 0) {
+                    moduleId = module.rawRequest;
+                  }
                 }
               }
-              if (!moduleId && typeof module.rawRequest == 'string' && module.rawRequest.indexOf('.') !== 0) {
-                var index = paths.indexOf(module.rawRequest);
-                if (index >= 0) {
-                  moduleId = module.rawRequest;
-                }
+              if (moduleId && !modules.find(function (m) {
+                return m.id === moduleId;
+              })) {
+                module.id = moduleId;
               }
-            }
-            if (moduleId && !modules.find(function (m) {
-              return m.id === moduleId;
-            })) {
-              module.id = moduleId;
-            }
+            })();
           }
         });
       });

@@ -26,7 +26,7 @@ var _assign = require('babel-runtime/core-js/object/assign');
 var _assign2 = _interopRequireDefault(_assign);
 
 var processAll = exports.processAll = function () {
-  var _ref = (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee(options) {
+  var ref = (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee(options) {
     var dependencies, nodeModules, packageJson;
     return _regenerator2.default.wrap(function _callee$(_context) {
       while (1) {
@@ -84,15 +84,14 @@ var processAll = exports.processAll = function () {
       }
     }, _callee, this);
   }));
-
   return function processAll(_x2) {
-    return _ref.apply(this, arguments);
+    return ref.apply(this, arguments);
   };
 }();
 
 var autoresolveTemplates = function () {
-  var _ref7 = (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee2(resources, packagePath, srcPath) {
-    var templates, srcRelativeToRoot, _iterator6, _isArray6, _i6, _ref8, htmlFilePath, templateResources, _iterator7, _isArray7, _i7, _ref9, resource;
+  var ref = (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee2(resources, packagePath, srcPath) {
+    var templates, srcRelativeToRoot, _iterator6, _isArray6, _i6, _ref6, htmlFilePath, templateResources, _iterator7, _isArray7, _i7, _ref7, resource;
 
     return _regenerator2.default.wrap(function _callee2$(_context2) {
       while (1) {
@@ -120,7 +119,7 @@ var autoresolveTemplates = function () {
             return _context2.abrupt('break', 34);
 
           case 8:
-            _ref8 = _iterator6[_i6++];
+            _ref6 = _iterator6[_i6++];
             _context2.next = 15;
             break;
 
@@ -135,10 +134,10 @@ var autoresolveTemplates = function () {
             return _context2.abrupt('break', 34);
 
           case 14:
-            _ref8 = _i6.value;
+            _ref6 = _i6.value;
 
           case 15:
-            htmlFilePath = _ref8;
+            htmlFilePath = _ref6;
             templateResources = resolveTemplateResources(htmlFilePath, srcPath);
             _iterator7 = templateResources, _isArray7 = Array.isArray(_iterator7), _i7 = 0, _iterator7 = _isArray7 ? _iterator7 : (0, _getIterator3.default)(_iterator7);
 
@@ -156,7 +155,7 @@ var autoresolveTemplates = function () {
             return _context2.abrupt('break', 32);
 
           case 21:
-            _ref9 = _iterator7[_i7++];
+            _ref7 = _iterator7[_i7++];
             _context2.next = 28;
             break;
 
@@ -171,10 +170,10 @@ var autoresolveTemplates = function () {
             return _context2.abrupt('break', 32);
 
           case 27:
-            _ref9 = _i7.value;
+            _ref7 = _i7.value;
 
           case 28:
-            resource = _ref9;
+            resource = _ref7;
 
             processFromPath(resources, resource.path, resource, packagePath, srcRelativeToRoot);
 
@@ -193,9 +192,8 @@ var autoresolveTemplates = function () {
       }
     }, _callee2, this);
   }));
-
   return function autoresolveTemplates(_x8, _x9, _x10) {
-    return _ref7.apply(this, arguments);
+    return ref.apply(this, arguments);
   };
 }();
 
@@ -219,7 +217,7 @@ var modulePaths = [];
 var moduleNames = [];
 
 function installedRootModulePaths(moduleDir) {
-  var ensurePackageJson = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
+  var ensurePackageJson = arguments.length <= 1 || arguments[1] === undefined ? true : arguments[1];
 
   var rootModules = fileSystem.readdirSync(moduleDir).filter(function (dir) {
     return !/^\./.test(dir);
@@ -437,18 +435,18 @@ function processFromPath(resources, fromPath, resource, packagePath, relativeToD
     if (realPath) {
       var htmlResources = resolveTemplateResources(realPath.source, localSrcPath, realPath.moduleName);
       for (var _iterator = htmlResources, _isArray = Array.isArray(_iterator), _i = 0, _iterator = _isArray ? _iterator : (0, _getIterator3.default)(_iterator);;) {
-        var _ref2;
+        var _ref;
 
         if (_isArray) {
           if (_i >= _iterator.length) break;
-          _ref2 = _iterator[_i++];
+          _ref = _iterator[_i++];
         } else {
           _i = _iterator.next();
           if (_i.done) break;
-          _ref2 = _i.value;
+          _ref = _i.value;
         }
 
-        var htmlResource = _ref2;
+        var htmlResource = _ref;
 
         processFromPath(resources, htmlResource.path, htmlResource, packagePath, localRelativeToDir, overrideBlock || extractBundleResourceData(htmlResource));
       }
@@ -475,16 +473,16 @@ function processFromPath(resources, fromPath, resource, packagePath, relativeToD
       resources[fromPathCss] = (0, _assign2.default)({}, resource, realPath, overrideBlock || {});
     }
   } else {
-    console.error('Unable to resolve', fromPath);
-  }
+      console.error('Unable to resolve', fromPath);
+    }
 }
 
 function getResourcesOfPackage() {
-  var resources = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-  var packagePath = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : undefined;
-  var relativeToDir = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
-  var overrideBlock = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : undefined;
-  var externalModule = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : undefined;
+  var resources = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+  var packagePath = arguments.length <= 1 || arguments[1] === undefined ? undefined : arguments[1];
+  var relativeToDir = arguments.length <= 2 || arguments[2] === undefined ? '' : arguments[2];
+  var overrideBlock = arguments.length <= 3 || arguments[3] === undefined ? undefined : arguments[3];
+  var externalModule = arguments.length <= 4 || arguments[4] === undefined ? undefined : arguments[4];
 
   if (modulesProcessed.indexOf(packagePath) !== -1) {
     return;
@@ -501,34 +499,34 @@ function getResourcesOfPackage() {
   if (packageJson) {
     if (packageJson.aurelia && packageJson.aurelia.build && packageJson.aurelia.build.resources) {
       for (var _iterator2 = packageJson.aurelia.build.resources, _isArray2 = Array.isArray(_iterator2), _i2 = 0, _iterator2 = _isArray2 ? _iterator2 : (0, _getIterator3.default)(_iterator2);;) {
-        var _ref3;
+        var _ref2;
 
         if (_isArray2) {
           if (_i2 >= _iterator2.length) break;
-          _ref3 = _iterator2[_i2++];
+          _ref2 = _iterator2[_i2++];
         } else {
           _i2 = _iterator2.next();
           if (_i2.done) break;
-          _ref3 = _i2.value;
+          _ref2 = _i2.value;
         }
 
-        var resource = _ref3;
+        var resource = _ref2;
 
         resource = resource instanceof Object && !Array.isArray(resource) ? resource : { path: resource };
         var fromPaths = Array.isArray(resource.path) ? resource.path : [resource.path];
         for (var _iterator3 = fromPaths, _isArray3 = Array.isArray(_iterator3), _i3 = 0, _iterator3 = _isArray3 ? _iterator3 : (0, _getIterator3.default)(_iterator3);;) {
-          var _ref4;
+          var _ref3;
 
           if (_isArray3) {
             if (_i3 >= _iterator3.length) break;
-            _ref4 = _iterator3[_i3++];
+            _ref3 = _iterator3[_i3++];
           } else {
             _i3 = _iterator3.next();
             if (_i3.done) break;
-            _ref4 = _i3.value;
+            _ref3 = _i3.value;
           }
 
-          var fromPath = _ref4;
+          var fromPath = _ref3;
 
           debug('<' + (externalModule || path.basename(packagePath)) + '> [resolving] \'' + fromPath + '\'');
 
@@ -544,18 +542,18 @@ function getResourcesOfPackage() {
     if (packageJson.dependencies) {
       var depNames = filterDepNames((0, _getOwnPropertyNames2.default)(packageJson.dependencies), getPackageAureliaIncludeDependencies(packageJson));
       for (var _iterator4 = depNames, _isArray4 = Array.isArray(_iterator4), _i4 = 0, _iterator4 = _isArray4 ? _iterator4 : (0, _getIterator3.default)(_iterator4);;) {
-        var _ref5;
+        var _ref4;
 
         if (_isArray4) {
           if (_i4 >= _iterator4.length) break;
-          _ref5 = _iterator4[_i4++];
+          _ref4 = _iterator4[_i4++];
         } else {
           _i4 = _iterator4.next();
           if (_i4.done) break;
-          _ref5 = _i4.value;
+          _ref4 = _i4.value;
         }
 
-        var _moduleName = _ref5;
+        var _moduleName = _ref4;
 
         var _modulePathIndex = moduleNames.indexOf(_moduleName);
         if (_modulePathIndex !== -1) {
@@ -566,18 +564,18 @@ function getResourcesOfPackage() {
 
       if (!externalModule) {
         for (var _iterator5 = depNames, _isArray5 = Array.isArray(_iterator5), _i5 = 0, _iterator5 = _isArray5 ? _iterator5 : (0, _getIterator3.default)(_iterator5);;) {
-          var _ref6;
+          var _ref5;
 
           if (_isArray5) {
             if (_i5 >= _iterator5.length) break;
-            _ref6 = _iterator5[_i5++];
+            _ref5 = _iterator5[_i5++];
           } else {
             _i5 = _iterator5.next();
             if (_i5.done) break;
-            _ref6 = _i5.value;
+            _ref5 = _i5.value;
           }
 
-          var moduleName = _ref6;
+          var moduleName = _ref5;
 
           var modulePathIndex = moduleNames.indexOf(moduleName);
           if (modulePathIndex !== -1) {
