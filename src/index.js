@@ -213,7 +213,7 @@ class AureliaWebpackPlugin {
             let moduleId;
             
             if (options.nameLocalModules) {
-              if (module.resource.startsWith(options.src)) {
+              if (path.normalize(module.resource).startsWith(options.src)) {
                 // paths inside SRC
                 let relativeToSrc = path.relative(options.src, module.resource);
                 moduleId = relativeToSrc;
@@ -223,7 +223,7 @@ class AureliaWebpackPlugin {
               if (!moduleId && typeof module.userRequest == 'string') {
                 // paths resolved as build resources
                 let matchingModuleIds = paths
-                  .filter(originPath => contextElements[originPath].source === module.userRequest)
+                  .filter(originPath => contextElements[originPath].source === path.normalize(module.userRequest))
                   .map(originPath => path.normalize(originPath));
 
                 if (matchingModuleIds.length) {
