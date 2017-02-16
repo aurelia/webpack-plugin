@@ -27,13 +27,12 @@ describe('Aurelia webpack plugin', function () {
     };
     
     webpack(config, function (err, stats) {
-      expect(err).to.be.falsy;
-      expect(stats.hasErrors()).to.be.falsy;
-      expect(stats.hasWarnings()).to.be.falsy;
+      expect(err).to.be.null;
+      // Do not allow any errors, warnings are ok though
+      expect(stats.hasErrors()).to.be.false;
       
-      expect(fs.existsSync(path.join(OUTPUT_DIR, '1.bundle.js'))).to.be.truthy;
-
-      // todo try to require from bundle
+      expect(fs.existsSync(path.join(OUTPUT_DIR, 'bundle.js'))).to.be.true;
+      expect(fs.existsSync(path.join(OUTPUT_DIR, '0.bundle.js'))).to.be.true;
       
       done();
     });
