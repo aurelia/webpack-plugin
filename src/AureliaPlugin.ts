@@ -44,7 +44,7 @@ export class AureliaPlugin {
       moduleMethods: [],
       noHtmlLoader: false,
       noModulePathResolve: false,
-      viewsFor: "src/**/*.{ts,js}",
+      viewsFor: "**/*.{ts,js}",
       viewsExtensions: ".html",
     },
     options);
@@ -102,28 +102,16 @@ export class AureliaPlugin {
       // We don't use aureliaApp as we assume it's included in the folder above
       opts.aureliaApp = undefined;
     }
-    else {
-      // Traced dependencies approach
-      compiler.apply(
-        // This plugin looks for companion files by swapping extensions,
-        // e.g. the view of a ViewModel. @useView and co. should use PLATFORM.moduleName().
-        new ConventionDependenciesPlugin(opts.viewsFor, opts.viewsExtensions),
-        // This plugin adds dependencies traced by html-requires-loader
-        // Note: the config extension point for this one is html-requires-loader.attributes.
-        new HtmlDependenciesPlugin()
-      );
 
-      if (!opts.noHtmlLoader) {
-        // Ensure that we trace HTML dependencies
-        let module = compiler.options.module;
-        let rules = module.rules || (module.rules = []);
-        // Note that this loader will be in last place, which is important 
-        // because it will process the file first, before any other loader.
-        rules.push({ test: /\.html?$/i, use: "aurelia-webpack-plugin/html-requires-loader" });
-      }
+    if (!opts.noHtmlLoader) {
+      // Ensure that we trace HTML dependencies (always required because of 3rd party libs)
+      let module = compiler.options.module;
+      let rules = module.rules || (module.rules = []);
+      // Note that this loader will be in last place, which is important 
+      // because it will process the file first, before any other loader.
+      rules.push({ test: /\.html?$/i, use: "aurelia-webpack-plugin/html-requires-loader" });
     }
 
-    // Common plugins
     compiler.apply(
       // Adds some dependencies that are not documented by `PLATFORM.moduleName`
       new ModuleDependenciesPlugin({
@@ -141,6 +129,13 @@ export class AureliaPlugin {
       }),
       // This plugin traces dependencies in code that are wrapped in PLATFORM.moduleName() calls
       new AureliaDependenciesPlugin(...opts.moduleMethods),
+      // This plugin adds dependencies traced by html-requires-loader
+      // Note: the config extension point for this one is html-requires-loader.attributes.
+      new HtmlDependenciesPlugin(),
+      // This plugin looks for companion files by swapping extensions,
+      // e.g. the view of a ViewModel. @useView and co. should use PLATFORM.moduleName().
+      // We use it always even with `includeAll` because libs often don't `@useView` (they should).
+      new ConventionDependenciesPlugin(opts.viewsFor, opts.viewsExtensions),
       // This plugin preserves module names for dynamic loading by aurelia-loader
       new PreserveModuleNamePlugin(),
       // This plugin supports preserving specific exports names when dynamically loading modules
