@@ -33,7 +33,9 @@ export class ConventionDependenciesPlugin extends BaseIncludePlugin {
         try {
           const probe = c(file);
           compilation.inputFileSystem.statSync(probe);  // Check if file exists
-          addDependency(probe);
+          let relative = path.relative(path.dirname(file), probe);
+          if (!relative.startsWith(".")) relative = "./" + relative;
+          addDependency(relative);
           // If the module has a conventional dependency, make sure we preserve its name as well.
           // This solves the pattern where a VM is statically loaded, e.g. `import { ViewModel } from "x"`
           // and then passed to Aurelia, e.g. with `aurelia-dialog`.

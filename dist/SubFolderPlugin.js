@@ -5,12 +5,13 @@
 // Then if `aurelia-charts/pie` fails, we'll try `aurelia-charts/dist/pie`.
 const path = require("path");
 const subFolderTrial = Symbol();
+exports.resolveCache = {};
 class SubFolderPlugin {
     apply(resolver) {
         resolver.plugin("after-resolve", (request, cb) => {
             // Only look for request not starting with a dot (module names)
-            // and followed by a path (slash).
-            let match = /^(?!\.)([^/]+)(\/.*)$/i.exec(request.request);
+            // and followed by a path (slash). Support @scoped/modules.
+            let match = /^(?!\.)((?:@[^/]+\/)?[^/]+)(\/.*)$/i.exec(request.request);
             if (!match || request.context[subFolderTrial]) {
                 cb();
                 return;
