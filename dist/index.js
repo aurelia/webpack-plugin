@@ -262,7 +262,7 @@ var AureliaWebpackPlugin = function () {
               var moduleId = void 0;
 
               if (options.nameLocalModules) {
-                if (module.resource.startsWith(options.src)) {
+                if (path.normalize(module.resource).startsWith(options.src)) {
                   var relativeToSrc = path.relative(options.src, module.resource);
                   moduleId = relativeToSrc;
                 }
@@ -270,7 +270,7 @@ var AureliaWebpackPlugin = function () {
               if (options.nameExternalModules) {
                 if (!moduleId && typeof module.userRequest == 'string') {
                   var matchingModuleIds = paths.filter(function (originPath) {
-                    return contextElements[originPath].source === module.userRequest;
+                    return contextElements[originPath].source === path.normalize(module.userRequest);
                   }).map(function (originPath) {
                     return path.normalize(originPath);
                   });
