@@ -1,6 +1,14 @@
 import { BaseIncludePlugin, AddDependency } from "./BaseIncludePlugin";
 import path = require("path");
 
+export interface ModuleDependenciesPluginOptions { 
+  [module: string]: 
+    undefined | 
+    string | 
+    DependencyOptionsEx | 
+    (undefined|string|DependencyOptionsEx)[] 
+};
+
 export class ModuleDependenciesPlugin extends BaseIncludePlugin {
   root = path.resolve();
   hash: { [name: string]: (string | DependencyOptionsEx)[] };
@@ -9,7 +17,7 @@ export class ModuleDependenciesPlugin extends BaseIncludePlugin {
   /**
    * Each hash member is a module name, for which additional module names (or options) are added as dependencies.
    */
-  constructor(hash: { [module: string]: undefined | string | DependencyOptionsEx | (undefined|string|DependencyOptionsEx)[] }) {
+  constructor(hash: ModuleDependenciesPluginOptions) {
     super();
     for (let module in hash) {
       let deps = hash[module];
@@ -51,6 +59,7 @@ export class ModuleDependenciesPlugin extends BaseIncludePlugin {
 
   parser(compilation: Webpack.Compilation, parser: Webpack.Parser, addDependency: AddDependency) {
     parser.plugin("program", () => {
+      // We try to match the resource, or the initial module request.
       const deps = this.modules[parser.state.module.resource];
       if (deps) deps.forEach(addDependency);
     });

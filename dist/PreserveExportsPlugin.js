@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.dependencyImports = Symbol();
 const moduleExports = Symbol();
 const nativeIsUsed = Symbol();

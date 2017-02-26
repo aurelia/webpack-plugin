@@ -1,6 +1,8 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 const BaseIncludePlugin_1 = require("./BaseIncludePlugin");
 const path = require("path");
+;
 class ModuleDependenciesPlugin extends BaseIncludePlugin_1.BaseIncludePlugin {
     /**
      * Each hash member is a module name, for which additional module names (or options) are added as dependencies.
@@ -45,6 +47,7 @@ class ModuleDependenciesPlugin extends BaseIncludePlugin_1.BaseIncludePlugin {
     }
     parser(compilation, parser, addDependency) {
         parser.plugin("program", () => {
+            // We try to match the resource, or the initial module request.
             const deps = this.modules[parser.state.module.resource];
             if (deps)
                 deps.forEach(addDependency);

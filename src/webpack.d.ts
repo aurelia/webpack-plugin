@@ -2,14 +2,18 @@ declare namespace Webpack {
   export class Dependency {
     module: Module | null;
     getReference(): { module: Module | null, importedNames: boolean | string[] } | null;
+    static compare(a: Dependency, b: Dependency): number;
   }
 
   export class DependenciesBlock {
+    dependencies: Dependency[];
+    
     addDependency(dependency: Dependency): void;
   }
 
   export class Module extends DependenciesBlock {
     id: string;
+    meta: object;
     rawRequest: string;
     reasons: Reason[];
     resource: string;
@@ -83,14 +87,14 @@ declare namespace Webpack {
 
     apply(...plugin: Object[]): void;
     plugin(type: "compilation", cb: (compilation: Compilation, params: CompilationParameters) => void): void;    
-    plugin(type: "before-compile", cb: (params: {}, callback: Function) => void): void;
+    plugin(type: "before-compile", cb: (params: {}, callback: Function) => void): void;    
     resolvers: {
       normal: Resolver;
     }
   }
 
   interface Options {
-    entry: string | Object | (string|Object)[];
+    entry: string | string[] | { [name: string]: string | string[] };
     target: string;
     module: {
       rules?: { test?: RegExp; use: string | string[] }[];
@@ -100,10 +104,13 @@ declare namespace Webpack {
       modules: string[];
       extensions: string[];
       plugins: Object[];
+      symlinks: boolean;
     }; 
     resolveLoader: {
       alias?: { [key: string]: string };      
-    }
+      symlinks: boolean;
+    };
+    plugins: object[];
   }
 
   export class Compilation {
@@ -112,6 +119,7 @@ declare namespace Webpack {
 
     dependencyFactories: { set(d: any, f: ModuleFactory): void; };
     dependencyTemplates: { set(d: any, f: any): void; };
+    plugin(type: "succeed-module", cb: (module: Webpack.Module) => void): void;
     plugin(type: "before-module-ids", cb: (modules: Module[]) => void): void;
     plugin(type: "finish-modules", cb: (modules: Module[]) => void): void;
   }
@@ -163,6 +171,17 @@ declare module "webpack" {
   export class DefinePlugin {
     constructor(hash: any);
   }
+
+  export class DllPlugin {    
+  }
+
+  export class DllReferencePlugin {    
+  }
+}
+
+declare module "webpack/lib/Dependency" {
+  const Dependency: typeof Webpack.Dependency;
+  export = Dependency;
 }
 
 declare module "webpack/lib/dependencies/NullDependency" {

@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 const PreserveExportsPlugin_1 = require("./PreserveExportsPlugin");
 const PreserveModuleNamePlugin_1 = require("./PreserveModuleNamePlugin");
 const ModuleDependency = require("webpack/lib/dependencies/ModuleDependency");

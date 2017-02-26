@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 const IncludeDependency_1 = require("./IncludeDependency");
 const NullDependency = require("webpack/lib/dependencies/NullDependency");
 class BaseIncludePlugin {

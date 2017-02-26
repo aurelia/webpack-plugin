@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 const path = require("path");
 exports.preserveModuleName = Symbol();
 // This plugins preserves the module names of IncludeDependency and 
@@ -7,6 +8,9 @@ exports.preserveModuleName = Symbol();
 // All other dependencies are handled by webpack itself and don't
 // need special treatment.
 class PreserveModuleNamePlugin {
+    constructor(isDll = false) {
+        this.isDll = isDll;
+    }
     apply(compiler) {
         compiler.plugin("compilation", compilation => {
             compilation.plugin("before-module-ids", modules => {
@@ -28,7 +32,9 @@ class PreserveModuleNamePlugin {
                     // Keep "async!" in front of code splits proxies, they are used by aurelia-loader
                     if (/^async[?!]/.test(module.rawRequest))
                         id = "async!" + id;
-                    module.id = id.replace(/\\/g, "/");
+                    module.meta["aurelia-id"] = id = id.replace(/\\/g, "/");
+                    if (!this.isDll)
+                        module.id = id;
                 }
             });
         });

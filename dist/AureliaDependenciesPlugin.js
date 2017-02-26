@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 const IncludeDependency_1 = require("./IncludeDependency");
 const BasicEvaluatedExpression = require("webpack/lib/BasicEvaluatedExpression");
 class AureliaDependency extends IncludeDependency_1.IncludeDependency {

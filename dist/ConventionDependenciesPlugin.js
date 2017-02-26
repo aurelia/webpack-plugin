@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 const BaseIncludePlugin_1 = require("./BaseIncludePlugin");
 const PreserveModuleNamePlugin_1 = require("./PreserveModuleNamePlugin");
 const minimatch = require("minimatch");

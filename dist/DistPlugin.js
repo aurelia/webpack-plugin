@@ -10,6 +10,7 @@
 // The alias configuration above will fail the build if a third party lib also uses ./dist/commonjs
 // but does not include a ./dist/native-modules
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 class DistPlugin {
     constructor(dist) {
         this.dist = `/dist/${dist}/`;
