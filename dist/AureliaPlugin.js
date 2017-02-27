@@ -24,7 +24,14 @@ class AureliaPlugin {
             noHtmlLoader: false,
             noModulePathResolve: false,
             noWebpackLoader: false,
-            viewsFor: "**/*.{ts,js}",
+            // Ideally we would like _not_ to process conventions in node_modules,
+            // because they should be using @useView and not rely in convention in 
+            // the first place. Unfortunately at this point many libs do use conventions
+            // so it's just more helpful for users to process them.
+            // As unlikely as it may seem, a common offender here is tslib, which has
+            // matching (yet unrelated) html files in its distribution. So I am making 
+            // a quick exception for that.
+            viewsFor: "**/!(tslib)*.{ts,js}",
             viewsExtensions: ".html",
         }, options);
         this.options.features = Object.assign({
