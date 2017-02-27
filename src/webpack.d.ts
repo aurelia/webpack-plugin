@@ -13,7 +13,7 @@ declare namespace Webpack {
 
   export class Module extends DependenciesBlock {
     id: string;
-    meta: object;
+    meta: object|null;
     rawRequest: string;
     reasons: Reason[];
     resource: string;

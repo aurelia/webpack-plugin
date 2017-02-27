@@ -37,8 +37,10 @@ export class PreserveModuleNamePlugin {
           // Keep "async!" in front of code splits proxies, they are used by aurelia-loader
           if (/^async[?!]/.test(module.rawRequest)) 
             id = "async!" + id;
-
-          module.meta["aurelia-id"] = id = id.replace(/\\/g, "/");
+          
+          id = id.replace(/\\/g, "/");
+          if (module.meta)  // meta can be null if the module contains errors
+            module.meta["aurelia-id"] = id;
           if (!this.isDll)
             module.id = id;
         }
