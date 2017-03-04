@@ -1,3 +1,7 @@
+## 2.0.0-rc.1
+
+Complete re-writer for Webpack 2.2.
+
 <a name="1.2.2"></a>
 ## [1.2.2](https://github.com/aurelia/webpack-plugin/compare/1.2.1...v1.2.2) (2017-02-19)
 
