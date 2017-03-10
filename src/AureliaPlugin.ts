@@ -20,6 +20,7 @@ export interface Options {
   dist: string;
   entry?: string | string[];
   features: {
+    ie?: boolean;
     svg?: boolean;
     unparser?: boolean;
     polyfills?: Polyfills;
@@ -63,6 +64,7 @@ export class AureliaPlugin {
     options);
 
     this.options.features = Object.assign({
+      ie: true,
       svg: true,
       unparser: true,
       polyfills: <"es2015">"es2015",
@@ -92,6 +94,7 @@ export class AureliaPlugin {
     const defines: any = {
       AURELIA_WEBPACK_2_0: "true"
     };
+    if (!features.ie) defines.FEATURE_NO_IE = "true";
     if (!features.svg) defines.FEATURE_NO_SVG = "true";
     if (!features.unparser) defines.FEATURE_NO_UNPARSER = "true";
     definePolyfills(defines, features.polyfills!);
