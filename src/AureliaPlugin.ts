@@ -166,7 +166,7 @@ export class AureliaPlugin {
     if (!opts.noHtmlLoader) {
       // Ensure that we trace HTML dependencies (always required because of 3rd party libs)
       let module = compiler.options.module;
-      let rules = module.rules || (module.rules = []);
+      let rules = module.rules || module.loaders || (module.rules = []);
       // Note that this loader will be in last place, which is important 
       // because it will process the file first, before any other loader.
       rules.push({ test: /\.html?$/i, use: "aurelia-webpack-plugin/html-requires-loader" });

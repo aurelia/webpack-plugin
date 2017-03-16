@@ -98,6 +98,7 @@ declare namespace Webpack {
     target: string;
     module: {
       rules?: { test?: RegExp; use: string | string[] }[];
+      loaders?: { test?: RegExp; use: string | string[] }[]; // same as rules, supported for backward compat with 1.x
     };
     resolve: {
       alias: { [key: string]: string };
