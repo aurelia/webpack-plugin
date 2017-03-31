@@ -13,7 +13,10 @@ export class SubFolderPlugin {
       // Only look for request not starting with a dot (module names)
       // and followed by a path (slash). Support @scoped/modules.
       let match = /^(?!\.)((?:@[^/]+\/)?[^/]+)(\/.*)$/i.exec(request.request);
-      if (!match || request.context[subFolderTrial]) { cb(); return; }
+      // Fix: it seems that under some error conditions `request.context` might end up being null.
+      //      this is bad but to help users find relevant errors on the web, we don't want to crash 
+      //      so instead we just skip the request.
+      if (!match || !request.context || request.context[subFolderTrial]) { cb(); return; }
       let [, module, rest] = match;
       // Try resolve just the module name to locate its actual root
       let rootRequest = Object.assign({}, request, { request: module });

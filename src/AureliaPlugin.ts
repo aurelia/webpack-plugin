@@ -20,6 +20,7 @@ export interface Options {
   dist: string;
   entry?: string | string[];
   features: {
+    ie?: boolean;
     svg?: boolean;
     unparser?: boolean;
     polyfills?: Polyfills;
@@ -63,6 +64,7 @@ export class AureliaPlugin {
     options);
 
     this.options.features = Object.assign({
+      ie: true,
       svg: true,
       unparser: true,
       polyfills: <"es2015">"es2015",
@@ -92,6 +94,7 @@ export class AureliaPlugin {
     const defines: any = {
       AURELIA_WEBPACK_2_0: "true"
     };
+    if (!features.ie) defines.FEATURE_NO_IE = "true";
     if (!features.svg) defines.FEATURE_NO_SVG = "true";
     if (!features.unparser) defines.FEATURE_NO_UNPARSER = "true";
     definePolyfills(defines, features.polyfills!);
@@ -157,13 +160,15 @@ export class AureliaPlugin {
     if (!dllPlugin && !opts.noWebpackLoader) {
       // Setup aurelia-loader-webpack as the module loader
       // Note that code inside aurelia-loader-webpack performs PLATFORM.Loader = WebpackLoader;
-      this.addEntry(compiler.options, "aurelia-loader-webpack");      
+      // Since this runs very early, before any other Aurelia code, we need "aurelia-polyfills"
+      // for older platforms (e.g. `Map` is undefined in IE 10-).
+      this.addEntry(compiler.options, ["aurelia-polyfills", "aurelia-loader-webpack"]);      
     }
 
     if (!opts.noHtmlLoader) {
       // Ensure that we trace HTML dependencies (always required because of 3rd party libs)
       let module = compiler.options.module;
-      let rules = module.rules || (module.rules = []);
+      let rules = module.rules || module.loaders || (module.rules = []);
       // Note that this loader will be in last place, which is important 
       // because it will process the file first, before any other loader.
       rules.push({ test: /\.html?$/i, use: "aurelia-webpack-plugin/html-requires-loader" });
@@ -200,9 +205,9 @@ export class AureliaPlugin {
     );
   }
 
-  addEntry(options: Webpack.Options, module: string) {
+  addEntry(options: Webpack.Options, modules: string|string[]) {
     let webpackEntry = options.entry;
-    let entries = [module];
+    let entries = Array.isArray(modules) ? modules : [modules];
     if (typeof webpackEntry == "object" && !Array.isArray(webpackEntry)) {
       // There are multiple entries defined in the config
       // Unless there was a particular configuration, we modify the first one
