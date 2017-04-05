@@ -8,6 +8,7 @@ export interface Options {
     dist: string;
     entry?: string | string[];
     features: {
+        ie?: boolean;
         svg?: boolean;
         unparser?: boolean;
         polyfills?: Polyfills;
@@ -23,5 +24,5 @@ export declare class AureliaPlugin {
     options: Options;
     constructor(options?: Partial<Options>);
     apply(compiler: Webpack.Compiler): void;
-    addEntry(options: Webpack.Options, module: string): void;
+    addEntry(options: Webpack.Options, modules: string | string[]): void;
 }

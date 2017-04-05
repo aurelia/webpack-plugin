@@ -41,10 +41,13 @@ class ParserPlugin {
         // This covers commonjs modules, for example:
         //    const _aureliaPal = require("aurelia-pal");
         //    _aureliaPal.PLATFORM.moduleName("id");    
+        // Or (note: no renaming supported):
+        //    const PLATFORM = require("aurelia-pal").PLATFORM;
+        //    PLATFORM.moduleName("id");
         parser.plugin("evaluate MemberExpression", (expr) => {
             if (expr.property.name === "moduleName" &&
-                expr.object.type === "MemberExpression" &&
-                expr.object.property.name === "PLATFORM") {
+                (expr.object.type === "MemberExpression" && expr.object.property.name === "PLATFORM" ||
+                    expr.object.type === "Identifier" && expr.object.name === "PLATFORM")) {
                 return new BasicEvaluatedExpression().setIdentifier("PLATFORM.moduleName").setRange(expr.range);
             }
             return undefined;

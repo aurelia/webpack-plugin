@@ -1,3 +1,16 @@
+## 2.0.0-rc.2
+
+### Features
+
+* flag to opt-out of IE support
+* support module.loaders
+
+### Bug Fixes
+
+* errors might crash SubFolderPlugin
+* compat with IE < 11
+* support more CommonJS import styles
+
 ## 2.0.0-rc.1
 
 Complete re-writer for Webpack 2.2.
