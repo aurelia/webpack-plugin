@@ -227,6 +227,7 @@ function getPAL(target: string) {
   switch (target) {
     case "web": return "aurelia-pal-browser";
     case "webworker": return "aurelia-pal-worker";
+    case "electron-renderer": return "aurelia-pal-browser";
     default: return "aurelia-pal-nodejs";
   }
 }
