@@ -1,7 +1,7 @@
 import { IncludeDependency } from "./IncludeDependency";
 import NullDependency = require("webpack/lib/dependencies/NullDependency");
 
-export type AddDependency = (request: string, options?: DependencyOptions) => void;
+export type AddDependency = (request: string | DependencyOptionsEx) => void;
 
 export class BaseIncludePlugin {
   apply(compiler: Webpack.Compiler) {

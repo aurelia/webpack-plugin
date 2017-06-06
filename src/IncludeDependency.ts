@@ -4,8 +4,12 @@ import ModuleDependency = require("webpack/lib/dependencies/ModuleDependency");
 import NullDependency = require("webpack/lib/dependencies/NullDependency");
 
 export class IncludeDependency extends ModuleDependency {  
-  constructor(request: string, private options?: DependencyOptions) {
-    super(request);
+  private options?: DependencyOptions;
+
+  constructor(request: string, options?: DependencyOptions) {
+    let chunk = options && options.chunk;
+    super(chunk ? `async?lazy&name=${chunk}!${request}` : request);
+    this.options = options;
   }
 
   get type() {
