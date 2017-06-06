@@ -36,17 +36,17 @@
   },
   "dependencies": {
     "aurelia-loader-webpack": "^2.1.0",
-    "bundle-loader": "^0.5.4",
-    "html-loader": "^0.4.4",
-    "minimatch": "^3.0.3"
+    "bundle-loader": "^0.5.5",
+    "html-loader": "^0.4.5",
+    "minimatch": "^3.0.4"
   },
   "peerDependencies": {
     "webpack": ">= 2.2.0"
   },
   "devDependencies": {
     "@types/minimatch": "^2.0.29",
-    "@types/node": "^7.0.1",
-    "typescript": "^2.2.1"
+    "@types/node": "^7.0.28",
+    "typescript": "^2.3.4"
   },
   "aurelia": {
     "documentation": {
