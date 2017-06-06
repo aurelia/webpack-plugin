@@ -41,9 +41,7 @@ export class AureliaPlugin {
 
   constructor(options: Partial<Options> = {}) {
     this.options = Object.assign({
-      includeAll: <false>false,
-
-      aureliaApp: "main",
+      includeAll: <false>false,            
       aureliaConfig: ["standard", "developmentLogging"],
       dist: "native-modules",
       features: { },
@@ -76,6 +74,9 @@ export class AureliaPlugin {
     const features = opts.features;
     let needsEmptyEntry = false;
 
+    let dllPlugin = compiler.options.plugins.some(p => p instanceof DllPlugin);
+    let dllRefPlugins = compiler.options.plugins.filter(p => p instanceof DllReferencePlugin);
+
     // Make sure the loaders are easy to load at the root like `aurelia-webpack-plugin/html-resource-loader`
     let resolveLoader = compiler.options.resolveLoader;
     let alias = resolveLoader.alias || (resolveLoader.alias = {});
@@ -88,6 +89,12 @@ export class AureliaPlugin {
     if ("NODE_PRESERVE_SYMLINKS" in process.env) {
       resolveLoader.symlinks = false;
       compiler.options.resolve.symlinks = false;
+    }
+
+    // If we aren't building a DLL, "main" is the default entry point
+    // Note that the 'in' check is because someone may explicitly set aureliaApp to undefined
+    if (!dllPlugin && !("aureliaApp" in opts)) {
+      opts.aureliaApp = "main";
     }
 
     // Uses DefinePlugin to cut out optional features
@@ -143,8 +150,6 @@ export class AureliaPlugin {
       globalDependencies.push({ name: opts.aureliaApp, exports: ["configure"] });
     }
 
-    let dllPlugin = compiler.options.plugins.some(p => p instanceof DllPlugin);
-    let dllRefPlugins = compiler.options.plugins.filter(p => p instanceof DllReferencePlugin);
     if (!dllPlugin && dllRefPlugins.length > 0) {
       // Creates delegated entries for all Aurelia modules in DLLs.
       // This is required for aurelia-loader-webpack to find them.
