@@ -4,6 +4,7 @@ import { ConventionDependenciesPlugin, Convention } from "./ConventionDependenci
 import { DistPlugin } from "./DistPlugin";
 import { GlobDependenciesPlugin } from "./GlobDependenciesPlugin";
 import { HtmlDependenciesPlugin } from "./HtmlDependenciesPlugin";
+import { InlineViewDependenciesPlugin } from "./InlineViewDependenciesPlugin";
 import { ModuleDependenciesPlugin, ModuleDependenciesPluginOptions } from "./ModuleDependenciesPlugin";
 import { PreserveExportsPlugin } from "./PreserveExportsPlugin";
 import { PreserveModuleNamePlugin } from "./PreserveModuleNamePlugin";
@@ -26,6 +27,7 @@ export interface Options {
     polyfills?: Polyfills;
   },
   noHtmlLoader: boolean;
+  noInlineView: boolean;
   noModulePathResolve: boolean;
   noWebpackLoader: boolean;
   moduleMethods: string[];
@@ -47,6 +49,8 @@ export class AureliaPlugin {
       features: { },
       moduleMethods: [],
       noHtmlLoader: false,
+      // Undocumented safety switch
+      noInlineView: false,
       noModulePathResolve: false,
       noWebpackLoader: false,
       // Ideally we would like _not_ to process conventions in node_modules,
@@ -177,6 +181,10 @@ export class AureliaPlugin {
       // Note that this loader will be in last place, which is important 
       // because it will process the file first, before any other loader.
       rules.push({ test: /\.html?$/i, use: "aurelia-webpack-plugin/html-requires-loader" });
+    }
+
+    if (!opts.noInlineView) {
+      compiler.apply(new InlineViewDependenciesPlugin());
     }
 
     if (globalDependencies.length > 0) {
