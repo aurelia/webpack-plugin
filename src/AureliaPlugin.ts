@@ -36,7 +36,7 @@ export interface Options {
 }
 
 // See comments inside the module to understand why this is used
-const emptyEntryModule = "aurelia-webpack-plugin/dist/aurelia-entry";
+const emptyEntryModule = "aurelia-webpack-plugin/runtime/empty-entry";
 
 export class AureliaPlugin {
   options: Options;
@@ -168,10 +168,7 @@ export class AureliaPlugin {
 
     if (!dllPlugin && !opts.noWebpackLoader) {
       // Setup aurelia-loader-webpack as the module loader
-      // Note that code inside aurelia-loader-webpack performs PLATFORM.Loader = WebpackLoader;
-      // Since this runs very early, before any other Aurelia code, we need "aurelia-polyfills"
-      // for older platforms (e.g. `Map` is undefined in IE 10-).
-      this.addEntry(compiler.options, ["aurelia-polyfills", "aurelia-loader-webpack"]);      
+      this.addEntry(compiler.options, ["aurelia-webpack-plugin/runtime/pal-loader-entry"]);      
     }
 
     if (!opts.noHtmlLoader) {
