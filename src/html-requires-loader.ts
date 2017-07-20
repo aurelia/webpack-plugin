@@ -14,6 +14,7 @@ namespace loader {
   export let attributes = {
     "require": [ "from" ],
     "compose": [ "view", "view-model" ],
+    "router-view": [ "layout-view", "layout-view-model" ],
   };
 
   export function modules(html: string) {
