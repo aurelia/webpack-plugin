@@ -6,22 +6,24 @@ const ConventionDependenciesPlugin_1 = require("./ConventionDependenciesPlugin")
 const DistPlugin_1 = require("./DistPlugin");
 const GlobDependenciesPlugin_1 = require("./GlobDependenciesPlugin");
 const HtmlDependenciesPlugin_1 = require("./HtmlDependenciesPlugin");
+const InlineViewDependenciesPlugin_1 = require("./InlineViewDependenciesPlugin");
 const ModuleDependenciesPlugin_1 = require("./ModuleDependenciesPlugin");
 const PreserveExportsPlugin_1 = require("./PreserveExportsPlugin");
 const PreserveModuleNamePlugin_1 = require("./PreserveModuleNamePlugin");
 const SubFolderPlugin_1 = require("./SubFolderPlugin");
 // See comments inside the module to understand why this is used
-const emptyEntryModule = "aurelia-webpack-plugin/dist/aurelia-entry";
+const emptyEntryModule = "aurelia-webpack-plugin/runtime/empty-entry";
 class AureliaPlugin {
     constructor(options = {}) {
         this.options = Object.assign({
             includeAll: false,
-            aureliaApp: "main",
             aureliaConfig: ["standard", "developmentLogging"],
             dist: "native-modules",
             features: {},
             moduleMethods: [],
             noHtmlLoader: false,
+            // Undocumented safety switch
+            noInlineView: false,
             noModulePathResolve: false,
             noWebpackLoader: false,
             // Ideally we would like _not_ to process conventions in node_modules,
@@ -45,6 +47,8 @@ class AureliaPlugin {
         const opts = this.options;
         const features = opts.features;
         let needsEmptyEntry = false;
+        let dllPlugin = compiler.options.plugins.some(p => p instanceof webpack_1.DllPlugin);
+        let dllRefPlugins = compiler.options.plugins.filter(p => p instanceof webpack_1.DllReferencePlugin);
         // Make sure the loaders are easy to load at the root like `aurelia-webpack-plugin/html-resource-loader`
         let resolveLoader = compiler.options.resolveLoader;
         let alias = resolveLoader.alias || (resolveLoader.alias = {});
@@ -56,6 +60,11 @@ class AureliaPlugin {
         if ("NODE_PRESERVE_SYMLINKS" in process.env) {
             resolveLoader.symlinks = false;
             compiler.options.resolve.symlinks = false;
+        }
+        // If we aren't building a DLL, "main" is the default entry point
+        // Note that the 'in' check is because someone may explicitly set aureliaApp to undefined
+        if (!dllPlugin && !("aureliaApp" in opts)) {
+            opts.aureliaApp = "main";
         }
         // Uses DefinePlugin to cut out optional features
         const defines = {
@@ -107,8 +116,6 @@ class AureliaPlugin {
             // When using includeAll, we assume it's already included
             globalDependencies.push({ name: opts.aureliaApp, exports: ["configure"] });
         }
-        let dllPlugin = compiler.options.plugins.some(p => p instanceof webpack_1.DllPlugin);
-        let dllRefPlugins = compiler.options.plugins.filter(p => p instanceof webpack_1.DllReferencePlugin);
         if (!dllPlugin && dllRefPlugins.length > 0) {
             // Creates delegated entries for all Aurelia modules in DLLs.
             // This is required for aurelia-loader-webpack to find them.
@@ -122,10 +129,7 @@ class AureliaPlugin {
         }
         if (!dllPlugin && !opts.noWebpackLoader) {
             // Setup aurelia-loader-webpack as the module loader
-            // Note that code inside aurelia-loader-webpack performs PLATFORM.Loader = WebpackLoader;
-            // Since this runs very early, before any other Aurelia code, we need "aurelia-polyfills"
-            // for older platforms (e.g. `Map` is undefined in IE 10-).
-            this.addEntry(compiler.options, ["aurelia-polyfills", "aurelia-loader-webpack"]);
+            this.addEntry(compiler.options, ["aurelia-webpack-plugin/runtime/pal-loader-entry"]);
         }
         if (!opts.noHtmlLoader) {
             // Ensure that we trace HTML dependencies (always required because of 3rd party libs)
@@ -134,6 +138,9 @@ class AureliaPlugin {
             // Note that this loader will be in last place, which is important 
             // because it will process the file first, before any other loader.
             rules.push({ test: /\.html?$/i, use: "aurelia-webpack-plugin/html-requires-loader" });
+        }
+        if (!opts.noInlineView) {
+            compiler.apply(new InlineViewDependenciesPlugin_1.InlineViewDependenciesPlugin());
         }
         if (globalDependencies.length > 0) {
             dependencies[emptyEntryModule] = globalDependencies;
@@ -186,6 +193,7 @@ function getPAL(target) {
     switch (target) {
         case "web": return "aurelia-pal-browser";
         case "webworker": return "aurelia-pal-worker";
+        case "electron-renderer": return "aurelia-pal-browser";
         default: return "aurelia-pal-nodejs";
     }
 }

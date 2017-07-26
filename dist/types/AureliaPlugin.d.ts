@@ -14,6 +14,7 @@ export interface Options {
         polyfills?: Polyfills;
     };
     noHtmlLoader: boolean;
+    noInlineView: boolean;
     noModulePathResolve: boolean;
     noWebpackLoader: boolean;
     moduleMethods: string[];

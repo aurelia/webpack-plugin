@@ -65,13 +65,12 @@ class ParserPlugin {
                     // PLATFORM.moduleName('some-module')
                     return addDependency(param1.string, expr.range);
                 }
-                let chunk;
                 let options;
                 let param2 = parser.evaluateExpression(arg2);
                 if (param2.isString()) {
                     // Async module dependency
                     // PLATFORM.moduleName('some-module', 'chunk name');
-                    chunk = param2.string;
+                    options = { chunk: param2.string };
                 }
                 else if (arg2.type === "ObjectExpression") {
                     // Module dependency with extended options
@@ -84,7 +83,7 @@ class ParserPlugin {
                         switch (prop.key.name) {
                             case "chunk":
                                 if (value.isString())
-                                    chunk = value.string;
+                                    options.chunk = value.string;
                                 break;
                             case "exports":
                                 if (value.isArray() && value.items.every(v => v.isString()))
@@ -97,7 +96,7 @@ class ParserPlugin {
                     // Unknown PLATFORM.moduleName() signature
                     return;
                 }
-                return addDependency(chunk ? `async?lazy&name=${chunk}!${param1.string}` : param1.string, expr.range, options);
+                return addDependency(param1.string, expr.range, options);
             });
         }
     }

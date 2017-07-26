@@ -1,3 +1,18 @@
+## 2.0.0-rc.3
+
+### Features
+
+* support Webpack 3 ModuleConcatenationPlugin
+* support resources inside @inlineView
+
+### Bug Fixes
+
+* recognize router-view attributes
+* better control over entry sequence
+* chunk not supported by ModuleDependenciesPlugin
+* no default entrypoint with DLLPlugin
+* use browser-pal for electron-renderer (#100)
+
 ## 2.0.0-rc.2
 
 ### Features

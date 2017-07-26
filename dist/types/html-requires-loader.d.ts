@@ -4,6 +4,8 @@ declare namespace loader {
     let attributes: {
         "require": string[];
         "compose": string[];
+        "router-view": string[];
     };
+    function modules(html: string): string[];
 }
 export = loader;

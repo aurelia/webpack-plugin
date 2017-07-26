@@ -1,7 +1,7 @@
 import ModuleDependency = require("webpack/lib/dependencies/ModuleDependency");
 import NullDependency = require("webpack/lib/dependencies/NullDependency");
 export declare class IncludeDependency extends ModuleDependency {
-    private options;
+    private options?;
     constructor(request: string, options?: DependencyOptions);
     readonly type: string;
     getReference(): {

@@ -17,12 +17,21 @@ class PreserveModuleNamePlugin {
                 let { modules: roots, extensions, alias } = compilation.options.resolve;
                 roots = roots.map(x => path.resolve(x));
                 const normalizers = extensions.map(x => new RegExp(x.replace(/\./g, "\\.") + "$", "i"));
+                // ModuleConcatenationPlugin merges modules into new ConcatenatedModule
+                let modulesBeforeConcat = modules.slice();
+                for (let i = 0; i < modulesBeforeConcat.length; i++) {
+                    let m = modulesBeforeConcat[i];
+                    // We don't `import ConcatenatedModule` and then `m instanceof ConcatenatedModule`
+                    // because it was introduced in Webpack 3.0 and we're still compatible with 2.x at the moment.
+                    if (m.constructor.name === "ConcatenatedModule")
+                        modulesBeforeConcat.splice(i--, 1, ...m["modules"]);
+                }
                 for (let module of getPreservedModules(modules)) {
                     let preserve = module[exports.preserveModuleName];
                     let id = typeof preserve === "string" ? preserve : null;
                     // No absolute request to preserve, we try to normalize the module resource
                     if (!id && module.resource)
-                        id = fixNodeModule(module, modules) ||
+                        id = fixNodeModule(module, modulesBeforeConcat) ||
                             makeModuleRelative(roots, module.resource) ||
                             aliasRelative(alias, module.resource);
                     if (!id)

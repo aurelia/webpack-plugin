@@ -6,7 +6,8 @@ const ModuleDependency = require("webpack/lib/dependencies/ModuleDependency");
 const NullDependency = require("webpack/lib/dependencies/NullDependency");
 class IncludeDependency extends ModuleDependency {
     constructor(request, options) {
-        super(request);
+        let chunk = options && options.chunk;
+        super(chunk ? `async?lazy&name=${chunk}!${request}` : request);
         this.options = options;
     }
     get type() {
