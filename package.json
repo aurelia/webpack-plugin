@@ -25,7 +25,6 @@
     }
   ],
   "main": "dist/index.js",
-  "typings": "dist/types/index.d.ts",
   "files": [ "dist", "runtime" ],
   "scripts": {
     "build": "tsc"
