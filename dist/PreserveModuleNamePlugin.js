@@ -27,19 +27,25 @@ class PreserveModuleNamePlugin {
                         modulesBeforeConcat.splice(i--, 1, ...m["modules"]);
                 }
                 for (let module of getPreservedModules(modules)) {
-                    let preserve = module[exports.preserveModuleName];
+                    // Even though it's imported by Aurelia, it's still possible that the module
+                    // became the _root_ of a ConcatenatedModule.
+                    // We use `constructor.name` rather than `instanceof` for compat. with Webpack 2.
+                    let realModule = module;
+                    if (module.constructor.name === "ConcatenatedModule")
+                        realModule = module["rootModule"];
+                    let preserve = realModule[exports.preserveModuleName];
                     let id = typeof preserve === "string" ? preserve : null;
                     // No absolute request to preserve, we try to normalize the module resource
-                    if (!id && module.resource)
-                        id = fixNodeModule(module, modulesBeforeConcat) ||
-                            makeModuleRelative(roots, module.resource) ||
-                            aliasRelative(alias, module.resource);
+                    if (!id && realModule.resource)
+                        id = fixNodeModule(realModule, modulesBeforeConcat) ||
+                            makeModuleRelative(roots, realModule.resource) ||
+                            aliasRelative(alias, realModule.resource);
                     if (!id)
-                        throw new Error(`Can't figure out a normalized module name for ${module.rawRequest}, please call PLATFORM.moduleName() somewhere to help.`);
+                        throw new Error(`Can't figure out a normalized module name for ${realModule.rawRequest}, please call PLATFORM.moduleName() somewhere to help.`);
                     // Remove default extensions 
                     normalizers.forEach(n => id = id.replace(n, ""));
                     // Keep "async!" in front of code splits proxies, they are used by aurelia-loader
-                    if (/^async[?!]/.test(module.rawRequest))
+                    if (/^async[?!]/.test(realModule.rawRequest))
                         id = "async!" + id;
                     id = id.replace(/\\/g, "/");
                     if (module.meta)
