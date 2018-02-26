@@ -23,7 +23,7 @@ export class ConventionDependenciesPlugin extends BaseIncludePlugin {
   parser(compilation: Webpack.Compilation, parser: Webpack.Parser, addDependency: AddDependency) {
     const root = path.resolve();
 
-    parser.plugin("program", () => {
+    parser.hooks.program.tap("Aurelia:ConventionDependencies", () => {
       const { resource: file, rawRequest } = parser.state.current;
       if (!file) return;
       // We don't want to bring in dependencies of the async! loader

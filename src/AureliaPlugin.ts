@@ -140,12 +140,11 @@ export class AureliaPlugin {
 
     if (opts.includeAll) {
       // Grab everything approach
-      compiler.apply(
-        // This plugin ensures that everything in /src is included in the bundle.
-        // This prevents splitting in several chunks but is super easy to use and setup,
-        // no change in existing code or PLATFORM.nameModule() calls are required.
-        new GlobDependenciesPlugin({ [emptyEntryModule]: opts.includeAll + "/**" })
-      );
+
+      // This plugin ensures that everything in /src is included in the bundle.
+      // This prevents splitting in several chunks but is super easy to use and setup,
+      // no change in existing code or PLATFORM.nameModule() calls are required.
+      new GlobDependenciesPlugin({ [emptyEntryModule]: opts.includeAll + "/**" }).apply(compiler);      
       needsEmptyEntry = true;
     }
     else if (opts.aureliaApp) {
@@ -160,7 +159,7 @@ export class AureliaPlugin {
       let aureliaModules = dllRefPlugins.map(plugin => {
         let content = plugin["options"].manifest.content;
         return Object.keys(content)
-                     .map(k => content[k].meta["aurelia-id"])
+                     .map(k => content[k].buildMeta["aurelia-id"])
                      .filter(id => !!id) as string[];
       });
       globalDependencies = globalDependencies.concat(...aureliaModules);
@@ -181,7 +180,7 @@ export class AureliaPlugin {
     }
 
     if (!opts.noInlineView) {
-      compiler.apply(new InlineViewDependenciesPlugin());
+      new InlineViewDependenciesPlugin().apply(compiler);
     }
 
     if (globalDependencies.length > 0) {
@@ -192,27 +191,25 @@ export class AureliaPlugin {
     if (needsEmptyEntry) {
       this.addEntry(compiler.options, emptyEntryModule);
     }
-
-    compiler.apply(
-      // Aurelia libs contain a few global defines to cut out unused features
-      new DefinePlugin(defines),
-      // Adds some dependencies that are not documented by `PLATFORM.moduleName`      
-      new ModuleDependenciesPlugin(dependencies),
-      // This plugin traces dependencies in code that are wrapped in PLATFORM.moduleName() calls
-      new AureliaDependenciesPlugin(...opts.moduleMethods),
-      // This plugin adds dependencies traced by html-requires-loader
-      // Note: the config extension point for this one is html-requires-loader.attributes.
-      new HtmlDependenciesPlugin(),
-      // This plugin looks for companion files by swapping extensions,
-      // e.g. the view of a ViewModel. @useView and co. should use PLATFORM.moduleName().
-      // We use it always even with `includeAll` because libs often don't `@useView` (they should).
-      new ConventionDependenciesPlugin(opts.viewsFor, opts.viewsExtensions),
-      // This plugin preserves module names for dynamic loading by aurelia-loader
-      new PreserveModuleNamePlugin(dllPlugin),
-      // This plugin supports preserving specific exports names when dynamically loading modules
-      // with aurelia-loader, while still enabling tree shaking all other exports.
-      new PreserveExportsPlugin(),
-    );
+  
+    // Aurelia libs contain a few global defines to cut out unused features
+    new DefinePlugin(defines).apply(compiler);
+    // Adds some dependencies that are not documented by `PLATFORM.moduleName`      
+    new ModuleDependenciesPlugin(dependencies).apply(compiler);
+    // This plugin traces dependencies in code that are wrapped in PLATFORM.moduleName() calls
+    new AureliaDependenciesPlugin(...opts.moduleMethods).apply(compiler);
+    // This plugin adds dependencies traced by html-requires-loader
+    // Note: the config extension point for this one is html-requires-loader.attributes.
+    new HtmlDependenciesPlugin().apply(compiler);
+    // This plugin looks for companion files by swapping extensions,
+    // e.g. the view of a ViewModel. @useView and co. should use PLATFORM.moduleName().
+    // We use it always even with `includeAll` because libs often don't `@useView` (they should).
+    new ConventionDependenciesPlugin(opts.viewsFor, opts.viewsExtensions).apply(compiler);
+    // This plugin preserves module names for dynamic loading by aurelia-loader
+    new PreserveModuleNamePlugin(dllPlugin).apply(compiler);
+    // This plugin supports preserving specific exports names when dynamically loading modules
+    // with aurelia-loader, while still enabling tree shaking all other exports.
+    new PreserveExportsPlugin().apply(compiler);
   }
 
   addEntry(options: Webpack.Options, modules: string|string[]) {

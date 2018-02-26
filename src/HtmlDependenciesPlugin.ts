@@ -3,7 +3,7 @@ import { htmlSymbol } from "./html-requires-loader";
 
 export class HtmlDependenciesPlugin extends BaseIncludePlugin {
   parser(compilation: Webpack.Compilation, parser: Webpack.Parser, addDependency: AddDependency) {
-    parser.plugin("program", () => {
+    parser.hooks.program.tap("Aurelia:HtmlDependencies", () => {
       const deps = parser.state.current[htmlSymbol];
       if (!deps) return;
       deps.forEach(addDependency);

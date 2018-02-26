@@ -19,12 +19,13 @@ export class DistPlugin {
 
   apply(resolver: Webpack.Resolver) {
     if (!this.dist) return;
-    resolver.plugin("before-described-resolve", (request, cb) => {
+    resolver.getHook("before-described-resolve")
+            .tapAsync("Aurelia:Dist", (request: Webpack.ResolveRequest, resolveContext: object, cb: (err?: any, result?: any) => void) => {
       // If the request contains /dist/xxx/, try /dist/{dist}/ first
       let rewritten = request.request.replace(/\/dist\/[^/]+\//i, this.dist);
       if (rewritten !== request.request) {
         let newRequest = Object.assign({}, request, { request: rewritten });
-        resolver.doResolve("described-resolve", newRequest, "try alternate " + this.dist, cb);
+        resolver.doResolve(resolver.getHook("described-resolve"), newRequest, "try alternate " + this.dist, {}, cb);
       }
       else
         cb(); // Path does not contain /dist/xxx/, continue normally

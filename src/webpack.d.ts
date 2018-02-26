@@ -1,3 +1,24 @@
+declare namespace Tapable {
+  interface Hook {
+  }
+
+  export class SyncHook<A = never, B = never> implements Hook {
+    tap(options: string, fn: (a: A, b: B) => void): void;
+  }
+
+  export class AsyncHook<A = never, B = never> implements Hook {
+    tap(options: string, fn: (a: A, b: B) => void): void;
+    tapAsync(options: string, fn: (cb: Function) => void): void;
+    tapAsync(options: string, fn: (a: A, cb: Function) => void): void;
+    tapAsync(options: string, fn: (a: A, b: B, cb: Function) => void): void;
+    tapPromise(options: string, fn: (a: A, b: B) => Promise<any>): void;
+  }
+
+  export class SyncHook1<T, A> {
+    tap(arg: T, options: string, fn: (a: A) => void): void;
+  }
+}
+
 declare namespace Webpack {
   export class Dependency {
     module: Module | null;
@@ -13,7 +34,7 @@ declare namespace Webpack {
 
   export class Module extends DependenciesBlock {
     id: string;
-    meta: object|null;
+    buildMeta: object|null;
     rawRequest: string;
     reasons: Reason[];
     resource: string;
@@ -69,10 +90,13 @@ declare namespace Webpack {
       current: Module;
       module: Module;
     }
-
-    plugin(type: string, cb: (e: Expression) => any): void;
+    hooks: {
+      program: Tapable.SyncHook;
+      evaluate: Tapable.SyncHook1<"MemberExpression", Webpack.MemberExpression>;
+      evaluateIdentifier: Tapable.SyncHook1<string, Webpack.Expression>;
+      call: Tapable.SyncHook1<string, Webpack.CallExpression>;
+    }
     evaluateExpression(expr: Expression): EvaluatedExpression;
-    apply(plugin: Object): void;
   }
 
   export class EvaluatedExpression {
@@ -84,12 +108,12 @@ declare namespace Webpack {
 
   export class Compiler {
     options: Options;
-
-    apply(...plugin: Object[]): void;
-    plugin(type: "compilation", cb: (compilation: Compilation, params: CompilationParameters) => void): void;    
-    plugin(type: "before-compile", cb: (params: {}, callback: Function) => void): void;    
-    resolvers: {
-      normal: Resolver;
+    hooks: {
+      compilation: Tapable.SyncHook<Compilation, CompilationParameters>;
+      beforeCompile: Tapable.AsyncHook<object>;
+    }
+    resolverFactory: {
+      get(type: "normal", context: object): Resolver;
     }
   }
 
@@ -117,12 +141,13 @@ declare namespace Webpack {
   export class Compilation {
     options: Options;
     inputFileSystem: FileSystem;
+    hooks: {
+      beforeModuleIds: Tapable.SyncHook<Module[]>;
+      finishModules: Tapable.SyncHook<Module[]>;
+    }
 
     dependencyFactories: { set(d: any, f: ModuleFactory): void; };
     dependencyTemplates: { set(d: any, f: any): void; };
-    plugin(type: "succeed-module", cb: (module: Webpack.Module) => void): void;
-    plugin(type: "before-module-ids", cb: (modules: Module[]) => void): void;
-    plugin(type: "finish-modules", cb: (modules: Module[]) => void): void;
   }
 
   export class CompilationParameters {
@@ -134,18 +159,27 @@ declare namespace Webpack {
   }
 
   export class ModuleFactory {
-    plugin(type: "parser", cb: (parser: Parser) => void): void;
+    hooks: {
+      parser: {
+        for(type: "javascript/auto"): Tapable.SyncHook<Parser>;
+      } 
+    }
   }
 
   type ResolverCallback = (request: ResolveRequest, cb: (err?: any, result?: any) => void) => void;
 
   export class Resolver {    
     fileSystem: FileSystem;
-    plugin(type: "resolve-step", handler: (type: string, request: ResolveRequest) => void): void;
-    plugin(type: "after-resolve", handler: ResolverCallback): void;
-    plugin(type: "before-described-resolve", handler: ResolverCallback): void;
-    doResolve(step: string, request: ResolveRequest, message: string, cb: (err?: any, result?: any) => void): void;
-    resolve(context: string|null, path: string, request: string, cb: (err: any, result: string) => void): void;
+    hooks: {
+      resolve: Tapable.AsyncHook<ResolveRequest, object>;
+      resolveStep: Tapable.SyncHook<string, ResolveRequest>;
+    }
+    getHook(name: "after-resolve"): Tapable.AsyncHook<ResolveRequest, object>;
+    getHook(name: "before-described-resolve"): Tapable.AsyncHook<ResolveRequest, object>;
+    getHook(name: "described-resolve"): Tapable.AsyncHook<ResolveRequest, object>;
+
+    doResolve(step: Tapable.Hook, request: ResolveRequest, message: string, resolveContext: object, cb: (err?: any, result?: any) => void): void;
+    resolve(context: string|null, path: string, request: string, resolveContext: object, cb: (err: any, result: string) => void): void;
   }
 
   export class ResolveRequest {
@@ -171,6 +205,7 @@ declare namespace Webpack {
 declare module "webpack" {
   export class DefinePlugin {
     constructor(hash: any);
+    apply(compiler: Webpack.Compiler): void;
   }
 
   export class DllPlugin {    

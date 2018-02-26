@@ -2,6 +2,8 @@ import path = require("path");
 import ModuleDependency = require("webpack/lib/dependencies/ModuleDependency");
 export const preserveModuleName = Symbol();
 
+const TAP_NAME = "Aurelia:PreserveModuleName";
+
 // This plugins preserves the module names of IncludeDependency and 
 // AureliaDependency so that they can be dynamically requested by 
 // aurelia-loader.
@@ -12,8 +14,8 @@ export class PreserveModuleNamePlugin {
   }
 
   apply(compiler: Webpack.Compiler) {
-    compiler.plugin("compilation", compilation => {
-      compilation.plugin("before-module-ids", modules => {
+    compiler.hooks.compilation.tap(TAP_NAME, compilation => {
+      compilation.hooks.beforeModuleIds.tap(TAP_NAME, modules => {
         let { modules: roots, extensions, alias } = compilation.options.resolve;
         roots = roots.map(x => path.resolve(x));
         const normalizers = extensions.map(x => new RegExp(x.replace(/\./g, "\\.") + "$", "i"));
@@ -56,8 +58,8 @@ export class PreserveModuleNamePlugin {
             id = "async!" + id;
           
           id = id.replace(/\\/g, "/");
-          if (module.meta)  // meta can be null if the module contains errors
-            module.meta["aurelia-id"] = id;
+          if (module.buildMeta)  // meta can be null if the module contains errors
+            module.buildMeta["aurelia-id"] = id;
           if (!this.isDll)
             module.id = id;
         }
@@ -72,7 +74,7 @@ function getPreservedModules(modules: Webpack.Module[]) {
       // Some modules might have [preserveModuleName] already set, see ConventionDependenciesPlugin.
       let value = m[preserveModuleName];      
       for (let r of m.reasons) {
-        if (!r.dependency[preserveModuleName]) continue;
+        if (!r.dependency || !r.dependency[preserveModuleName]) continue;
         value = true;
         let req = removeLoaders((r.dependency as ModuleDependency).request);
         // We try to find an absolute string and set that as the module [preserveModuleName], as it's the best id.

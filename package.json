@@ -1,6 +1,6 @@
 {
   "name": "aurelia-webpack-plugin",
-  "version": "2.0.0-rc.5",
+  "version": "2.0.0-rc.6",
   "description": "A plugin for webpack that enables bundling Aurelia applications.",
   "keywords": [
     "aurelia",
@@ -35,17 +35,17 @@
   },
   "dependencies": {
     "aurelia-loader-webpack": "^2.1.0",
-    "bundle-loader": "^0.5.5",
-    "html-loader": "^0.4.5",
+    "bundle-loader": "^0.5.6",
+    "html-loader": "^0.5.5",
     "minimatch": "^3.0.4"
   },
   "peerDependencies": {
-    "webpack": ">= 2.2.0"
+    "webpack": ">= 4.0.0"
   },
   "devDependencies": {
-    "@types/minimatch": "^2.0.29",
-    "@types/node": "^7.0.28",
-    "typescript": "^2.3.4"
+    "@types/minimatch": "^3.0.3",
+    "@types/node": "^9.4.6",
+    "typescript": "^2.7.2"
   },
   "aurelia": {
     "documentation": {

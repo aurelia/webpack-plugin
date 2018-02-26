@@ -1,6 +1,8 @@
 import { BaseIncludePlugin, AddDependency } from "./BaseIncludePlugin";
 import path = require("path");
 
+const TAP_NAME = "Aurelia:ModuleDependencies";
+
 export interface ModuleDependenciesPluginOptions { 
   [module: string]: 
     undefined | 
@@ -39,26 +41,26 @@ export class ModuleDependenciesPlugin extends BaseIncludePlugin {
     const hashKeys = Object.getOwnPropertyNames(this.hash);
     if (hashKeys.length === 0) return;
 
-    compiler.plugin("before-compile", (params, cb) => {
+    compiler.hooks.beforeCompile.tapPromise(TAP_NAME, () => {
       // Map the modules passed in ctor to actual resources (files) so that we can
       // recognize them no matter what the rawRequest was (loaders, relative paths, etc.)
       this.modules = { };
-      const resolve: (module: string, cb: (err: any, resource: string) => void) => void = 
-        compiler.resolvers.normal.resolve.bind(compiler.resolvers.normal, null, this.root);
-      let countdown = hashKeys.length;
-      for (let module of hashKeys) {
-        resolve(module, (err, resource) => {
-          this.modules[resource] = this.hash[module];
-          if (--countdown === 0) cb();
-        });
-      }
+      const resolver = compiler.resolverFactory.get("normal", {});
+      return Promise.all(
+        hashKeys.map(module => new Promise(resolve => {
+          resolver.resolve(null, this.root, module, {}, (err, resource) => {
+            this.modules[resource] = this.hash[module];
+            resolve();
+          });
+        })
+      ));
     });
 
     super.apply(compiler);
   }
 
   parser(compilation: Webpack.Compilation, parser: Webpack.Parser, addDependency: AddDependency) {
-    parser.plugin("program", () => {
+    parser.hooks.program.tap(TAP_NAME, () => {
       // We try to match the resource, or the initial module request.
       const deps = this.modules[parser.state.module.resource];
       if (deps) deps.forEach(addDependency);

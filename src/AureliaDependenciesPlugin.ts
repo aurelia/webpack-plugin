@@ -1,6 +1,8 @@
 import { IncludeDependency } from "./IncludeDependency";
 import BasicEvaluatedExpression = require("webpack/lib/BasicEvaluatedExpression");
 
+const TAP_NAME = "Aurelia:Dependencies";
+
 class AureliaDependency extends IncludeDependency {
   constructor(request: string, 
               public range: [number, number], 
@@ -25,16 +27,18 @@ class ParserPlugin {
       let dep = new AureliaDependency(module, range, options);
       parser.state.current.addDependency(dep);
       return true;
-    }
+    }    
 
     // The parser will only apply "call PLATFORM.moduleName" on free variables.
     // So we must first trick it into thinking PLATFORM.moduleName is an unbound identifier
     // in the various situations where it is not.
 
+    const hooks = parser.hooks;
+
     // This covers native ES module, for example:
     //    import { PLATFORM } from "aurelia-pal";
     //    PLATFORM.moduleName("id");
-    parser.plugin("evaluate Identifier imported var.moduleName", (expr: Webpack.MemberExpression) => {
+    hooks.evaluateIdentifier.tap("imported var.moduleName", TAP_NAME, (expr: Webpack.MemberExpression) => {
       if (expr.property.name === "moduleName" &&
           expr.object.name === "PLATFORM" &&
           expr.object.type === "Identifier") {
@@ -49,7 +53,7 @@ class ParserPlugin {
     // Or (note: no renaming supported):
     //    const PLATFORM = require("aurelia-pal").PLATFORM;
     //    PLATFORM.moduleName("id");
-    parser.plugin("evaluate MemberExpression", (expr: Webpack.MemberExpression) => {
+    hooks.evaluate.tap("MemberExpression", TAP_NAME, expr => {
       if (expr.property.name === "moduleName" &&
          (expr.object.type === "MemberExpression" && expr.object.property.name === "PLATFORM" ||
           expr.object.type === "Identifier" && expr.object.name === "PLATFORM")) {
@@ -59,7 +63,7 @@ class ParserPlugin {
     });
 
     for (let method of this.methods) {
-      parser.plugin("call " + method, (expr: Webpack.CallExpression) => {
+      hooks.call.tap(method, TAP_NAME, (expr: Webpack.CallExpression) => {
         if (expr.arguments.length === 0 || expr.arguments.length > 2) 
           return;
         
@@ -119,14 +123,14 @@ export class AureliaDependenciesPlugin {
   }
 
   apply(compiler: Webpack.Compiler) {
-    compiler.plugin("compilation", (compilation, params) => {
+    compiler.hooks.compilation.tap(TAP_NAME, (compilation, params) => {
       const normalModuleFactory = params.normalModuleFactory;
 
       compilation.dependencyFactories.set(AureliaDependency, normalModuleFactory);
       compilation.dependencyTemplates.set(AureliaDependency, new Template());
 
-      normalModuleFactory.plugin("parser", parser => {
-        parser.apply(this.parserPlugin);
+      normalModuleFactory.hooks.parser.for("javascript/auto").tap(TAP_NAME, parser => {
+        this.parserPlugin.apply(parser);
       });
     });
   }
