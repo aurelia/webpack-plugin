@@ -5,6 +5,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const BaseIncludePlugin_1 = require("./BaseIncludePlugin");
 const BasicEvaluatedExpression = require("webpack/lib/BasicEvaluatedExpression");
 const htmlLoader = require("./html-requires-loader");
+const TAP_NAME = "Aurelia:InlineViewDependencies";
 class InlineViewDependenciesPlugin extends BaseIncludePlugin_1.BaseIncludePlugin {
     parser(compilation, parser, add) {
         // The parser will only apply "call inlineView" on free variables.
@@ -13,7 +14,7 @@ class InlineViewDependenciesPlugin extends BaseIncludePlugin_1.BaseIncludePlugin
         // This covers native ES module, for example:
         //    import { inlineView } from "aurelia-framework";
         //    inlineView("<template>");
-        parser.plugin("evaluate Identifier imported var", (expr) => {
+        parser.hooks.evaluateIdentifier.tap("imported var", TAP_NAME, (expr) => {
             if (expr.name === "inlineView") {
                 return new BasicEvaluatedExpression().setIdentifier("inlineView").setRange(expr.range);
             }
@@ -25,13 +26,13 @@ class InlineViewDependenciesPlugin extends BaseIncludePlugin_1.BaseIncludePlugin
         // Or (note: no renaming supported):
         //    const inlineView = require("aurelia-framework").inlineView;
         //    inlineView("<template>");
-        parser.plugin("evaluate MemberExpression", (expr) => {
+        parser.hooks.evaluate.tap("MemberExpression", TAP_NAME, expr => {
             if (expr.property.name === "inlineView") {
                 return new BasicEvaluatedExpression().setIdentifier("inlineView").setRange(expr.range);
             }
             return undefined;
         });
-        parser.plugin("call inlineView", (expr) => {
+        parser.hooks.call.tap("inlineView", TAP_NAME, expr => {
             if (expr.arguments.length !== 1)
                 return;
             let arg1 = expr.arguments[0];

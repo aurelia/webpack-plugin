@@ -9,7 +9,8 @@ const subFolderTrial = Symbol();
 exports.resolveCache = {};
 class SubFolderPlugin {
     apply(resolver) {
-        resolver.plugin("after-resolve", (request, cb) => {
+        resolver.getHook("after-resolve")
+            .tapAsync("Aurelia:SubFolder", (request, resolveContext, cb) => {
             // Only look for request not starting with a dot (module names)
             // and followed by a path (slash). Support @scoped/modules.
             let match = /^(?!\.)((?:@[^/]+\/)?[^/]+)(\/.*)$/i.exec(request.request);
@@ -25,7 +26,7 @@ class SubFolderPlugin {
             let rootRequest = Object.assign({}, request, { request: module });
             // Note: if anything doesn't work while probing or trying alternate paths, 
             //       we just ignore the error and pretend nothing happened (i.e. call cb())
-            resolver.doResolve("resolve", rootRequest, "module sub-folder: identify root", (err, result) => {
+            resolver.doResolve(resolver.hooks.resolve, rootRequest, "module sub-folder: identify root", {}, (err, result) => {
                 if (!result ||
                     !result.relativePath.startsWith('./')) {
                     cb();
@@ -35,7 +36,7 @@ class SubFolderPlugin {
                 let root = path.posix.dirname(result.relativePath);
                 let newRequest = Object.assign({}, request, { request: root.replace(/^\./, module) + rest });
                 newRequest.context[subFolderTrial] = true;
-                resolver.doResolve("resolve", newRequest, "try module sub-folder: " + root, (err, result) => {
+                resolver.doResolve(resolver.hooks.resolve, newRequest, "try module sub-folder: " + root, {}, (err, result) => {
                     if (result)
                         cb(null, result);
                     else

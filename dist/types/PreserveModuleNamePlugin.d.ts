@@ -1,4 +1,4 @@
-export declare const preserveModuleName: symbol;
+export declare const preserveModuleName: unique symbol;
 export declare class PreserveModuleNamePlugin {
     private isDll;
     constructor(isDll?: boolean);

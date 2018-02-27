@@ -1,4 +1,4 @@
-export declare const dependencyImports: symbol;
+export declare const dependencyImports: unique symbol;
 export declare class PreserveExportsPlugin {
     apply(compiler: Webpack.Compiler): void;
 }

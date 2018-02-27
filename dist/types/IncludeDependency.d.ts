@@ -1,3 +1,5 @@
+import { dependencyImports } from "./PreserveExportsPlugin";
+import { preserveModuleName } from "./PreserveModuleNamePlugin";
 import ModuleDependency = require("webpack/lib/dependencies/ModuleDependency");
 import NullDependency = require("webpack/lib/dependencies/NullDependency");
 export declare class IncludeDependency extends ModuleDependency {
@@ -8,6 +10,8 @@ export declare class IncludeDependency extends ModuleDependency {
         module: Webpack.Module | null;
         importedNames: boolean | string[];
     } | null;
+    readonly [preserveModuleName]: boolean;
+    readonly [dependencyImports]: string[] | undefined;
 }
 export declare type NullDependencyTemplate = typeof NullDependency.Template;
 export declare const Template: NullDependencyTemplate;

@@ -1,3 +1,7 @@
+## 3.0.0-rc.1
+
+Supports only Webpack 4.x
+
 ## 2.0.0-rc.3
 
 ### Features

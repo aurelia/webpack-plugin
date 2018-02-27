@@ -2,13 +2,14 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const IncludeDependency_1 = require("./IncludeDependency");
 const NullDependency = require("webpack/lib/dependencies/NullDependency");
+const TAP_NAME = "Aurelia:BaseInclude";
 class BaseIncludePlugin {
     apply(compiler) {
-        compiler.plugin("compilation", (compilation, data) => {
+        compiler.hooks.compilation.tap(TAP_NAME, (compilation, data) => {
             const normalModuleFactory = data.normalModuleFactory;
             compilation.dependencyFactories.set(IncludeDependency_1.IncludeDependency, normalModuleFactory);
             compilation.dependencyTemplates.set(IncludeDependency_1.IncludeDependency, new NullDependency.Template());
-            normalModuleFactory.plugin("parser", parser => {
+            normalModuleFactory.hooks.parser.for("javascript/auto").tap(TAP_NAME, parser => {
                 function addDependency(request) {
                     let options = typeof request === 'object' ? request : undefined;
                     let name = options ? options.name : request;

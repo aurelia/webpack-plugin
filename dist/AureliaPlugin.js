@@ -104,11 +104,10 @@ class AureliaPlugin {
         }
         if (opts.includeAll) {
             // Grab everything approach
-            compiler.apply(
             // This plugin ensures that everything in /src is included in the bundle.
             // This prevents splitting in several chunks but is super easy to use and setup,
             // no change in existing code or PLATFORM.nameModule() calls are required.
-            new GlobDependenciesPlugin_1.GlobDependenciesPlugin({ [emptyEntryModule]: opts.includeAll + "/**" }));
+            new GlobDependenciesPlugin_1.GlobDependenciesPlugin({ [emptyEntryModule]: opts.includeAll + "/**" }).apply(compiler);
             needsEmptyEntry = true;
         }
         else if (opts.aureliaApp) {
@@ -122,7 +121,7 @@ class AureliaPlugin {
             let aureliaModules = dllRefPlugins.map(plugin => {
                 let content = plugin["options"].manifest.content;
                 return Object.keys(content)
-                    .map(k => content[k].meta["aurelia-id"])
+                    .map(k => content[k].buildMeta["aurelia-id"])
                     .filter(id => !!id);
             });
             globalDependencies = globalDependencies.concat(...aureliaModules);
@@ -140,7 +139,7 @@ class AureliaPlugin {
             rules.push({ test: /\.html?$/i, use: "aurelia-webpack-plugin/html-requires-loader" });
         }
         if (!opts.noInlineView) {
-            compiler.apply(new InlineViewDependenciesPlugin_1.InlineViewDependenciesPlugin());
+            new InlineViewDependenciesPlugin_1.InlineViewDependenciesPlugin().apply(compiler);
         }
         if (globalDependencies.length > 0) {
             dependencies[emptyEntryModule] = globalDependencies;
@@ -149,25 +148,24 @@ class AureliaPlugin {
         if (needsEmptyEntry) {
             this.addEntry(compiler.options, emptyEntryModule);
         }
-        compiler.apply(
         // Aurelia libs contain a few global defines to cut out unused features
-        new webpack_1.DefinePlugin(defines), 
+        new webpack_1.DefinePlugin(defines).apply(compiler);
         // Adds some dependencies that are not documented by `PLATFORM.moduleName`      
-        new ModuleDependenciesPlugin_1.ModuleDependenciesPlugin(dependencies), 
+        new ModuleDependenciesPlugin_1.ModuleDependenciesPlugin(dependencies).apply(compiler);
         // This plugin traces dependencies in code that are wrapped in PLATFORM.moduleName() calls
-        new AureliaDependenciesPlugin_1.AureliaDependenciesPlugin(...opts.moduleMethods), 
+        new AureliaDependenciesPlugin_1.AureliaDependenciesPlugin(...opts.moduleMethods).apply(compiler);
         // This plugin adds dependencies traced by html-requires-loader
         // Note: the config extension point for this one is html-requires-loader.attributes.
-        new HtmlDependenciesPlugin_1.HtmlDependenciesPlugin(), 
+        new HtmlDependenciesPlugin_1.HtmlDependenciesPlugin().apply(compiler);
         // This plugin looks for companion files by swapping extensions,
         // e.g. the view of a ViewModel. @useView and co. should use PLATFORM.moduleName().
         // We use it always even with `includeAll` because libs often don't `@useView` (they should).
-        new ConventionDependenciesPlugin_1.ConventionDependenciesPlugin(opts.viewsFor, opts.viewsExtensions), 
+        new ConventionDependenciesPlugin_1.ConventionDependenciesPlugin(opts.viewsFor, opts.viewsExtensions).apply(compiler);
         // This plugin preserves module names for dynamic loading by aurelia-loader
-        new PreserveModuleNamePlugin_1.PreserveModuleNamePlugin(dllPlugin), 
+        new PreserveModuleNamePlugin_1.PreserveModuleNamePlugin(dllPlugin).apply(compiler);
         // This plugin supports preserving specific exports names when dynamically loading modules
         // with aurelia-loader, while still enabling tree shaking all other exports.
-        new PreserveExportsPlugin_1.PreserveExportsPlugin());
+        new PreserveExportsPlugin_1.PreserveExportsPlugin().apply(compiler);
     }
     addEntry(options, modules) {
         let webpackEntry = options.entry;
