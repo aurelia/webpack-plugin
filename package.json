@@ -51,5 +51,6 @@
     "documentation": {
       "articles": []
     }
-  }
+  },
+  "types": "dist/types/index.d.ts"
 }
