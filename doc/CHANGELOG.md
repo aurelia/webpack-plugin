@@ -1,3 +1,7 @@
+## 3.0.0
+
+* Promote the RC to release.
+
 ## 3.0.0-rc.1
 
 Supports only Webpack 4.x
