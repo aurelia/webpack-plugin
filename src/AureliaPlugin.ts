@@ -216,14 +216,17 @@ export class AureliaPlugin {
     let webpackEntry = options.entry;
     let entries = Array.isArray(modules) ? modules : [modules];
     if (typeof webpackEntry == "object" && !Array.isArray(webpackEntry)) {
-      // There are multiple entries defined in the config
-      // Unless there was a particular configuration, we modify the first one
-      // (note that JS enumerates props in the same order they were declared)
-      // Modifying the first one only plays nice with the common pattern
-      // `entry: { main, vendor }` some people use.
-      let ks = this.options.entry || Object.keys(webpackEntry)[0];
-      if (!Array.isArray(ks)) ks = [ks];
-      ks.forEach(k => webpackEntry[k] = entries.concat(webpackEntry[k]));
+      // Add runtime to each entry
+      for (let k in webpackEntry) {
+        if (!webpackEntry.hasOwnProperty(k)) {
+          continue;
+        }
+        let entry = webpackEntry[k];
+        if (!Array.isArray(entry)) {
+          entry = [entry];
+        }
+        webpackEntry[k] = entries.concat(entry);
+      }
     }
     else
       options.entry = entries.concat(webpackEntry);
