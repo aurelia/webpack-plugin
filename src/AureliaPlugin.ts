@@ -215,17 +215,29 @@ export class AureliaPlugin {
   addEntry(options: Webpack.Options, modules: string|string[]) {
     let webpackEntry = options.entry;
     let entries = Array.isArray(modules) ? modules : [modules];
-    if (typeof webpackEntry == "object" && !Array.isArray(webpackEntry)) {
-      // Add runtime to each entry
-      for (let k in webpackEntry) {
-        if (!webpackEntry.hasOwnProperty(k)) {
-          continue;
+    if (typeof webpackEntry === "object" && !Array.isArray(webpackEntry)) {
+      if (this.options.entry) {
+        // Add runtime only to the entries defined on this plugin
+        let ks = this.options.entry;
+        if (!Array.isArray(ks)) ks = [ks];
+        ks.forEach(k => {
+          if (webpackEntry[k] === undefined) {
+            throw new Error('entry key "' + k + '" is not defined in Webpack build, cannot apply runtime.');
+          }
+          webpackEntry[k] = entries.concat(webpackEntry[k])
+        });
+      } else {
+        // Add runtime to each entry
+        for (let k in webpackEntry) {
+          if (!webpackEntry.hasOwnProperty(k)) {
+            continue;
+          }
+          let entry = webpackEntry[k];
+          if (!Array.isArray(entry)) {
+            entry = [entry];
+          }
+          webpackEntry[k] = entries.concat(entry);
         }
-        let entry = webpackEntry[k];
-        if (!Array.isArray(entry)) {
-          entry = [entry];
-        }
-        webpackEntry[k] = entries.concat(entry);
       }
     }
     else
