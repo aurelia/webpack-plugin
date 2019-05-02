@@ -170,16 +170,32 @@ class AureliaPlugin {
     addEntry(options, modules) {
         let webpackEntry = options.entry;
         let entries = Array.isArray(modules) ? modules : [modules];
-        if (typeof webpackEntry == "object" && !Array.isArray(webpackEntry)) {
-            // There are multiple entries defined in the config
-            // Unless there was a particular configuration, we modify the first one
-            // (note that JS enumerates props in the same order they were declared)
-            // Modifying the first one only plays nice with the common pattern
-            // `entry: { main, vendor }` some people use.
-            let ks = this.options.entry || Object.keys(webpackEntry)[0];
-            if (!Array.isArray(ks))
-                ks = [ks];
-            ks.forEach(k => webpackEntry[k] = entries.concat(webpackEntry[k]));
+        if (typeof webpackEntry === "object" && !Array.isArray(webpackEntry)) {
+            if (this.options.entry) {
+                // Add runtime only to the entries defined on this plugin
+                let ks = this.options.entry;
+                if (!Array.isArray(ks))
+                    ks = [ks];
+                ks.forEach(k => {
+                    if (webpackEntry[k] === undefined) {
+                        throw new Error('entry key "' + k + '" is not defined in Webpack build, cannot apply runtime.');
+                    }
+                    webpackEntry[k] = entries.concat(webpackEntry[k]);
+                });
+            }
+            else {
+                // Add runtime to each entry
+                for (let k in webpackEntry) {
+                    if (!webpackEntry.hasOwnProperty(k)) {
+                        continue;
+                    }
+                    let entry = webpackEntry[k];
+                    if (!Array.isArray(entry)) {
+                        entry = [entry];
+                    }
+                    webpackEntry[k] = entries.concat(entry);
+                }
+            }
         }
         else
             options.entry = entries.concat(webpackEntry);
