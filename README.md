@@ -30,3 +30,7 @@ module.exports = {
   plugins: [ new AureliaPlugin() ]
 };
 ```
+
+## Documentation
+
+Information about how to use this Webpack plugin can be found in [its Github wiki](https://github.com/aurelia/webpack-plugin/wiki).
