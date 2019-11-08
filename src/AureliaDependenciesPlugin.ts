@@ -1,5 +1,6 @@
 import { IncludeDependency } from "./IncludeDependency";
 import BasicEvaluatedExpression = require("webpack/lib/BasicEvaluatedExpression");
+import { preserveModuleName } from "./PreserveModuleNamePlugin";
 
 const TAP_NAME = "Aurelia:Dependencies";
 
@@ -13,7 +14,13 @@ class AureliaDependency extends IncludeDependency {
 
 class Template {
   apply(dep: AureliaDependency, source: Webpack.Source) {
-    source.replace(dep.range[0], dep.range[1] - 1, "'" + dep.request.replace(/^async(?:\?[^!]*)?!/, "") + "'");
+    // Get the module id, fallback to using the module request
+    let moduleId = dep.request;
+    if (dep.module && typeof dep.module[preserveModuleName] === "string") {
+      moduleId = dep.module[preserveModuleName];
+    }
+
+    source.replace(dep.range[0], dep.range[1] - 1, "'" + moduleId.replace(/^async(?:\?[^!]*)?!/, "") + "'");
   };
 }
 
