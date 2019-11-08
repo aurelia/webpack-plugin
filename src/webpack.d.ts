@@ -57,8 +57,13 @@ declare namespace Webpack {
     range: [number, number];
     // Those types are not correct, but that's enough to compile this project
     property: IdentifierExpression;
-    object: { name: string; type: string; } & MemberExpression;
+    object: { name: string; type: string; } & (MemberExpression | Identifier);
     type: "MemberExpression";
+  }
+
+  export class Identifier {
+    name: string;
+    type: "Identifier";
   }
 
   export class IdentifierExpression {
@@ -202,16 +207,36 @@ declare namespace Webpack {
   }
 }
 
+declare namespace NodeModule {
+  interface ModuleResource {
+    [key: string]: Data;
+  }
+
+  interface ResourcesMap {
+    [key: string]: ModuleResource;
+  }
+
+  interface ResourceIdMap {
+    [key: string]: string;
+  }
+
+  interface Data {
+    path: string;
+    name: string;
+    relative: string;
+  }
+}
+
 declare module "webpack" {
   export class DefinePlugin {
     constructor(hash: any);
     apply(compiler: Webpack.Compiler): void;
   }
 
-  export class DllPlugin {    
+  export class DllPlugin {
   }
 
-  export class DllReferencePlugin {    
+  export class DllReferencePlugin {
   }
 }
 
