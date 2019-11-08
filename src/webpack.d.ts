@@ -38,8 +38,10 @@ declare namespace Webpack {
     rawRequest: string;
     reasons: Reason[];
     resource: string;
-    
-    isUsed(_export: string): boolean | string;    
+    rootModule: Module | null
+    modules: Module[] | null
+
+    isUsed(_export: string): boolean | string;
   }
 
   export interface Reason {
@@ -199,6 +201,26 @@ declare namespace Webpack {
   export interface Loader {
     _module: Module;
     cacheable?(): void;
+  }
+}
+
+declare namespace NodeModule {
+  interface ModuleResource {
+    [key: string]: Data
+  }
+
+  interface ResourcesMap {
+    [key: string]: ModuleResource
+  }
+
+  interface ResourceIdMap {
+    [key: string]: string
+  }
+
+  interface Data {
+    path: string,
+    name: string,
+    relative: string
   }
 }
 

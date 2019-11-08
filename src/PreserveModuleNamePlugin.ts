@@ -1,11 +1,14 @@
 import path = require("path");
-import ModuleDependency = require("webpack/lib/dependencies/ModuleDependency");
 export const preserveModuleName = Symbol();
 
 const TAP_NAME = "Aurelia:PreserveModuleName";
 
-// This plugins preserves the module names of IncludeDependency and 
-// AureliaDependency so that they can be dynamically requested by 
+// node_module maps
+let _nodeModuleResourcesMap: NodeModule.ResourcesMap = {};
+let _nodeModuleResourceIdMap: NodeModule.ResourceIdMap = {};
+
+// This plugins preserves the module names of IncludeDependency and
+// AureliaDependency so that they can be dynamically requested by
 // aurelia-loader.
 // All other dependencies are handled by webpack itself and don't
 // need special treatment.
@@ -14,148 +17,420 @@ export class PreserveModuleNamePlugin {
   }
 
   apply(compiler: Webpack.Compiler) {
-    compiler.hooks.compilation.tap(TAP_NAME, compilation => {
-      compilation.hooks.beforeModuleIds.tap(TAP_NAME, modules => {
-        let { modules: roots, extensions, alias } = compilation.options.resolve;
-        roots = roots.map(x => path.resolve(x));
-        const normalizers = extensions.map(x => new RegExp(x.replace(/\./g, "\\.") + "$", "i"));
+    compiler.hooks.compilation.tap(TAP_NAME, (compilation: Webpack.Compilation) => {
+      compilation.hooks.beforeModuleIds.tap(TAP_NAME, (modules: Webpack.Module[]) => {
+        const { modules: roots, extensions, alias } = compilation.options.resolve;
+        const modulePaths: string[] = roots.map((p) => path.resolve(p));
+        const extensionNormalizers: RegExp[] = extensions.map((ext) => new RegExp(`${ext.replace(/\./g, '\\.')}$`, 'i'));
 
-        // ModuleConcatenationPlugin merges modules into new ConcatenatedModule
-        let modulesBeforeConcat = modules.slice();
-        for (let i = 0; i < modulesBeforeConcat.length; i++) {
-          let m = modulesBeforeConcat[i];
-          // We don't `import ConcatenatedModule` and then `m instanceof ConcatenatedModule`
-          // because it was introduced in Webpack 3.0 and we're still compatible with 2.x at the moment.
-          if (m.constructor.name === "ConcatenatedModule")
-            modulesBeforeConcat.splice(i--, 1, ...m["modules"]);
-        }
-        
-        for (let module of getPreservedModules(modules)) {
+        // Get every module even if they were concatenated
+        const rawModules = expandConcatenatedModules(modules);
+
+        // Map and parse the modules if needed
+        rawModules.forEach((m) => mapNodeModule(m));
+        parseNodeModules();
+
+        // Set the id for each preserved module
+        getPreservedModules(modules).forEach((module: Webpack.Module) => {
           // Even though it's imported by Aurelia, it's still possible that the module
-          // became the _root_ of a ConcatenatedModule.
-          // We use `constructor.name` rather than `instanceof` for compat. with Webpack 2.
-          let realModule = module;
-          if (module.constructor.name === "ConcatenatedModule")
-            realModule = module["rootModule"];
+          // became the _root_ of a ConcatenatedModule. We still need compatability with Webpack 2.
+          const rawModule = (module.constructor.name === 'ConcatenatedModule') ? module.rootModule : module;
+          if (!rawModule) {
+            return;
+          }
 
-          let preserve: string | true | undefined = realModule[preserveModuleName];
-          let id = typeof preserve === "string" ? preserve : null;
+          // Get the module id
+          let moduleId: string | null = getModuleId(rawModule, modulePaths, alias);
+          if (!moduleId) {
+            throw new Error(`Can't figure out a normalized module name for ${rawModule.rawRequest}, please call PLATFORM.moduleName() somewhere to help.`);
+          }
 
-          // No absolute request to preserve, we try to normalize the module resource
-          if (!id && realModule.resource)
-            id = fixNodeModule(realModule, modulesBeforeConcat) || 
-                 makeModuleRelative(roots, realModule.resource) ||
-                 aliasRelative(alias, realModule.resource);
-                    
-          if (!id)
-            throw new Error(`Can't figure out a normalized module name for ${realModule.rawRequest}, please call PLATFORM.moduleName() somewhere to help.`);
-          
-          // Remove default extensions 
-          normalizers.forEach(n => id = id!.replace(n, ""));
-          
-          // Keep "async!" in front of code splits proxies, they are used by aurelia-loader
-          if (/^async[?!]/.test(realModule.rawRequest)) 
-            id = "async!" + id;
-          
-          id = id.replace(/\\/g, "/");
-          if (module.buildMeta)  // meta can be null if the module contains errors
-            module.buildMeta["aurelia-id"] = id;
-          if (!this.isDll)
-            module.id = id;
-        }
-      })
+          // Normalize the extension from the id if needed
+          extensionNormalizers.forEach((n) => {
+            if (moduleId) {
+              moduleId = moduleId.replace(n, '');
+            }
+          });
+
+          // Keep async! in front of code split proxies, they are used by the aurelia-loader
+          if (rawModule.rawRequest && /^async[?!]/.test(rawModule.rawRequest)) {
+            moduleId = `async!${moduleId}`;
+          }
+
+          // Metadata?
+          moduleId = moduleId.replace(/\\/g, '/');
+          if (module.buildMeta) {
+            module.buildMeta['aurelia-id'] = moduleId;
+          }
+
+          // Only save the module id if were not a dll
+          if (!this.isDll) {
+            module[preserveModuleName] = moduleId;
+            module.id = moduleId;
+          }
+        });
+      });
     });
   }
 };
 
-function getPreservedModules(modules: Webpack.Module[]) {      
-  return new Set(
-    modules.filter(m => {
-      // Some modules might have [preserveModuleName] already set, see ConventionDependenciesPlugin.
-      let value = m[preserveModuleName];      
-      for (let r of m.reasons) {
-        if (!r.dependency || !r.dependency[preserveModuleName]) continue;
-        value = true;
-        let req = removeLoaders((r.dependency as ModuleDependency).request);
-        // We try to find an absolute string and set that as the module [preserveModuleName], as it's the best id.
-        if (req && !req.startsWith(".")) {
-          m[preserveModuleName] = req;
-          return true;
-        }
-      }
-      return !!value;
-    })
-  );
-}
-
-function aliasRelative(aliases: {[key: string]: string } | null, resource: string) {
-  // We consider that aliases point to local folder modules.
-  // For example: `"my-lib": "../my-lib/src"`.
-  // Basically we try to make the resource relative to the alias target,
-  // and if it works we build the id from the alias name.
-  // So file `../my-lib/src/index.js` becomes `my-lib/index.js`.
-  // Note that this only works with aliases pointing to folders, not files.
-  // To have a "default" file in the folder, the following construct works:
-  // alias: { "mod$": "src/index.js", "mod": "src" }
-  if (!aliases) return null;
-  for (let name in aliases) {
-    let root = path.resolve(aliases[name]);
-    let relative = path.relative(root, resource);
-    if (relative.startsWith("..")) continue;
-    name = name.replace(/\$$/, ""); // A trailing $ indicates an exact match in webpack
-    return relative ? name + "/" + relative : name;
+/**
+ *  ModuleConcatenationPlugin merges modules in a new ConcatenatedModule
+ *  We need to remove each modules grouping in place of the modules
+ *  themselves
+ *
+ *  @param  {Webpack.Module[]} modules The modules to expand
+ *
+ *  @return {Webpack.Module[]} The expanded modules
+ */
+function expandConcatenatedModules(modules: Webpack.Module[]): Webpack.Module[] {
+  if (!modules || !Array.isArray(modules)) {
+    return [];
   }
-  return null;
-}
 
-function makeModuleRelative(roots: string[], resource: string) {
-  for (let root of roots) {
-    let relative = path.relative(root, resource);
-    if (!relative.startsWith("..")) return relative;
+  let modulesBeforeConcat: Webpack.Module[] = modules.slice();
+  for (let i = 0; i < modulesBeforeConcat.length; i++) {
+    const m: Webpack.Module = modulesBeforeConcat[i];
+
+    // We don't `import ConcatenatedModule` and then `m instanceof ConcatenatedModule`
+    // because it was introduced in Webpack 3.0 and we're still compatible with 2.x at the moment.
+    if (m.constructor.name === 'ConcatenatedModule') {
+      m.modules = (Array.isArray(m.modules)) ? m.modules : [];
+      modulesBeforeConcat.splice(i--, 1, ...m.modules);
+    }
   }
-  return null;
+
+  return modulesBeforeConcat;
 }
 
-function fixNodeModule(module: Webpack.Module, allModules: Webpack.Module[]) {
-  if (!/\bnode_modules\b/i.test(module.resource)) return null;
-  // The problem with node_modules is that often the root of the module is not /node_modules/my-lib
-  // Webpack is going to look for `main` in `project.json` to find where the main file actually is.
-  // And this can of course be configured differently with `resolve.alias`, `resolve.mainFields` & co.
-  
-  // Our best hope is that the file was not required as a relative path, then we can just preserve that.
-  // We just need to be careful with loaders (e.g. async!)
-  let request = removeLoaders(module.rawRequest)!;  // we assume that Aurelia dependencies always have a rawRequest
-  if (!request.startsWith(".")) return request;
+/**
+ *  Get the filtered list of PLATFORM.moduleName() imported modules
+ *
+ *  @param  {Webpack.Module[]} modules The modules to filter
+ *
+ *  @return {Webpack.Module[]} The imported modules
+ */
+function getPreservedModules(modules: Webpack.Module[]): Webpack.Module[] {
+  if (!modules || !Array.isArray(modules)) {
+    return [];
+  }
 
-  // Otherwise we need to build the relative path from the module root, which as explained above is hard to find.
-  // Ideally we could use webpack resolvers, but they are currently async-only, which can't be used in before-modules-id
-  // See https://github.com/webpack/webpack/issues/1634
-  // Instead, we'll look for the root library module, because it should have been requested somehow and work from there.
+  return modules.filter((module: Webpack.Module): boolean => {
+    // Preserve the module itself?
+    if (module[preserveModuleName]) {
+      return true;
+    }
+
+    // Preserve the module if its dependencies are also preserved
+    const reasons = (module.reasons && Array.isArray(module.reasons)) ? module.reasons : [];
+    return reasons.some((reason) => Boolean(reason.dependency && reason.dependency[preserveModuleName]));
+  });
+}
+
+/**
+ *  Check if a module exists in node_modules/
+ *
+ *  @param  {Webpack.Module} module The module to check
+ *
+ *  @return {Boolean} True if it exists in node_modules/, false otherwise
+ */
+function isNodeModule(module: Webpack.Module): boolean {
+  return !(!module || !module.resource || !(/\bnode_modules\b/i.test(module.resource)));
+}
+
+/**
+ *  Get module data if it exists in node_modules/
+ *
+ *  @param  {Webpack.Module} module The module to get the data for
+ *
+ *  @return {NodeModule.Data|null} The module data if available, null otherwise
+ */
+function getNodeModuleData(module: Webpack.Module): NodeModule.Data | null {
+  // Not a node_module?
+  if (!isNodeModule(module)) {
+    return null;
+  }
+
   // Note that the negative lookahead (?!.*node_modules) ensures that we only match the last node_modules/ folder in the path,
   // in case the package was located in a sub-node_modules (which can occur in special circumstances).
   // We also need to take care of scoped modules. If the name starts with @ we must keep two parts,
   // so @corp/bar is the proper module name.
-  let name = /\bnode_modules[\\/](?!.*\bnode_modules\b)((?:@[^\\/]+[\\/])?[^\\/]+)/i.exec(module.resource)![1];
-  name = name.replace("\\", "/"); // normalize \ to / for scoped modules
-  let entry = allModules.find(m => removeLoaders(m.rawRequest) === name);
-  if (entry) 
-    return name + "/" + path.relative(path.dirname(entry.resource), module.resource);
-  // We could not find the raw module. Let's try to find another a more complex entry point.
-  for (let m of allModules) {
-    let req = removeLoaders(m.rawRequest);
-    if (!req || !req.startsWith(name) || !m.resource) continue;
-    let i = m.resource.replace(/\\/g, "/").lastIndexOf(req.substr(name.length));
-    if (i < 0) continue;
-    let root = m.resource.substr(0, i);
-    return name + "/" + path.relative(root, module.resource);
+  const modulePaths = module.resource.match(/(.*\bnode_modules[\\/](?!.*\bnode_modules\b)((?:@[^\\/]+[\\/])?[^\\/]+))(.*)/i);
+  if (!modulePaths || modulePaths.length !== 4) {
+    return null;
   }
-  throw new Error("PreserveModuleNamePlugin: Unable to find root of module " + name);
+
+  return {
+    path: modulePaths[1],
+    name: modulePaths[2],
+    relative: modulePaths[3],
+  };
 }
 
-function removeLoaders(request: string | undefined) {
-  // We have to be careful, as it seems that in the allModules.find() call above
-  // some modules might have m.rawRequst === undefined
-  if (!request) return request;
-  let lastBang = request.lastIndexOf("!");
-  return lastBang < 0 ? request : request.substr(lastBang + 1);
+/**
+ *  If a module exists in node_modules/ map its data
+ *
+ *  @param  {Webpack.Module} module The module to map
+ *
+ *  @return {undefined}
+ */
+function mapNodeModule(module: Webpack.Module) {
+  // Not a node_module?
+  if (!isNodeModule(module)) {
+    return;
+  }
+
+  // Get the module data
+  const moduleData = getNodeModuleData(module);
+  if (!moduleData) {
+    return;
+  }
+
+  // Map it
+  if (!_nodeModuleResourcesMap[moduleData.name]) {
+    _nodeModuleResourcesMap[moduleData.name] = {};
+  }
+  _nodeModuleResourcesMap[moduleData.name][module.resource] = moduleData;
+}
+
+/**
+ *  Parse the resource map for modules that exist in node_modules/
+ *
+ *  Since a module can be imported in any number of ways, we cannot rely
+ *  on the module request or any other dynamic scenarios. This gets even
+ *  more tricky when modules themselves can import their own relative or
+ *  even node_modules/.
+ *
+ *  In order to remedy this, we look at every module that is resolved in
+ *  webpack and combine modules who share a common module path. While this
+ *  approach works, it gets complicated when you have to detect the modules
+ *  entry point. Luckily, using PLATFORM.moduleName() on the modules entry
+ *  point will allow webpack to include the resource when parsing if needed.
+ *
+ *  However, we need to know exactly which resource is the module entry.
+ *  In order to do this, we make some assumptions:
+ *    - The resource name matches 'index', discounting the extenstion
+ *    - The resource name matches the module key exactly
+ *    - If there is only one module resource, use that as the entry
+ *    - If there are multiple entry points: (index, exact match)
+ *        - Pick the resource that is most shallow to the modules root
+ *        - Otherwise, choose the 'index' resource
+ *
+ *  @return {undefined}
+ */
+function parseNodeModules() {
+  if (!_nodeModuleResourcesMap || !Object.keys(_nodeModuleResourcesMap).length) {
+    return;
+  }
+
+  // Parse each module
+  for (const moduleKey in _nodeModuleResourcesMap) {
+    const moduleResources: NodeModule.ModuleResource = _nodeModuleResourcesMap[moduleKey];
+
+    // Keep track of the common resource path and possible module entry points
+    let commonPathParts: string[] = [];
+    let possibleEntryPoints: string[] = [];
+
+    // Parse each resource in the module
+    for (const resource in moduleResources) {
+      const data: NodeModule.Data = moduleResources[resource];
+      const pathParts: string[] = data.relative.split('/');
+      const resourceFile: string | null = pathParts.splice(-1)[0];
+      if (!resourceFile) {
+        continue;
+      }
+
+      // Entry?
+      const resourceName: string = resourceFile.replace(/\..*/, '');
+      if (resourceName === moduleKey || resourceName === 'index') {
+        possibleEntryPoints.push(resource);
+      }
+
+      // Initial or only resource?
+      if (!commonPathParts.length) {
+        commonPathParts = pathParts.slice();
+        continue;
+      }
+
+      // Remove uncommon paths
+      let cont = true;
+      commonPathParts = commonPathParts.reduce((common: string[], segment: string, idx: number): string[] => {
+        // Same?
+        if (cont && segment === pathParts[idx]) {
+          common.push(segment);
+        }
+        else {
+          cont = false;
+        }
+        return common;
+      }, []);
+    }
+
+    // Convert common path to string
+    let commonPath: string = commonPathParts.join('/');
+    commonPath = (commonPath.startsWith('/')) ? commonPath : `/${commonPath}`;
+
+    // If there is more than one possible entry point, use the most shallow resource
+    let moduleEntry: string | null = null;
+    possibleEntryPoints.forEach((resource: string) => {
+      const data: NodeModule.Data = moduleResources[resource];
+
+      // No entry yet?
+      if (!moduleEntry) {
+        moduleEntry = data.relative;
+      }
+
+      // Shallow?
+      else if (moduleEntry.split('/').length > data.relative.split('/').length) {
+        moduleEntry = data.relative;
+      }
+
+      // This is an odd edge-case, both are as shallow as possible
+      // We attempt to use index over moduleKey
+      else if (!(/\bindex\b/i.test(moduleEntry)) && /\bindex\b/i.test(data.relative)) {
+        moduleEntry = data.relative;
+      }
+    });
+
+    // If an entry point still hasnt been found and there is only one resource, use that
+    const resourceKeys: string[] = Object.keys(moduleResources);
+    if (!moduleEntry && resourceKeys.length === 1) {
+      moduleEntry = moduleResources[resourceKeys[0]].relative;
+    }
+
+    // Map the resources to the module id
+    resourceKeys.forEach((resource: string) => {
+      const data: NodeModule.Data = moduleResources[resource];
+
+      // Entry?
+      if (moduleEntry === data.relative) {
+        _nodeModuleResourceIdMap[resource] = moduleKey;
+        return;
+      }
+
+      // Build the id from the resources common path
+      let key: string = data.relative.replace(new RegExp(`^${escapeString(commonPath)}`), '');
+      key = (key.startsWith('/')) ? key : `/${key}`;
+      _nodeModuleResourceIdMap[resource] = `${moduleKey}${key}`;
+    });
+  }
+}
+
+/**
+ *  Find the path to a modules resource relative to the webpack
+ *  resolve module paths
+ *
+ *  @param  {Webpack.Module} module The module to get the relative path
+ *  @param  {string[]} paths The webpack resolver module paths
+ *
+ *  @return {string|null} The relative path if available, null otherwise
+ */
+function getRelativeModule(module: Webpack.Module, paths: string[]): string | null {
+  if (!module || !module.resource || !paths || !paths.length) {
+    return null;
+  }
+
+  // Try to find the module in the resolver paths
+  for (let i = 0, len = paths.length; i < len; i++) {
+    const relative: string = path.relative(paths[i], module.resource);
+    if (!relative.startsWith('..')) {
+      return relative;
+    }
+  }
+
+  // Nothing relative
+  return null;
+}
+
+/**
+ *  Find the path to a modules resource relative to webpack aliases
+ *
+ *  @param  {Webpack.Module} module The module to alias
+ *  @param  {[{ [key: string]: string }|null} aliases The webpack aliases
+ *
+ *  @return {string|null} The alias path if available, null otherwise
+ */
+function getAliasModule(module: Webpack.Module, aliases: { [key: string]: string } | null): string | null {
+  if (!module || !module.resource || !aliases || !Object.keys(aliases).length) {
+    return null;
+  }
+
+  // Look for the module in each alias
+  for (let alias in aliases) {
+    const relative: string = path.relative(path.resolve(aliases[alias]), module.resource);
+    if (relative.startsWith('..')) {
+      continue;
+    }
+
+    // Absolute alias?
+    alias = alias.replace(/\$$/, '');
+    return (relative && relative.length) ? `${alias}/${relative}` : alias;
+  }
+
+  // Nothing aliased
+  return null;
+}
+
+/**
+ *  Get the module id based on its resource
+ *
+ *  @param  {Webpack.Module} module The module to get the id for
+ *  @param  {string[]} paths The webpack resolver module paths
+ *  @param  {[{ [key: string]: string }]|null} aliases The webpack aliases
+ *
+ *  @return {string|null} The module id if available, null otherwise
+ */
+function getModuleId(module: Webpack.Module, paths: string[], aliases: { [key: string]: string } | null): string | null {
+  if (!module) {
+    return null;
+  }
+
+  // Handling module ids can be a bit tricky
+  // Modules can be included in any of the following ways:
+  //   import { Module } from 'module'
+  //                          'module/submodule'
+  //                          './module'
+  //                          'folder/module'
+  //                          'alias/folder/module'
+  //                          'alias$'
+  //                          '@scope/module'
+  //
+  //   @decorator(PLATFORM.moduleName('module'))
+  //                                  ...
+  //
+  // The problem arises when aurelia-loader has to know the module to use at runtime.
+  // Webpack Mappings:
+  //   Absolute Module: 'module' -> 'module'
+  //   Relative Module: './module' -> 'folder/module'
+  //   Absolute Path: 'folder/module' -> 'folder/module'
+  //   Aliased Path: 'alias/folder/module' -> 'alias/folder/module'
+  //   Absolute Alias Path: 'alias$' -> 'alias$'
+  //
+  // In order to have the aurelia-loader work correctly, we need to coerce everything to absolute ids
+
+  // Is it a node_module?
+  if (isNodeModule(module)) {
+    return _nodeModuleResourceIdMap[module.resource];
+  }
+
+  // Get the module relative to the webpack resolver paths
+  let moduleId = getRelativeModule(module, paths);
+
+  // Fallback to parsing aliases if needed
+  return (moduleId) ? moduleId : getAliasModule(module, aliases);
+}
+
+/**
+ *  Escape a string to pass to a regular expression
+ *
+ *  @param  {string} str The string to escape
+ *
+ *  @return {string|null} The escaped string
+ */
+function escapeString(str: string): string | null {
+  if (typeof str !== 'string') {
+    return null;
+  }
+
+  return str.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
 }

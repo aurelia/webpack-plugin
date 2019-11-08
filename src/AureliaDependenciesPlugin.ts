@@ -1,5 +1,6 @@
 import { IncludeDependency } from "./IncludeDependency";
 import BasicEvaluatedExpression = require("webpack/lib/BasicEvaluatedExpression");
+import { preserveModuleName } from "./PreserveModuleNamePlugin";
 
 const TAP_NAME = "Aurelia:Dependencies";
 
@@ -13,7 +14,13 @@ class AureliaDependency extends IncludeDependency {
 
 class Template {
   apply(dep: AureliaDependency, source: Webpack.Source) {
-    source.replace(dep.range[0], dep.range[1] - 1, "'" + dep.request.replace(/^async(?:\?[^!]*)?!/, "") + "'");
+    // Get the module id, fallback to using the module request
+    let moduleId: string = dep.request;
+    if (dep.module && typeof dep.module[preserveModuleName] === 'string') {
+      moduleId = dep.module[preserveModuleName];
+    }
+
+    source.replace(dep.range[0], dep.range[1] - 1, "'" + moduleId.replace(/^async(?:\?[^!]*)?!/, "") + "'");
   };
 }
 
@@ -41,7 +48,7 @@ class ParserPlugin {
     hooks.evaluateIdentifier.tap("imported var.moduleName", TAP_NAME, (expr: Webpack.MemberExpression) => {
       if (expr.property.name === "moduleName" &&
           expr.object.name === "PLATFORM" &&
-          expr.object.type === "Identifier") {
+          String(expr.object.type) === "Identifier") {
         return new BasicEvaluatedExpression().setIdentifier("PLATFORM.moduleName").setRange(expr.range);
       }
       return undefined;
@@ -56,7 +63,7 @@ class ParserPlugin {
     hooks.evaluate.tap("MemberExpression", TAP_NAME, expr => {
       if (expr.property.name === "moduleName" &&
          (expr.object.type === "MemberExpression" && expr.object.property.name === "PLATFORM" ||
-          expr.object.type === "Identifier" && expr.object.name === "PLATFORM")) {
+          String(expr.object.type) === "Identifier" && expr.object.name === "PLATFORM")) {
         return new BasicEvaluatedExpression().setIdentifier("PLATFORM.moduleName").setRange(expr.range);
       }
       return undefined;
