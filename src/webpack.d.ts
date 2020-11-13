@@ -240,7 +240,7 @@ declare module "webpack/lib/dependencies/ModuleDependency" {
   export = ModuleDependency;
 }
 
-declare module "webpack/lib/BasicEvaluatedExpression" {
+declare module "webpack/lib/javascript/BasicEvaluatedExpression" {
   class BasicEvaluatedExpression {    
     setIdentifier(identifier: string): this;
     setRange(range: [number, number]): this;

@@ -1,5 +1,6 @@
-import { IncludeDependency } from "./IncludeDependency";
-import BasicEvaluatedExpression = require("webpack/lib/BasicEvaluatedExpression");
+import { IncludeDependency } from './IncludeDependency';
+
+import BasicEvaluatedExpression = require("webpack/lib/javascript/BasicEvaluatedExpression");
 
 const TAP_NAME = "Aurelia:Dependencies";
 

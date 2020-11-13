@@ -1,7 +1,8 @@
 // This plugins tries to detect @inlineView('<template>...</template>') and process its dependencies
 // like HtmlDependenciesPlugin does.
-import { BaseIncludePlugin, AddDependency } from "./BaseIncludePlugin";
-import BasicEvaluatedExpression = require("webpack/lib/BasicEvaluatedExpression");
+import { AddDependency, BaseIncludePlugin } from './BaseIncludePlugin';
+
+import BasicEvaluatedExpression = require("webpack/lib/javascript/BasicEvaluatedExpression");
 import htmlLoader = require("./html-requires-loader");
 
 const TAP_NAME = "Aurelia:InlineViewDependencies";
