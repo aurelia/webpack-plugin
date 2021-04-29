@@ -47,43 +47,43 @@ declare namespace Webpack {
     dependency: Dependency;
   }
 
-  export type Expression =
-    MemberExpression | 
-    IdentifierExpression |
-    CallExpression |
-    ObjectExpression;
+  // export type Expression =
+  //   MemberExpression | 
+  //   IdentifierExpression |
+  //   CallExpression |
+  //   ObjectExpression;
 
-  export class MemberExpression {
-    range: [number, number];
-    // Those types are not correct, but that's enough to compile this project
-    property: IdentifierExpression;
-    object: { name: string; type: string; } & MemberExpression;
-    type: "MemberExpression";
-  }
+  // export class MemberExpression {
+  //   range: [number, number];
+  //   // Those types are not correct, but that's enough to compile this project
+  //   property: IdentifierExpression;
+  //   object: { name: string; type: string; } & MemberExpression;
+  //   type: "MemberExpression";
+  // }
 
-  export class IdentifierExpression {
-    range: [number, number];
-    name: string;
-    type: "IdentifierExpression";
-  }
+  // export class IdentifierExpression {
+  //   range: [number, number];
+  //   name: string;
+  //   type: "IdentifierExpression";
+  // }
 
-  export class CallExpression {
-    range: [number, number];
-    arguments: Expression[];
-    type: "CallExpression";
-  }
+  // export class CallExpression {
+  //   range: [number, number];
+  //   arguments: Expression[];
+  //   type: "CallExpression";
+  // }
 
-  export class ObjectExpression {
-    range: [number, number];
-    type: "ObjectExpression";
-    properties: {
-      key: {
-        type: string;
-        name: string;
-      };
-      value: Expression;
-    }[];
-  }
+  // export class ObjectExpression {
+  //   range: [number, number];
+  //   type: "ObjectExpression";
+  //   properties: {
+  //     key: {
+  //       type: string;
+  //       name: string;
+  //     };
+  //     value: Expression;
+  //   }[];
+  // }
 
   export class Parser {
     state: {
@@ -202,37 +202,52 @@ declare namespace Webpack {
   }
 }
 
+import 'webpack';
 declare module "webpack" {
+
+  export class Module extends DependenciesBlock {
+    id: string;
+    buildMeta: object|null;
+    rawRequest: string;
+    reasons: Reason[];
+    resource: string;
+    
+    isUsed(_export: string): boolean | string;    
+  }
+
   export class DefinePlugin {
     constructor(hash: any);
     apply(compiler: Webpack.Compiler): void;
   }
 
-  export class DllPlugin {    
+  export class DllPlugin {
   }
 
-  export class DllReferencePlugin {    
+  export class DllReferencePlugin {
   }
 }
 
+// @ts-ignore
 declare module "webpack/lib/Dependency" {
   const Dependency: typeof Webpack.Dependency;
   export = Dependency;
 }
 
+// @ts-ignore
 declare module "webpack/lib/dependencies/NullDependency" {
   class NullDependencyTemplate {
   }
 
-  class NullDependency extends Webpack.Dependency {    
+  class NullDependency extends Webpack.Dependency {
     static Template: typeof NullDependencyTemplate;
   }
 
   export = NullDependency;
 }
 
+// @ts-ignore
 declare module "webpack/lib/dependencies/ModuleDependency" {
-  class ModuleDependency extends Webpack.Dependency {    
+  class ModuleDependency extends Webpack.Dependency {
     constructor(request: string);
     request: string;
   }
@@ -240,15 +255,25 @@ declare module "webpack/lib/dependencies/ModuleDependency" {
   export = ModuleDependency;
 }
 
-declare module "webpack/lib/BasicEvaluatedExpression" {
-  class BasicEvaluatedExpression {    
-    setIdentifier(identifier: string): this;
-    setRange(range: [number, number]): this;
-  }
+// @ts-ignore
+// declare module "webpack/lib/javascript/JavaScriptParser" {
+  
+//   export class Parser {
+//     state: {
+//       current: Module;
+//       module: Module;
+//     }
+//     hooks: {
+//       program: Tapable.SyncHook;
+//       evaluate: Tapable.SyncHook1<"MemberExpression", Webpack.MemberExpression>;
+//       evaluateIdentifier: Tapable.SyncHook1<string, Webpack.Expression>;
+//       call: Tapable.SyncHook1<string, Webpack.CallExpression>;
+//     }
+//     evaluateExpression(expr: Expression): EvaluatedExpression;
+//   }
+// }
 
-  export = BasicEvaluatedExpression;
-}
-
+// @ts-ignore
 declare module "html-loader/lib/attributesParser" {
   function parse(content: string, cb: (tag: string, attr: string) => boolean): { value: string }[];
 

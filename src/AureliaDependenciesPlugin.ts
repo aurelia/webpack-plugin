@@ -1,7 +1,14 @@
+/// <reference path="./webpack.submodules.d.ts" />
 import { IncludeDependency } from "./IncludeDependency";
-import BasicEvaluatedExpression = require("webpack/lib/BasicEvaluatedExpression");
+import BasicEvaluatedExpression = require("webpack/lib/javascript/BasicEvaluatedExpression");
+import * as estree from 'estree';
+import * as webpack from 'webpack';
 
 const TAP_NAME = "Aurelia:Dependencies";
+
+function isIdentifier(expr: estree.Expression | estree.Super, name: string): expr is estree.Identifier {
+  return expr.type === 'Identifier' && expr.name === name;
+}
 
 class AureliaDependency extends IncludeDependency {
   constructor(request: string, 
@@ -12,7 +19,7 @@ class AureliaDependency extends IncludeDependency {
 }
 
 class Template {
-  apply(dep: AureliaDependency, source: Webpack.Source) {
+  apply(dep: AureliaDependency, source: webpack.sources.Source) {
     source.replace(dep.range[0], dep.range[1] - 1, "'" + dep.request.replace(/^async(?:\?[^!]*)?!/, "") + "'");
   };
 }
@@ -21,13 +28,13 @@ class ParserPlugin {
   constructor(private methods: string[]) {
   }
 
-  apply(parser: Webpack.Parser) {
+  apply(parser: webpack.javascript.JavascriptParser) {
 
     function addDependency(module: string, range: [number, number], options?: DependencyOptions) {
       let dep = new AureliaDependency(module, range, options);
       parser.state.current.addDependency(dep);
       return true;
-    }    
+    }
 
     // The parser will only apply "call PLATFORM.moduleName" on free variables.
     // So we must first trick it into thinking PLATFORM.moduleName is an unbound identifier
@@ -38,11 +45,13 @@ class ParserPlugin {
     // This covers native ES module, for example:
     //    import { PLATFORM } from "aurelia-pal";
     //    PLATFORM.moduleName("id");
-    hooks.evaluateIdentifier.tap("imported var.moduleName", TAP_NAME, (expr: Webpack.MemberExpression) => {
-      if (expr.property.name === "moduleName" &&
-          expr.object.name === "PLATFORM" &&
-          expr.object.type === "Identifier") {
-        return new BasicEvaluatedExpression().setIdentifier("PLATFORM.moduleName").setRange(expr.range);
+    hooks.evaluateIdentifier.for('javascript/auto').tap(TAP_NAME, (expr: estree.MemberExpression) => {
+      if (isIdentifier(expr.property, 'moduleName')
+        && isIdentifier(expr.object, 'PLATFORM')
+      ) {
+        return new BasicEvaluatedExpression()
+          .setIdentifier("PLATFORM.moduleName")
+          .setRange(expr.range!);
       }
       return undefined;
     });
@@ -53,62 +62,83 @@ class ParserPlugin {
     // Or (note: no renaming supported):
     //    const PLATFORM = require("aurelia-pal").PLATFORM;
     //    PLATFORM.moduleName("id");
-    hooks.evaluate.tap("MemberExpression", TAP_NAME, expr => {
-      if (expr.property.name === "moduleName" &&
-         (expr.object.type === "MemberExpression" && expr.object.property.name === "PLATFORM" ||
-          expr.object.type === "Identifier" && expr.object.name === "PLATFORM")) {
-        return new BasicEvaluatedExpression().setIdentifier("PLATFORM.moduleName").setRange(expr.range);
+    hooks.evaluate.for('javascript/auto').tap(TAP_NAME, (expr: estree.MemberExpression) => {
+      if (expr.type === 'MemberExpression'
+        && isIdentifier(expr.property, "moduleName")
+        && (
+          expr.object.type === "MemberExpression" && isIdentifier(expr.object.property, "PLATFORM")
+          || expr.object.type === "Identifier" && expr.object.name === "PLATFORM"
+        )
+      ) {
+        return new BasicEvaluatedExpression()
+          .setIdentifier("PLATFORM.moduleName")
+          .setRange(expr.range!);
       }
       return undefined;
     });
 
-    for (let method of this.methods) {
-      hooks.call.tap(method, TAP_NAME, (expr: Webpack.CallExpression) => {
-        if (expr.arguments.length === 0 || expr.arguments.length > 2) 
-          return;
-        
-        let [arg1, arg2] = expr.arguments;
-        let param1 = parser.evaluateExpression(arg1);
-        if (!param1.isString()) return;
-        if (expr.arguments.length === 1) {
-          // Normal module dependency
-          // PLATFORM.moduleName('some-module')
-          return addDependency(param1.string!, expr.range);
-        }
+    hooks.call.for('javascript/auto').tap(TAP_NAME, (expr: estree.CallExpression) => {
+      if (expr.type !== 'CallExpression'
+        || !this.methods.includes((expr.callee as estree.Identifier).name)
+      ) {
+        return;
+      }
+      if (expr.arguments.length === 0 || expr.arguments.length > 2) 
+        return;
 
-        let options: DependencyOptions | undefined;
-        let param2 = parser.evaluateExpression(arg2);
-        if (param2.isString()) {
-          // Async module dependency
-          // PLATFORM.moduleName('some-module', 'chunk name');
-          options = { chunk: param2.string };
-        }
-        else if (arg2.type === "ObjectExpression") {
-          // Module dependency with extended options
-          // PLATFORM.moduleName('some-module', { option: value });
-          options = {};
-          for (let prop of arg2.properties) {
-            if (prop.key.type !== "Identifier") continue;
-            let value = parser.evaluateExpression(prop.value);
-            switch (prop.key.name) {
-              case "chunk": 
-                if (value.isString()) 
-                  options.chunk = value.string;
-                break;
-              case "exports": 
-                if (value.isArray() && value.items!.every(v => v.isString()))
-                  options.exports = value.items!.map(v => v.string!);
-                break;
-            }
+      let [arg1, arg2] = expr.arguments as estree.Expression[];
+      let param1 = parser.evaluateExpression(arg1);
+      if (!param1?.isString())
+        return;
+      if (expr.arguments.length === 1) {
+        // Normal module dependency
+        // PLATFORM.moduleName('some-module')
+        return addDependency(param1.string!, expr.range!);
+      }
+
+      let options: DependencyOptions | undefined;
+      let param2 = parser.evaluateExpression(arg2)!;
+      if (param2?.isString()) {
+        // Async module dependency
+        // PLATFORM.moduleName('some-module', 'chunk name');
+        options = { chunk: param2.string };
+      }
+      else if (arg2.type === "ObjectExpression") {
+        // Module dependency with extended options
+        // PLATFORM.moduleName('some-module', { option: value });
+        options = {};
+        // NOTE:
+        // casting here is likely to be correct, as we can declare the following not supported:
+        // PLATFORM.moduleName('some-module', { ...options })
+        for (let prop of arg2.properties) {
+          if (prop.type !== 'Property'
+            || prop.method
+            // theoretically, PLATFORM.moduleName('..', { ['chunk']: '' })
+            // works, but ... not a lot of sense supporting it
+            || prop.computed
+            || prop.key.type !== "Identifier"
+          )
+            continue;
+
+          let value = parser.evaluateExpression(prop.value as estree.Literal);
+          switch (prop.key.name) {
+            case "chunk":
+              if (value?.isString()) 
+                options.chunk = value.string;
+              break;
+            case "exports":
+              if (value?.isArray() && value.items!.every(v => v.isString()))
+                options.exports = value.items!.map(v => v.string!);
+              break;
           }
         }
-        else {
-          // Unknown PLATFORM.moduleName() signature
-          return;
-        }        
-        return addDependency(param1.string!, expr.range, options);
-      });
-    }
+      }
+      else {
+        // Unknown PLATFORM.moduleName() signature
+        return;
+      }
+      return addDependency(param1.string!, expr.range!, options);
+    });
   }
 }
 
@@ -122,7 +152,7 @@ export class AureliaDependenciesPlugin {
     this.parserPlugin = new ParserPlugin(methods);
   }
 
-  apply(compiler: Webpack.Compiler) {
+  apply(compiler: webpack.Compiler) {
     compiler.hooks.compilation.tap(TAP_NAME, (compilation, params) => {
       const normalModuleFactory = params.normalModuleFactory;
 

@@ -1,8 +1,13 @@
+import * as webpack from 'webpack';
 import parse = require("html-loader/lib/attributesParser");
 
 const _htmlSymbol = Symbol("HTML dependencies");
 
-function loader(this: Webpack.Loader, content: string) {
+// webpack.NormalModule.getCompilationHooks(compilation).loader.tap('...', (loader, data) => {
+// 
+// })
+
+function loader(this: webpack.Loader, content: string) {
   this.cacheable && this.cacheable();
   this._module[_htmlSymbol] = loader.modules(content);
   return content;

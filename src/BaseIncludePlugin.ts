@@ -1,12 +1,13 @@
 import { IncludeDependency } from "./IncludeDependency";
-import NullDependency = require("webpack/lib/dependencies/NullDependency");
+import * as webpack from 'webpack';
 
 const TAP_NAME = "Aurelia:BaseInclude";
+const NullDependency = webpack.dependencies.NullDependency;
 
 export type AddDependency = (request: string | DependencyOptionsEx) => void;
 
 export class BaseIncludePlugin {
-  apply(compiler: Webpack.Compiler) {
+  apply(compiler: webpack.Compiler) {
     compiler.hooks.compilation.tap(TAP_NAME, (compilation, data) => {
       const normalModuleFactory = data.normalModuleFactory;
       compilation.dependencyFactories.set(IncludeDependency, normalModuleFactory);
@@ -19,12 +20,12 @@ export class BaseIncludePlugin {
           parser.state.current.addDependency(new IncludeDependency(name, options));
         }
         
-        this.parser(compilation, parser, addDependency);
+        this.parse(compilation, parser, addDependency);
       });
     });
   }
 
-  parser(compilation: Webpack.Compilation, parser: Webpack.Parser, add: AddDependency) { 
+  parse(compilation: webpack.Compilation, parser: webpack.javascript.JavascriptParser, add: AddDependency) { 
     /* Meant to be overriden */ 
-  }  
+  }
 }

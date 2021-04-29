@@ -1,14 +1,15 @@
 import { DefinePlugin, DllReferencePlugin, DllPlugin } from "webpack";
 import { AureliaDependenciesPlugin } from "./AureliaDependenciesPlugin";
 import { ConventionDependenciesPlugin, Convention } from "./ConventionDependenciesPlugin";
-import { DistPlugin } from "./DistPlugin";
+import { DistPlugin } from "./ResolverDistPlugin";
 import { GlobDependenciesPlugin } from "./GlobDependenciesPlugin";
 import { HtmlDependenciesPlugin } from "./HtmlDependenciesPlugin";
 import { InlineViewDependenciesPlugin } from "./InlineViewDependenciesPlugin";
 import { ModuleDependenciesPlugin, ModuleDependenciesPluginOptions } from "./ModuleDependenciesPlugin";
 import { PreserveExportsPlugin } from "./PreserveExportsPlugin";
 import { PreserveModuleNamePlugin } from "./PreserveModuleNamePlugin";
-import { SubFolderPlugin } from "./SubFolderPlugin";
+import { SubFolderPlugin } from "./ResolverSubFolderPlugin";
+import * as webpack from 'webpack';
 
 export type Polyfills = "es2015" | "es2016" | "esnext" | "none";
 
@@ -73,7 +74,7 @@ export class AureliaPlugin {
     }, options.features);
   }
 
-  apply(compiler: Webpack.Compiler) {
+  apply(compiler: webpack.Compiler) {
     const opts = this.options;
     const features = opts.features;
     let needsEmptyEntry = false;
@@ -83,7 +84,7 @@ export class AureliaPlugin {
 
     // Make sure the loaders are easy to load at the root like `aurelia-webpack-plugin/html-resource-loader`
     let resolveLoader = compiler.options.resolveLoader;
-    let alias = resolveLoader.alias || (resolveLoader.alias = {});
+    let alias = resolveLoader.alias ??= {};
     alias["aurelia-webpack-plugin"] = "aurelia-webpack-plugin/dist";
     // Our async! loader is in fact just bundle-loader!.
     alias["async"] = "bundle-loader";
@@ -114,7 +115,7 @@ export class AureliaPlugin {
     // because they are determined at build-time.
     const dependencies: ModuleDependenciesPluginOptions = {
       // PAL for target
-      "aurelia-bootstrapper": "pal" in opts ? opts.pal : getPAL(compiler.options.target),
+      "aurelia-bootstrapper": "pal" in opts ? opts.pal : getPAL(compiler.options.target as string),
       // `aurelia-framework` exposes configuration helpers like `.standardConfiguration()`,
       // that load plugins, but we can't know if they are actually used or not.
       // User indicates what he uses at build time in `aureliaConfig` option.
@@ -125,9 +126,10 @@ export class AureliaPlugin {
 
     if (opts.dist) {
       // This plugin enables easy switching to a different module distribution (default for Aurelia is dist/commonjs).
-      let resolve = compiler.options.resolve;
-      let plugins = resolve.plugins || (resolve.plugins = []);
-      plugins.push(new DistPlugin(opts.dist));
+      // let resolve = compiler.options.resolve;
+      // let plugins = resolve.plugins ??= [];
+      // plugins.push(new DistPlugin(opts.dist));
+      new DistPlugin(opts.dist).apply(compiler);
     }
 
     if (!opts.noModulePathResolve) {
@@ -167,13 +169,13 @@ export class AureliaPlugin {
 
     if (!dllPlugin && !opts.noWebpackLoader) {
       // Setup aurelia-loader-webpack as the module loader
-      this.addEntry(compiler.options, ["aurelia-webpack-plugin/runtime/pal-loader-entry"]);      
+      this.addEntry(compiler.options, ["aurelia-webpack-plugin/runtime/pal-loader-entry"]);
     }
 
     if (!opts.noHtmlLoader) {
       // Ensure that we trace HTML dependencies (always required because of 3rd party libs)
       let module = compiler.options.module;
-      let rules = module.rules || module.loaders || (module.rules = []);
+      let rules = module.rules;
       // Note that this loader will be in last place, which is important 
       // because it will process the file first, before any other loader.
       rules.push({ test: /\.html?$/i, use: "aurelia-webpack-plugin/html-requires-loader" });
@@ -194,7 +196,7 @@ export class AureliaPlugin {
   
     // Aurelia libs contain a few global defines to cut out unused features
     new DefinePlugin(defines).apply(compiler);
-    // Adds some dependencies that are not documented by `PLATFORM.moduleName`      
+    // Adds some dependencies that are not documented by `PLATFORM.moduleName`
     new ModuleDependenciesPlugin(dependencies).apply(compiler);
     // This plugin traces dependencies in code that are wrapped in PLATFORM.moduleName() calls
     new AureliaDependenciesPlugin(...opts.moduleMethods).apply(compiler);
@@ -212,7 +214,7 @@ export class AureliaPlugin {
     new PreserveExportsPlugin().apply(compiler);
   }
 
-  addEntry(options: Webpack.Options, modules: string|string[]) {
+  addEntry(options: webpack.WebpackOptionsNormalized, modules: string|string[]) {
     let webpackEntry = options.entry;
     let entries = Array.isArray(modules) ? modules : [modules];
     if (typeof webpackEntry === "object" && !Array.isArray(webpackEntry)) {

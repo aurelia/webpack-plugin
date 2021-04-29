@@ -1,5 +1,6 @@
 import path = require("path");
-import ModuleDependency = require("webpack/lib/dependencies/ModuleDependency");
+import * as webpack from 'webpack';
+
 export const preserveModuleName = Symbol();
 
 const TAP_NAME = "Aurelia:PreserveModuleName";
@@ -13,10 +14,17 @@ export class PreserveModuleNamePlugin {
   constructor(private isDll: boolean = false) {
   }
 
-  apply(compiler: Webpack.Compiler) {
+  apply(compiler: webpack.Compiler) {
     compiler.hooks.compilation.tap(TAP_NAME, compilation => {
-      compilation.hooks.beforeModuleIds.tap(TAP_NAME, modules => {
-        let { modules: roots, extensions, alias } = compilation.options.resolve;
+      compilation.hooks.beforeModuleIds.tap(TAP_NAME, $modules => {
+        let modules = Array.from($modules);
+        let { modules: m, extensions: e, alias: a } = compilation.options.resolve;
+        let roots = m as string[];
+        let extensions = e as string[];
+        // if it's not an object, it's pretty hard to guess how to map to common usage of alias
+        // temporarily not handle anything that is not a record of aliases
+        let alias = a == null || a instanceof Array ? {} : a;
+
         roots = roots.map(x => path.resolve(x));
         const normalizers = extensions.map(x => new RegExp(x.replace(/\./g, "\\.") + "$", "i"));
 
@@ -46,37 +54,37 @@ export class PreserveModuleNamePlugin {
             id = fixNodeModule(realModule, modulesBeforeConcat) || 
                  makeModuleRelative(roots, realModule.resource) ||
                  aliasRelative(alias, realModule.resource);
-                    
+
           if (!id)
             throw new Error(`Can't figure out a normalized module name for ${realModule.rawRequest}, please call PLATFORM.moduleName() somewhere to help.`);
-          
+
           // Remove default extensions 
           normalizers.forEach(n => id = id!.replace(n, ""));
-          
+
           // Keep "async!" in front of code splits proxies, they are used by aurelia-loader
           if (/^async[?!]/.test(realModule.rawRequest)) 
             id = "async!" + id;
-          
+
           id = id.replace(/\\/g, "/");
           if (module.buildMeta)  // meta can be null if the module contains errors
             module.buildMeta["aurelia-id"] = id;
           if (!this.isDll)
             module.id = id;
         }
-      })
+      });
     });
   }
 };
 
-function getPreservedModules(modules: Webpack.Module[]) {      
+function getPreservedModules(modules: webpack.Module[]) {
   return new Set(
     modules.filter(m => {
       // Some modules might have [preserveModuleName] already set, see ConventionDependenciesPlugin.
-      let value = m[preserveModuleName];      
+      let value = m[preserveModuleName];
       for (let r of m.reasons) {
         if (!r.dependency || !r.dependency[preserveModuleName]) continue;
         value = true;
-        let req = removeLoaders((r.dependency as ModuleDependency).request);
+        let req = removeLoaders((r.dependency as webpack.dependencies.ModuleDependency).request);
         // We try to find an absolute string and set that as the module [preserveModuleName], as it's the best id.
         if (req && !req.startsWith(".")) {
           m[preserveModuleName] = req;
@@ -88,7 +96,7 @@ function getPreservedModules(modules: Webpack.Module[]) {
   );
 }
 
-function aliasRelative(aliases: {[key: string]: string } | null, resource: string) {
+function aliasRelative(aliases: {[key: string]: string | false | string[] } | null, resource: string) {
   // We consider that aliases point to local folder modules.
   // For example: `"my-lib": "../my-lib/src"`.
   // Basically we try to make the resource relative to the alias target,
@@ -97,11 +105,20 @@ function aliasRelative(aliases: {[key: string]: string } | null, resource: strin
   // Note that this only works with aliases pointing to folders, not files.
   // To have a "default" file in the folder, the following construct works:
   // alias: { "mod$": "src/index.js", "mod": "src" }
-  if (!aliases) return null;
+  if (!aliases)
+    return null;
+
   for (let name in aliases) {
-    let root = path.resolve(aliases[name]);
+    let target = aliases[name];
+    // TODO:
+    // not sure how to handle anything other than a simple mapping yet
+    // just ignore for now
+    if (typeof target !== 'string')
+      continue;
+    let root = path.resolve(target);
     let relative = path.relative(root, resource);
-    if (relative.startsWith("..")) continue;
+    if (relative.startsWith(".."))
+      continue;
     name = name.replace(/\$$/, ""); // A trailing $ indicates an exact match in webpack
     return relative ? name + "/" + relative : name;
   }
@@ -116,7 +133,7 @@ function makeModuleRelative(roots: string[], resource: string) {
   return null;
 }
 
-function fixNodeModule(module: Webpack.Module, allModules: Webpack.Module[]) {
+function fixNodeModule(module: webpack.Module, allModules: webpack.Module[]) {
   if (!/\bnode_modules\b/i.test(module.resource)) return null;
   // The problem with node_modules is that often the root of the module is not /node_modules/my-lib
   // Webpack is going to look for `main` in `project.json` to find where the main file actually is.
