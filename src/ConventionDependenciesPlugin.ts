@@ -29,21 +29,26 @@ export class ConventionDependenciesPlugin extends BaseIncludePlugin {
 
     parser.hooks.program.tap("Aurelia:ConventionDependencies", () => {
       const { resource: file, rawRequest } = parser.state.current;
-      if (!file)
+      if (!file) {
         return;
+      }
       // We don't want to bring in dependencies of the async! loader
-      if (/^async[!?]/.test(rawRequest))
+      if (/^async[!?]/.test(rawRequest)) {
         return;
-      if (!minimatch(path.relative(root, file), this.glob))
+      }
+      if (!minimatch(path.relative(root, file), this.glob)) {
         return;
+      }
 
       for (let c of this.conventions) {
         try {
           const probe = c(file);
-          (compilation.inputFileSystem as typeof import('fs')).statSync(probe);  // Check if file exists
+          // Check if file exists
+          (compilation.inputFileSystem as typeof import('fs')).statSync(probe);
           let relative = path.relative(path.dirname(file), probe);
-          if (!relative.startsWith("."))
+          if (!relative.startsWith(".")) {
             relative = "./" + relative;
+          }
           addDependency(relative);
           // If the module has a conventional dependency, make sure we preserve its name as well.
           // This solves the pattern where a VM is statically loaded, e.g. `import { ViewModel } from "x"`

@@ -24,6 +24,7 @@ export class IncludeDependency extends webpack.dependencies.ModuleDependency {
   //     super.getReference();
   // }
 
+  // TODO: is this the equivalence of the getReference above?
   getReferencedExports() {
     return this.options?.exports
       ? [this.options.exports]

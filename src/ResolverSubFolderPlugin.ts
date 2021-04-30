@@ -3,68 +3,84 @@
 // For example, supposing `aurelia-charts` resolves to `aurelia-charts/dist/index.js`,
 // Then if `aurelia-charts/pie` fails, we'll try `aurelia-charts/dist/pie`.
 import path = require("path");
-import { Resolver, ResolveRequest, ResolveContext } from "./interfaces";
-import { ResolverPluginBase } from "./ResolverPluginBase";
+import { Resolver } from "./interfaces";
+import * as webpack from 'webpack';
 
 const subFolderTrial = Symbol();
 
 export const resolveCache = {};
 
-export class SubFolderPlugin extends ResolverPluginBase {
+export class SubFolderPlugin {
   get pluginName() { return 'SubFolderPlugin'; }
 
-  useResolver(resolver: Resolver) {
-    resolver
-      .getHook("after-resolve")
-      .tapAsync(
-        "Aurelia:SubFolder",
-        (request: ResolveRequest, resolveContext: ResolveContext, cb: (err?: any, result?: any) => void) => {
-          // Only look for request not starting with a dot (module names)
-          // and followed by a path (slash). Support @scoped/modules.
-          let match = /^(?!\.)((?:@[^/]+\/)?[^/]+)(\/.*)$/i.exec(request.request ?? '');
-          // Fix: it seems that under some error conditions `request.context` might end up being null.
-          //      this is bad but to help users find relevant errors on the web, we don't want to crash 
-          //      so instead we just skip the request.
-          if (!match || !resolveContext || resolveContext[subFolderTrial]) {
-            cb();
+  // TODO: verify the following code against commented apply method below
+  // ===========================================
+  //
+  apply(compiler: webpack.Compiler) {
+    compiler.hooks.normalModuleFactory.tap('SubFolderPlugin', moduleFactory => {
+      let resolver: Resolver = null!;
+      // NOTE:
+      // resolver hooks is called before beforeResolve hooks
+      // so hooking it here to get a hold of the resolver used for the current compilation
+      // todo: is this true? will know when doing the actual run
+      compiler.resolverFactory.hooks.resolver.for('normal').tap('SubFolderPlugin', r => {
+        // TODO: maybe remove cast and back to webpack Resolver declaration
+        // ============================
+        // casting as r is from webpack
+        // while <Resolver> at the top is from "enhanced-resolve" that webpack uses under the hood
+        // they are the same
+        resolver = r as Resolver;
+      });
+
+      moduleFactory.hooks.beforeResolve.tapAsync('SubFolderPlugin', (resolveData, callback) => {
+        // Only look for request not starting with a dot (module names)
+        // and followed by a path (slash). Support @scoped/modules.
+        let match = /^(?!\.)((?:@[^/]+\/)?[^/]+)(\/.*)$/i.exec(resolveData.request);
+        // Fix: it seems that under some error conditions `request.context` might end up being null.
+        //      this is bad but to help users find relevant errors on the web, we don't want to crash 
+        //      so instead we just skip the request.
+        if (!match || resolveData[subFolderTrial]) {
+          callback();
+          return;
+        }
+
+        let [, module, rest] = match;
+        // Try resolve just the module name to locate its actual root
+        let rootRequest = { ...resolveData, request: module };
+        // Note: if anything doesn't work while probing or trying alternate paths, 
+        //       we just ignore the error and pretend nothing happened (i.e. call cb())
+        resolver.doResolve(
+          /* resolve hooks to invoke */resolver.hooks.resolve,
+          /* request */rootRequest,
+          /* message */"module sub-folder: identify root",
+          /* resolve context */{}, (err: Error, result: { relativePath: string }) => {
+          if (!result || !result.relativePath.startsWith('./')) {
+            callback();
             return;
           }
-
-          let [, module, rest] = match;
-          // Try resolve just the module name to locate its actual root
-          let rootRequest = Object.assign({}, request, { request: module });
-          // Note: if anything doesn't work while probing or trying alternate paths, 
-          //       we just ignore the error and pretend nothing happened (i.e. call cb())
+          // It worked, let's try a relative folder from there
+          let root = path.posix.dirname(result.relativePath);
+          let newRequest = ({ ...resolveData, request: root.replace(/^\./, module) + rest });
+          newRequest[subFolderTrial] = true;
+          // newRequest.context[subFolderTrial] = true;
           resolver.doResolve(
-            /* resolve hooks to invoke */resolver.hooks.resolve,
-            /* request */rootRequest,
-            /* message */"module sub-folder: identify root",
-            /* resolve context */{}, (err: Error, result: { relativePath: string }) => {
-            if (!result ||
-                !result.relativePath.startsWith('./')) {
-              cb();
-              return;
+            resolver.hooks.resolve,
+            newRequest,
+            "try module sub-folder: " + root,
+            {},
+            (err: Error, result: { relativePath: string }) => {
+              if (result) {
+                callback(null, result);
+              } else {
+                callback();
+              }
             }
-            // It worked, let's try a relative folder from there
-            let root = path.posix.dirname(result.relativePath);
-            let newRequest = Object.assign({}, request, { request: root.replace(/^\./, module) + rest });
-            newRequest[subFolderTrial] = true;
-            // newRequest.context[subFolderTrial] = true;
-            resolver.doResolve(
-              resolver.hooks.resolve,
-              newRequest,
-              "try module sub-folder: " + root,
-              {},
-              (err: Error, result: { relativePath: string }) => {
-              if (result)
-                cb(null, result);
-              else
-                cb();
-            });
-          });
-        }
-      );
+          );
+        });
+      });
+    });
   }
+
   // apply(resolver: webpack.Resolver) {
   //   resolver.getHook("after-resolve")
   //           .tapAsync("Aurelia:SubFolder", (request: Webpack.ResolveRequest, resolveContext: object, cb: (err?: any, result?: any) => void) => {

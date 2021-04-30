@@ -6,6 +6,30 @@ import * as webpack from 'webpack';
 
 const TAP_NAME = "Aurelia:Dependencies";
 
+export class AureliaDependenciesPlugin {
+  private parserPlugin: ParserPlugin;
+
+  constructor(...methods: string[]) {
+    // Always include PLATFORM.moduleName as it's what used in libs.
+    if (!methods.includes("PLATFORM.moduleName"))
+      methods.push("PLATFORM.moduleName");
+    this.parserPlugin = new ParserPlugin(methods);
+  }
+
+  apply(compiler: webpack.Compiler) {
+    compiler.hooks.compilation.tap(TAP_NAME, (compilation, params) => {
+      const normalModuleFactory = params.normalModuleFactory;
+
+      compilation.dependencyFactories.set(AureliaDependency, normalModuleFactory);
+      compilation.dependencyTemplates.set(AureliaDependency, new Template());
+
+      normalModuleFactory.hooks.parser.for("javascript/auto").tap(TAP_NAME, parser => {
+        this.parserPlugin.apply(parser);
+      });
+    });
+  }
+}
+
 function isIdentifier(expr: estree.Expression | estree.Super, name: string): expr is estree.Identifier {
   return expr.type === 'Identifier' && expr.name === name;
 }
@@ -141,28 +165,3 @@ class ParserPlugin {
     });
   }
 }
-
-export class AureliaDependenciesPlugin {
-  private parserPlugin: ParserPlugin;
-
-  constructor(...methods: string[]) {
-    // Always include PLATFORM.moduleName as it's what used in libs.
-    if (!methods.includes("PLATFORM.moduleName"))
-      methods.push("PLATFORM.moduleName");
-    this.parserPlugin = new ParserPlugin(methods);
-  }
-
-  apply(compiler: webpack.Compiler) {
-    compiler.hooks.compilation.tap(TAP_NAME, (compilation, params) => {
-      const normalModuleFactory = params.normalModuleFactory;
-
-      compilation.dependencyFactories.set(AureliaDependency, normalModuleFactory);
-      compilation.dependencyTemplates.set(AureliaDependency, new Template());
-
-      normalModuleFactory.hooks.parser.for("javascript/auto").tap(TAP_NAME, parser => {
-        this.parserPlugin.apply(parser);
-      });
-    });
-  }
-};
-
