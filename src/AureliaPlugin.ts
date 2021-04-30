@@ -1,14 +1,14 @@
 import { DefinePlugin, DllReferencePlugin, DllPlugin } from "webpack";
 import { AureliaDependenciesPlugin } from "./AureliaDependenciesPlugin";
 import { ConventionDependenciesPlugin, Convention } from "./ConventionDependenciesPlugin";
-import { DistPlugin } from "./ResolverDistPlugin";
+import { DistPlugin } from "./DistPlugin";
 import { GlobDependenciesPlugin } from "./GlobDependenciesPlugin";
 import { HtmlDependenciesPlugin } from "./HtmlDependenciesPlugin";
 import { InlineViewDependenciesPlugin } from "./InlineViewDependenciesPlugin";
 import { ModuleDependenciesPlugin, ModuleDependenciesPluginOptions } from "./ModuleDependenciesPlugin";
 import { PreserveExportsPlugin } from "./PreserveExportsPlugin";
 import { PreserveModuleNamePlugin } from "./PreserveModuleNamePlugin";
-import { SubFolderPlugin } from "./ResolverSubFolderPlugin";
+import { SubFolderPlugin } from "./SubFolderPlugin";
 import * as webpack from 'webpack';
 
 export type Polyfills = "es2015" | "es2016" | "esnext" | "none";
