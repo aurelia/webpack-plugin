@@ -32,6 +32,8 @@ export class PreserveModuleNamePlugin {
         let modulesBeforeConcat = modules.slice();
         for (let i = 0; i < modulesBeforeConcat.length; i++) {
           let m = modulesBeforeConcat[i];
+          // TODO: verify if this still works
+          // ==================================================
           // We don't `import ConcatenatedModule` and then `m instanceof ConcatenatedModule`
           // because it was introduced in Webpack 3.0 and we're still compatible with 2.x at the moment.
           if (m.constructor.name === "ConcatenatedModule")

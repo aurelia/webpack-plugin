@@ -24,7 +24,7 @@ export class ConventionDependenciesPlugin extends BaseIncludePlugin {
     );
   }
 
-  parse(compilation: webpack.Compilation, parser: webpack.javascript.JavascriptParser, addDependency: AddDependency) {
+  parser(compilation: webpack.Compilation, parser: webpack.javascript.JavascriptParser, addDependency: AddDependency) {
     const root = path.resolve();
 
     parser.hooks.program.tap("Aurelia:ConventionDependencies", () => {

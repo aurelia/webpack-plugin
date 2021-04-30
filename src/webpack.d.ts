@@ -154,10 +154,6 @@ declare namespace Webpack {
     normalModuleFactory: ModuleFactory;  
   }
 
-  export class Source {
-    replace(from: number, to: number, text: string): void;
-  }
-
   export class ModuleFactory {
     hooks: {
       parser: {
@@ -211,8 +207,8 @@ declare module "webpack" {
     rawRequest: string;
     reasons: Reason[];
     resource: string;
-    
-    isUsed(_export: string): boolean | string;    
+
+    isUsed(_export: string): boolean | string;
   }
 
   export class DefinePlugin {

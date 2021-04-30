@@ -12,7 +12,7 @@ const TAP_NAME = "Aurelia:InlineViewDependencies";
 // const JavaScriptParser = webpack.javascript.JavascriptParser;
 
 export class InlineViewDependenciesPlugin extends BaseIncludePlugin {
-  parse(compilation: webpack.Compilation, parser: webpack.javascript.JavascriptParser, add: AddDependency) { 
+  parser(compilation: webpack.Compilation, parser: webpack.javascript.JavascriptParser, add: AddDependency) { 
     // The parser will only apply "call inlineView" on free variables.
     // So we must first trick it into thinking inlineView is an unbound identifier
     // in the various situations where it is not.

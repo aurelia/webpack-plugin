@@ -60,7 +60,7 @@ export class ModuleDependenciesPlugin extends BaseIncludePlugin {
     super.apply(compiler);
   }
 
-  parse(compilation: webpack.Compilation, parser: webpack.javascript.JavascriptParser, addDependency: AddDependency) {
+  parser(compilation: webpack.Compilation, parser: webpack.javascript.JavascriptParser, addDependency: AddDependency) {
     parser.hooks.program.tap(TAP_NAME, () => {
       // We try to match the resource, or the initial module request.
       const deps = this.modules[parser.state.module.resource];

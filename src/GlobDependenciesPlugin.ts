@@ -76,7 +76,7 @@ export class GlobDependenciesPlugin extends BaseIncludePlugin {
     super.apply(compiler);
   }
 
-  parse(compilation: webpack.Compilation, parser: webpack.javascript.JavascriptParser, addDependency: AddDependency) {
+  parser(compilation: webpack.Compilation, parser: webpack.javascript.JavascriptParser, addDependency: AddDependency) {
     const resolveFolders = compilation.options.resolve.modules!;
     // `resolveFolders` can be absolute paths, but by definition this plugin only 
     // looks for files in subfolders of the current `root` path.

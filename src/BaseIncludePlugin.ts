@@ -20,12 +20,12 @@ export class BaseIncludePlugin {
           parser.state.current.addDependency(new IncludeDependency(name, options));
         }
         
-        this.parse(compilation, parser, addDependency);
+        this.parser(compilation, parser, addDependency);
       });
     });
   }
 
-  parse(compilation: webpack.Compilation, parser: webpack.javascript.JavascriptParser, add: AddDependency) { 
+  parser(compilation: webpack.Compilation, parser: webpack.javascript.JavascriptParser, add: AddDependency) { 
     /* Meant to be overriden */ 
   }
 }

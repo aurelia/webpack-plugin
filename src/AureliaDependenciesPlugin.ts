@@ -43,7 +43,11 @@ class AureliaDependency extends IncludeDependency {
 }
 
 class Template {
-  apply(dep: AureliaDependency, source: webpack.sources.Source) {
+  apply(dep: AureliaDependency, source: webpack.sources.ReplaceSource) {
+    // TODO:
+    // ================================
+    // verify against v4 code:
+    // source.replace(dep.range[0], dep.range[1] - 1, "'" + dep.request.replace(/^async(?:\?[^!]*)?!/, "") + "'");
     source.replace(dep.range[0], dep.range[1] - 1, "'" + dep.request.replace(/^async(?:\?[^!]*)?!/, "") + "'");
   };
 }
