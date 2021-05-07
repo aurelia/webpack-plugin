@@ -11,25 +11,29 @@ declare module "webpack/lib/javascript/BasicEvaluatedExpression" {
   export = BasicEvaluatedExpression;
 }
 
+// declare module "loader-utils" {
+//   export function getOptions(obj: object): Record<string, any>;
+// }
+
 declare module "webpack/lib/javascript/JavaScriptParser" {
-  import { Module } from 'webpack';
-  import BasicEvaluatedExpression = require('webpack/lib/javascript/BasicEvaluatedExpression');
-  import { MemberExpression, Expression, CallExpression } from 'estree';
+  // import { Module } from 'webpack';
+  // import BasicEvaluatedExpression = require('webpack/lib/javascript/BasicEvaluatedExpression');
+  // import { MemberExpression, Expression, CallExpression } from 'estree';
 
-  class Parser {
-    state: {
-      current: Module;
-      module: Module;
-    }
-    hooks: {
-      program: Tapable.SyncHook;
-      evaluate: Tapable.SyncHook1<"MemberExpression", MemberExpression>;
-      evaluateIdentifier: Tapable.SyncHook1<string, Expression>;
-      call: Tapable.SyncHook1<string, CallExpression>;
-    }
-    // evaluateExpression(expr: Expression): EvaluatedExpression;
-    evaluateExpression(expr: Expression): BasicEvaluatedExpression;
-  }
+  // class Parser {
+  //   state: {
+  //     current: Module;
+  //     module: Module;
+  //   }
+  //   hooks: {
+  //     program: Tapable.SyncHook;
+  //     evaluate: Tapable.SyncHook1<"MemberExpression", MemberExpression>;
+  //     evaluateIdentifier: Tapable.SyncHook1<string, Expression>;
+  //     call: Tapable.SyncHook1<string, CallExpression>;
+  //   }
+  //   // evaluateExpression(expr: Expression): EvaluatedExpression;
+  //   evaluateExpression(expr: Expression): BasicEvaluatedExpression;
+  // }
 
-  export = Parser;
+  // export = Parser;
 }

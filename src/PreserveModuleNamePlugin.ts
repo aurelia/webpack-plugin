@@ -17,7 +17,7 @@ export class PreserveModuleNamePlugin {
   apply(compiler: webpack.Compiler) {
     compiler.hooks.compilation.tap(TAP_NAME, compilation => {
       compilation.hooks.beforeModuleIds.tap(TAP_NAME, $modules => {
-        let modules = Array.from($modules);
+        let modules = Array.from($modules) as webpack.NormalModule[];
         let { modules: m, extensions: e, alias: a } = compilation.options.resolve;
         let roots = m as string[];
         let extensions = e as string[];
@@ -40,7 +40,7 @@ export class PreserveModuleNamePlugin {
             modulesBeforeConcat.splice(i--, 1, ...m["modules"]);
         }
         
-        for (let module of getPreservedModules(modules)) {
+        for (let module of getPreservedModules(modules, compilation)) {
           // Even though it's imported by Aurelia, it's still possible that the module
           // became the _root_ of a ConcatenatedModule.
           // We use `constructor.name` rather than `instanceof` for compat. with Webpack 2.
@@ -78,13 +78,16 @@ export class PreserveModuleNamePlugin {
   }
 };
 
-function getPreservedModules(modules: webpack.Module[]) {
+function getPreservedModules(modules: webpack.NormalModule[], compilation: webpack.Compilation) {
   return new Set(
     modules.filter(m => {
       // Some modules might have [preserveModuleName] already set, see ConventionDependenciesPlugin.
       let value = m[preserveModuleName];
+      for (const connection of compilation.moduleGraph.getIncomingConnections(m)) {
+        connection.dependency
+      }
       for (let r of m.reasons) {
-        if (!r.dependency || !r.dependency[preserveModuleName]) continue;
+        if (!r?.dependency?.[preserveModuleName]) continue;
         value = true;
         let req = removeLoaders((r.dependency as webpack.dependencies.ModuleDependency).request);
         // We try to find an absolute string and set that as the module [preserveModuleName], as it's the best id.
@@ -135,8 +138,8 @@ function makeModuleRelative(roots: string[], resource: string) {
   return null;
 }
 
-function fixNodeModule(module: webpack.Module, allModules: webpack.Module[]) {
-  if (!/\bnode_modules\b/i.test(module.resource)) return null;
+function fixNodeModule(module: webpack.NormalModule, allModules: webpack.NormalModule[]) {
+  if (!/\bnode_modules\b/i.test(module.request)) return null;
   // The problem with node_modules is that often the root of the module is not /node_modules/my-lib
   // Webpack is going to look for `main` in `project.json` to find where the main file actually is.
   // And this can of course be configured differently with `resolve.alias`, `resolve.mainFields` & co.

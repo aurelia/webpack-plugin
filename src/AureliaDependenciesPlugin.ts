@@ -111,8 +111,9 @@ class ParserPlugin {
       ) {
         return;
       }
-      if (expr.arguments.length === 0 || expr.arguments.length > 2) 
+      if (expr.arguments.length === 0 || expr.arguments.length > 2) {
         return;
+      }
 
       let [arg1, arg2] = expr.arguments as estree.Expression[];
       let param1 = parser.evaluateExpression(arg1);

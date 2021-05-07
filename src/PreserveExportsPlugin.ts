@@ -15,6 +15,9 @@ export class PreserveExportsPlugin {
         for (let module of modules) {
           // TODO:
           // Replace this with the v5 equivalence
+          for (const connection of compilation.moduleGraph.getIncomingConnections(module)) {
+            connection.dependency;
+          }
           for (let reason of module.reasons) {
             let dep = reason.dependency;
             let imports = dep[dependencyImports];

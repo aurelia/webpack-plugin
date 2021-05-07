@@ -85,37 +85,37 @@ declare namespace Webpack {
   //   }[];
   // }
 
-  export class Parser {
-    state: {
-      current: Module;
-      module: Module;
-    }
-    hooks: {
-      program: Tapable.SyncHook;
-      evaluate: Tapable.SyncHook1<"MemberExpression", Webpack.MemberExpression>;
-      evaluateIdentifier: Tapable.SyncHook1<string, Webpack.Expression>;
-      call: Tapable.SyncHook1<string, Webpack.CallExpression>;
-    }
-    evaluateExpression(expr: Expression): EvaluatedExpression;
-  }
+  // export class Parser {
+  //   state: {
+  //     current: Module;
+  //     module: Module;
+  //   }
+  //   hooks: {
+  //     program: Tapable.SyncHook;
+  //     evaluate: Tapable.SyncHook1<"MemberExpression", Webpack.MemberExpression>;
+  //     evaluateIdentifier: Tapable.SyncHook1<string, Webpack.Expression>;
+  //     call: Tapable.SyncHook1<string, Webpack.CallExpression>;
+  //   }
+  //   evaluateExpression(expr: Expression): EvaluatedExpression;
+  // }
 
-  export class EvaluatedExpression {
-    isString(): boolean;
-    isArray(): boolean;
-    string?: string;
-    items?: EvaluatedExpression[];
-  }
+  // export class EvaluatedExpression {
+  //   isString(): boolean;
+  //   isArray(): boolean;
+  //   string?: string;
+  //   items?: EvaluatedExpression[];
+  // }
 
-  export class Compiler {
-    options: Options;
-    hooks: {
-      compilation: Tapable.SyncHook<Compilation, CompilationParameters>;
-      beforeCompile: Tapable.AsyncHook<object>;
-    }
-    resolverFactory: {
-      get(type: "normal", context: object): Resolver;
-    }
-  }
+  // export class Compiler {
+  //   options: Options;
+  //   hooks: {
+  //     compilation: Tapable.SyncHook<Compilation, CompilationParameters>;
+  //     beforeCompile: Tapable.AsyncHook<object>;
+  //   }
+  //   resolverFactory: {
+  //     get(type: "normal", context: object): Resolver;
+  //   }
+  // }
 
   interface Options {
     entry: string | string[] | { [name: string]: string | string[] };
@@ -138,45 +138,45 @@ declare namespace Webpack {
     plugins: object[];
   }
 
-  export class Compilation {
-    options: Options;
-    inputFileSystem: FileSystem;
-    hooks: {
-      beforeModuleIds: Tapable.SyncHook<Module[]>;
-      finishModules: Tapable.SyncHook<Module[]>;
-    }
+  // export class Compilation {
+  //   options: Options;
+  //   inputFileSystem: FileSystem;
+  //   hooks: {
+  //     beforeModuleIds: Tapable.SyncHook<Module[]>;
+  //     finishModules: Tapable.SyncHook<Module[]>;
+  //   }
 
-    dependencyFactories: { set(d: any, f: ModuleFactory): void; };
-    dependencyTemplates: { set(d: any, f: any): void; };
-  }
+  //   dependencyFactories: { set(d: any, f: ModuleFactory): void; };
+  //   dependencyTemplates: { set(d: any, f: any): void; };
+  // }
 
-  export class CompilationParameters {
-    normalModuleFactory: ModuleFactory;  
-  }
+  // export class CompilationParameters {
+  //   normalModuleFactory: ModuleFactory;  
+  // }
 
-  export class ModuleFactory {
-    hooks: {
-      parser: {
-        for(type: "javascript/auto"): Tapable.SyncHook<Parser>;
-      } 
-    }
-  }
+  // export class ModuleFactory {
+  //   hooks: {
+  //     parser: {
+  //       for(type: "javascript/auto"): Tapable.SyncHook<Parser>;
+  //     } 
+  //   }
+  // }
 
   type ResolverCallback = (request: ResolveRequest, cb: (err?: any, result?: any) => void) => void;
 
-  export class Resolver {    
-    fileSystem: FileSystem;
-    hooks: {
-      resolve: Tapable.AsyncHook<ResolveRequest, object>;
-      resolveStep: Tapable.SyncHook<string, ResolveRequest>;
-    }
-    getHook(name: "after-resolve"): Tapable.AsyncHook<ResolveRequest, object>;
-    getHook(name: "before-described-resolve"): Tapable.AsyncHook<ResolveRequest, object>;
-    getHook(name: "described-resolve"): Tapable.AsyncHook<ResolveRequest, object>;
+  // export class Resolver {    
+  //   fileSystem: FileSystem;
+  //   hooks: {
+  //     resolve: Tapable.AsyncHook<ResolveRequest, object>;
+  //     resolveStep: Tapable.SyncHook<string, ResolveRequest>;
+  //   }
+  //   getHook(name: "after-resolve"): Tapable.AsyncHook<ResolveRequest, object>;
+  //   getHook(name: "before-described-resolve"): Tapable.AsyncHook<ResolveRequest, object>;
+  //   getHook(name: "described-resolve"): Tapable.AsyncHook<ResolveRequest, object>;
 
-    doResolve(step: Tapable.Hook, request: ResolveRequest, message: string, resolveContext: object, cb: (err?: any, result?: any) => void): void;
-    resolve(context: string|null, path: string, request: string, resolveContext: object, cb: (err: any, result: string) => void): void;
-  }
+  //   doResolve(step: Tapable.Hook, request: ResolveRequest, message: string, resolveContext: object, cb: (err?: any, result?: any) => void): void;
+  //   resolve(context: string|null, path: string, request: string, resolveContext: object, cb: (err: any, result: string) => void): void;
+  // }
 
   export class ResolveRequest {
     path: string;
@@ -198,58 +198,58 @@ declare namespace Webpack {
   }
 }
 
-import 'webpack';
-declare module "webpack" {
+// import 'webpack';
+// declare module "webpack" {
 
-  export class Module extends DependenciesBlock {
-    id: string;
-    buildMeta: object|null;
-    rawRequest: string;
-    reasons: Reason[];
-    resource: string;
+//   export class Module extends DependenciesBlock {
+//     id: string;
+//     buildMeta: object|null;
+//     rawRequest: string;
+//     reasons: Reason[];
+//     resource: string;
 
-    isUsed(_export: string): boolean | string;
-  }
+//     isUsed(_export: string): boolean | string;
+//   }
 
-  export class DefinePlugin {
-    constructor(hash: any);
-    apply(compiler: Webpack.Compiler): void;
-  }
+//   export class DefinePlugin {
+//     constructor(hash: any);
+//     apply(compiler: Webpack.Compiler): void;
+//   }
 
-  export class DllPlugin {
-  }
+//   export class DllPlugin {
+//   }
 
-  export class DllReferencePlugin {
-  }
-}
-
-// @ts-ignore
-declare module "webpack/lib/Dependency" {
-  const Dependency: typeof Webpack.Dependency;
-  export = Dependency;
-}
+//   export class DllReferencePlugin {
+//   }
+// }
 
 // @ts-ignore
-declare module "webpack/lib/dependencies/NullDependency" {
-  class NullDependencyTemplate {
-  }
+// declare module "webpack/lib/Dependency" {
+//   const Dependency: typeof Webpack.Dependency;
+//   export = Dependency;
+// }
 
-  class NullDependency extends Webpack.Dependency {
-    static Template: typeof NullDependencyTemplate;
-  }
+// // @ts-ignore
+// declare module "webpack/lib/dependencies/NullDependency" {
+//   class NullDependencyTemplate {
+//   }
 
-  export = NullDependency;
-}
+//   class NullDependency extends Webpack.Dependency {
+//     static Template: typeof NullDependencyTemplate;
+//   }
 
-// @ts-ignore
-declare module "webpack/lib/dependencies/ModuleDependency" {
-  class ModuleDependency extends Webpack.Dependency {
-    constructor(request: string);
-    request: string;
-  }
+//   export = NullDependency;
+// }
 
-  export = ModuleDependency;
-}
+// // @ts-ignore
+// declare module "webpack/lib/dependencies/ModuleDependency" {
+//   class ModuleDependency extends Webpack.Dependency {
+//     constructor(request: string);
+//     request: string;
+//   }
+
+//   export = ModuleDependency;
+// }
 
 // @ts-ignore
 // declare module "webpack/lib/javascript/JavaScriptParser" {
