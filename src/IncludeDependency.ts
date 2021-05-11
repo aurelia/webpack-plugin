@@ -1,6 +1,7 @@
 import { dependencyImports } from "./PreserveExportsPlugin";
 import { preserveModuleName } from "./PreserveModuleNamePlugin";
 import * as webpack from 'webpack';
+import { ReferencedExport } from "./interfaces";
 
 export class IncludeDependency extends webpack.dependencies.ModuleDependency {
   private options?: DependencyOptions;
@@ -24,10 +25,11 @@ export class IncludeDependency extends webpack.dependencies.ModuleDependency {
   //     super.getReference();
   // }
 
-  // TODO: is this the equivalence of the getReference above?
-  getReferencedExports() {
+  // TODO:
+  // verify this
+  getReferencedExports(moduleGraph: webpack.ModuleGraph): (string[] | ReferencedExport)[] {
     return this.options?.exports
-      ? [this.options.exports]
+      ? [{ name: this.options.exports, canMangle: false }]
       : webpack.Dependency.NO_EXPORTS_REFERENCED;
   }
 

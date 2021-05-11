@@ -16,7 +16,7 @@ export class BaseIncludePlugin {
       normalModuleFactory.hooks.parser.for("javascript/auto").tap(TAP_NAME, parser => {
         function addDependency(request: string | DependencyOptionsEx) {
           let options = typeof request === 'object' ? request : undefined;
-          let name = options ? options.name : (<string>request);
+          let name = options ? options.name : (request as string);
           parser.state.current.addDependency(new IncludeDependency(name, options));
         }
         

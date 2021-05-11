@@ -23,7 +23,7 @@ function* findFiles(root: string, glob: string, fs: typeof import('fs')) {
     let full = path.resolve(root, folder);
     for (let name of fs.readdirSync(full)) {
       let stats = fs.statSync(path.resolve(full, name));
-      if (stats.isDirectory()) {       
+      if (stats.isDirectory()) {
         let subfolder = path.join(folder, name);
         if (m.match(subfolder, /*partial:*/ true))
           queue.push(subfolder);

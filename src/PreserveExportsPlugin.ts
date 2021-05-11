@@ -14,13 +14,10 @@ export class PreserveExportsPlugin {
       compilation.hooks.finishModules.tap(TAP_NAME, modules => {
         for (let module of modules) {
           // TODO:
-          // Replace this with the v5 equivalence
+          // verify against commented code below
           for (const connection of compilation.moduleGraph.getIncomingConnections(module)) {
-            connection.dependency;
-          }
-          for (let reason of module.reasons) {
-            let dep = reason.dependency;
-            let imports = dep[dependencyImports];
+            let dep = connection.dependency;
+            let imports = dep?.[dependencyImports];
             if (!imports) {
               continue;
             }
@@ -29,6 +26,17 @@ export class PreserveExportsPlugin {
             for (let e of imports)
               set.add(e);
           }
+          // for (let reason of module.reasons) {
+          //   let dep = reason.dependency;
+          //   let imports = dep[dependencyImports];
+          //   if (!imports) {
+          //     continue;
+          //   }
+
+          //   let set = getModuleExports(module);
+          //   for (let e of imports)
+          //     set.add(e);
+          // }
         }
       });
     });

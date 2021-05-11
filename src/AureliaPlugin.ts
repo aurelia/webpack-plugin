@@ -44,7 +44,7 @@ export class AureliaPlugin {
 
   constructor(options: Partial<Options> = {}) {
     this.options = Object.assign({
-      includeAll: <false>false,            
+      includeAll: <false>false,
       aureliaConfig: ["standard", "developmentLogging"],
       dist: "native-modules",
       features: { },
@@ -135,9 +135,13 @@ export class AureliaPlugin {
     if (!opts.noModulePathResolve) {
       // This plugin enables sub-path in modules that are not at the root (e.g. in a /dist folder),
       // for example aurelia-chart/pie might resolve to aurelia-chart/dist/commonjs/pie
-      let resolve = compiler.options.resolve;
-      let plugins = resolve.plugins || (resolve.plugins = []);
-      plugins.push(new SubFolderPlugin());
+      new SubFolderPlugin().apply(compiler);
+      // todo:
+      // verify the line above against the following
+      // ===========================================
+      // let resolve = compiler.options.resolve;
+      // let plugins = resolve.plugins || (resolve.plugins = []);
+      // plugins.push(new SubFolderPlugin());
     }
 
     if (opts.includeAll) {
@@ -235,14 +239,21 @@ export class AureliaPlugin {
             continue;
           }
           let entry = webpackEntry[k];
+      // the following @ts-ignore are intentional
+      // by this time, webpack hasn't normalized the options yet
+      // even though the typings say normalized
+          // @ts-ignore
           if (!Array.isArray(entry)) {
+          // @ts-ignore
             entry = [entry];
           }
+          // @ts-ignore
           webpackEntry[k] = entries.concat(entry);
         }
       }
     }
     else
+      // @ts-ignore
       options.entry = entries.concat(webpackEntry);
   }
 };

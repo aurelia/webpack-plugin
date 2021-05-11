@@ -20,32 +20,32 @@ declare namespace Tapable {
 }
 
 declare namespace Webpack {
-  export class Dependency {
-    module: Module | null;
-    getReference(): { module: Module | null, importedNames: boolean | string[] } | null;
-    static compare(a: Dependency, b: Dependency): number;
-  }
+  // export class Dependency {
+  //   module: Module | null;
+  //   getReference(): { module: Module | null, importedNames: boolean | string[] } | null;
+  //   static compare(a: Dependency, b: Dependency): number;
+  // }
 
-  export class DependenciesBlock {
-    dependencies: Dependency[];
+  // export class DependenciesBlock {
+  //   dependencies: Dependency[];
     
-    addDependency(dependency: Dependency): void;
-  }
+  //   addDependency(dependency: Dependency): void;
+  // }
 
-  export class Module extends DependenciesBlock {
-    id: string;
-    buildMeta: object|null;
-    rawRequest: string;
-    reasons: Reason[];
-    resource: string;
+  // export class Module extends DependenciesBlock {
+  //   id: string;
+  //   buildMeta: object|null;
+  //   rawRequest: string;
+  //   reasons: Reason[];
+  //   resource: string;
     
-    isUsed(_export: string): boolean | string;    
-  }
+  //   isUsed(_export: string): boolean | string;    
+  // }
 
-  export interface Reason {
-    module: Module;
-    dependency: Dependency;
-  }
+  // export interface Reason {
+  //   module: Module;
+  //   dependency: Dependency;
+  // }
 
   // export type Expression =
   //   MemberExpression | 
@@ -162,7 +162,7 @@ declare namespace Webpack {
   //   }
   // }
 
-  type ResolverCallback = (request: ResolveRequest, cb: (err?: any, result?: any) => void) => void;
+  // type ResolverCallback = (request: ResolveRequest, cb: (err?: any, result?: any) => void) => void;
 
   // export class Resolver {    
   //   fileSystem: FileSystem;
@@ -178,24 +178,24 @@ declare namespace Webpack {
   //   resolve(context: string|null, path: string, request: string, resolveContext: object, cb: (err: any, result: string) => void): void;
   // }
 
-  export class ResolveRequest {
-    path: string;
-    request: string;
-    context: any;
-  }
+  // export class ResolveRequest {
+  //   path: string;
+  //   request: string;
+  //   context: any;
+  // }
 
-  export interface FileSystem {
-    readdirSync(path: string): string[];
-    statSync(fname: string): { 
-      isDirectory(): boolean; 
-      isFile(): boolean;
-    };
-  }
+  // export interface FileSystem {
+  //   readdirSync(path: string): string[];
+  //   statSync(fname: string): { 
+  //     isDirectory(): boolean; 
+  //     isFile(): boolean;
+  //   };
+  // }
 
-  export interface Loader {
-    _module: Module;
-    cacheable?(): void;
-  }
+  // export interface Loader {
+  //   _module: Module;
+  //   cacheable?(): void;
+  // }
 }
 
 // import 'webpack';

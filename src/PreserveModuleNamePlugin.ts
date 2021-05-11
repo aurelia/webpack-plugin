@@ -84,18 +84,28 @@ function getPreservedModules(modules: webpack.NormalModule[], compilation: webpa
       // Some modules might have [preserveModuleName] already set, see ConventionDependenciesPlugin.
       let value = m[preserveModuleName];
       for (const connection of compilation.moduleGraph.getIncomingConnections(m)) {
-        connection.dependency
-      }
-      for (let r of m.reasons) {
-        if (!r?.dependency?.[preserveModuleName]) continue;
+        // todo: verify against commented code below
+        if (!connection?.dependency?.[preserveModuleName])
+          continue;
+
         value = true;
-        let req = removeLoaders((r.dependency as webpack.dependencies.ModuleDependency).request);
+        let req = removeLoaders((connection.dependency as webpack.dependencies.ModuleDependency).request);
         // We try to find an absolute string and set that as the module [preserveModuleName], as it's the best id.
         if (req && !req.startsWith(".")) {
           m[preserveModuleName] = req;
           return true;
         }
       }
+      // for (let r of m.reasons) {
+      //   if (!r?.dependency?.[preserveModuleName]) continue;
+      //   value = true;
+      //   let req = removeLoaders((r.dependency as webpack.dependencies.ModuleDependency).request);
+      //   // We try to find an absolute string and set that as the module [preserveModuleName], as it's the best id.
+      //   if (req && !req.startsWith(".")) {
+      //     m[preserveModuleName] = req;
+      //     return true;
+      //   }
+      // }
       return !!value;
     })
   );

@@ -19,3 +19,18 @@ declare module 'enhanced-resolve' {
 export interface IResolverPlugin {
   applyResolver(resolver: Resolver): void;
 }
+
+// note: from webpack.
+// webpack doesn't export this type
+// redeclare here instead
+export interface ReferencedExport {
+	/**
+	 * name of the referenced export
+	 */
+	name: string[];
+
+	/**
+	 * when false, referenced export can not be mangled, defaults to true
+	 */
+	canMangle?: boolean;
+}
