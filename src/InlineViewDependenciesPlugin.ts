@@ -1,7 +1,6 @@
 // This plugins tries to detect @inlineView('<template>...</template>') and process its dependencies
 // like HtmlDependenciesPlugin does.
 import { BaseIncludePlugin, AddDependency } from "./BaseIncludePlugin";
-// import JavaScriptParser = require('webpack/lib/javascript/JavaScriptParser');
 import htmlLoader = require("./html-requires-loader");
 import * as webpack from 'webpack';
 import * as estree from 'estree';

@@ -1,4 +1,3 @@
-/// <reference path="./webpack.submodules.d.ts" />
 import { IncludeDependency } from "./IncludeDependency";
 import * as estree from 'estree';
 import * as webpack from 'webpack';

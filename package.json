@@ -25,12 +25,15 @@
     }
   ],
   "main": "dist/index.js",
+  "types": "dist/types/index.d.ts",
   "files": [
     "dist",
     "runtime"
   ],
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "test": "cd tests/app-simple && npm run build && npm run build:prod"
   },
   "repository": {
     "type": "git",

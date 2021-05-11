@@ -9,7 +9,10 @@
 // if the alternate distribution does not exist.
 // The alias configuration above will fail the build if a third party lib also uses ./dist/commonjs
 // but does not include a ./dist/native-modules
+import { Resolver } from 'enhanced-resolve';
 import * as webpack from 'webpack';
+import { dirname } from "path";
+import { ResolveContext } from './interfaces';
 
 export class DistPlugin {
   private dist: string;
@@ -24,20 +27,48 @@ export class DistPlugin {
   // ===========================================
   //
   apply(compiler: webpack.Compiler) {
+    let resolver: Resolver;
+    compiler.resolverFactory.hooks.resolver.for('normal').tap('DistPlugin', r => {
+      resolver = r as Resolver;
+    });
     compiler.hooks.normalModuleFactory.tap('ResolverDistPlugin', moduleFactory => {
       moduleFactory.hooks.beforeResolve.tapAsync('ResolverDistPlugin', (resolveData, callback) => {
         // If the request contains /dist/xxx/, try /dist/{dist}/xxx first
         let rewritten = resolveData.request.replace(/\/dist\/[^/]+\//i, this.dist);
-        try {
-          compiler.inputFileSystem.stat(rewritten, (err, result) => {
-            if (!err) {
-              resolveData.request = rewritten;
+        if (rewritten !== resolveData.request) {
+          resolver.resolve({}, dirname(rewritten), rewritten, {} as ResolveContext, (err, result) => {
+            if (result) {
+              callback(null, result);
+            } else {
+              callback();
             }
-            callback();
           });
-        } catch {
+          // resolver.doResolve(
+          //   /* hooks to resolver (?) */resolver.hooks.result,
+          //   /* request (?) */{ ...resolveData, request: rewritten },
+          //   /* message (?) */ 'DistPlugin try resolve',
+          //   /* resolve context (?) */{},
+          //   (err: any, result: any) => {
+          //     if (result) {
+          //       callback(null, result);
+          //     } else {
+          //       callback();
+          //     }
+          //   }
+          // );
+        } else {
           callback();
         }
+        // try {
+        //   compiler.inputFileSystem.stat(rewritten, (err, result) => {
+        //     if (!err) {
+        //       resolveData.request = rewritten;
+        //     }
+        //     callback();
+        //   });
+        // } catch {
+        //   callback();
+        // }
       });
     });
   }

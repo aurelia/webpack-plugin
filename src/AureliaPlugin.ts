@@ -13,12 +13,12 @@ import * as webpack from 'webpack';
 import { DependencyOptionsEx } from "./interfaces";
 
 export type Polyfills = "es2015" | "es2016" | "esnext" | "none";
-
+export type AureliaModuleConfig = keyof typeof configModuleNames | 'standard' | 'basic';
 export interface Options {
   includeAll: false | string;
   
   aureliaApp?: string;
-  aureliaConfig: string | string[];
+  aureliaConfig: AureliaModuleConfig | AureliaModuleConfig[];
   pal?: string;
   dist: string;
   entry?: string | string[];
@@ -126,6 +126,7 @@ export class AureliaPlugin {
     let globalDependencies: (string|DependencyOptionsEx)[] = [];
 
     if (opts.dist) {
+      console.log('[Aurelia plugin] DistPlugin');
       // This plugin enables easy switching to a different module distribution (default for Aurelia is dist/commonjs).
       // let resolve = compiler.options.resolve;
       // let plugins = resolve.plugins ??= [];
@@ -134,6 +135,7 @@ export class AureliaPlugin {
     }
 
     if (!opts.noModulePathResolve) {
+      console.log('[Aurelia plugin] SubFolderPlugin');
       // This plugin enables sub-path in modules that are not at the root (e.g. in a /dist folder),
       // for example aurelia-chart/pie might resolve to aurelia-chart/dist/commonjs/pie
       new SubFolderPlugin().apply(compiler);
@@ -146,12 +148,13 @@ export class AureliaPlugin {
     }
 
     if (opts.includeAll) {
+      console.log('[Aurelia plugin] includeAll');
       // Grab everything approach
 
       // This plugin ensures that everything in /src is included in the bundle.
       // This prevents splitting in several chunks but is super easy to use and setup,
       // no change in existing code or PLATFORM.nameModule() calls are required.
-      new GlobDependenciesPlugin({ [emptyEntryModule]: opts.includeAll + "/**" }).apply(compiler);      
+      new GlobDependenciesPlugin({ [emptyEntryModule]: opts.includeAll + "/**" }).apply(compiler);
       needsEmptyEntry = true;
     }
     else if (opts.aureliaApp) {
@@ -187,6 +190,7 @@ export class AureliaPlugin {
     }
 
     if (!opts.noInlineView) {
+      console.log('[Aurelia plugin] InlineViewDependenciesPlugin');
       new InlineViewDependenciesPlugin().apply(compiler);
     }
 
@@ -200,23 +204,31 @@ export class AureliaPlugin {
     }
   
     // Aurelia libs contain a few global defines to cut out unused features
+    console.log('[Aurelia plugin] DefinePlugin');
     new DefinePlugin(defines).apply(compiler);
     // Adds some dependencies that are not documented by `PLATFORM.moduleName`
+    console.log('[Aurelia plugin] ModuleDependenciesPlugin');
     new ModuleDependenciesPlugin(dependencies).apply(compiler);
     // This plugin traces dependencies in code that are wrapped in PLATFORM.moduleName() calls
+    console.log('[Aurelia plugin] AureliaDependenciesPlugin');
     new AureliaDependenciesPlugin(...opts.moduleMethods).apply(compiler);
     // This plugin adds dependencies traced by html-requires-loader
     // Note: the config extension point for this one is html-requires-loader.attributes.
+    console.log('[Aurelia plugin] HtmlDependenciesPlugin');
     new HtmlDependenciesPlugin().apply(compiler);
     // This plugin looks for companion files by swapping extensions,
     // e.g. the view of a ViewModel. @useView and co. should use PLATFORM.moduleName().
     // We use it always even with `includeAll` because libs often don't `@useView` (they should).
+    console.log('[Aurelia plugin] ConventionDependenciesPlugin');
     new ConventionDependenciesPlugin(opts.viewsFor, opts.viewsExtensions).apply(compiler);
     // This plugin preserves module names for dynamic loading by aurelia-loader
+    console.log('[Aurelia plugin] PreserveModuleNamePlugin');
     new PreserveModuleNamePlugin(dllPlugin).apply(compiler);
     // This plugin supports preserving specific exports names when dynamically loading modules
     // with aurelia-loader, while still enabling tree shaking all other exports.
+    console.log('[Aurelia plugin] PreserveExportsPlugin');
     new PreserveExportsPlugin().apply(compiler);
+    console.log('[Aurelia plugin] --DONE applying plugins--')
   }
 
   addEntry(options: webpack.WebpackOptionsNormalized, modules: string|string[]) {
