@@ -16,7 +16,7 @@ module.exports = (env = {}) => {
     },
     output: {
       // If production, add a hash to burst cache
-      filename: isProduction ? '[name].[hash].js' : '[name].js'
+      filename: '[name].[hash].js'
     },
     module: {
       rules: [
