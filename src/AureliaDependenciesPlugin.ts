@@ -1,9 +1,10 @@
 /// <reference path="./webpack.submodules.d.ts" />
 import { IncludeDependency } from "./IncludeDependency";
-import BasicEvaluatedExpression = require("webpack/lib/javascript/BasicEvaluatedExpression");
 import * as estree from 'estree';
 import * as webpack from 'webpack';
 
+import { BasicEvaluatedExpression as $BasicEvaluatedExpression } from './interfaces';
+const BasicEvaluatedExpression: $BasicEvaluatedExpression = require("webpack/lib/javascript/BasicEvaluatedExpression");
 const TAP_NAME = "Aurelia:Dependencies";
 
 export class AureliaDependenciesPlugin {

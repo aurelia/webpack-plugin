@@ -1,5 +1,11 @@
 import { Resolver, ResolveContext, ResolveRequest, ResolveOptions } from 'enhanced-resolve';
-// import * as webpack from 'webpack';
+import * as webpack from 'webpack';
+
+type BasicEvaluatedExpressionType = NonNullable<
+  ReturnType<Parameters<ReturnType<webpack.javascript.JavascriptParser['hooks']['evaluateIdentifier']['for']>['tap']>[1]>
+>;
+
+export type BasicEvaluatedExpression = new () => BasicEvaluatedExpressionType;
 
 export { Resolver, ResolveContext, ResolveRequest, ResolveOptions };
 

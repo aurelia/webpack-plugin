@@ -1,7 +1,7 @@
 import * as webpack from 'webpack';
 import parse = require("html-loader/lib/attributesParser");
 
-interface Loader {
+declare interface Loader {
   _module: webpack.NormalModule;
   cacheable?(): void;
   async(): (...args: unknown[]) => unknown;
