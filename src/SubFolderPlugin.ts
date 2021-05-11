@@ -3,7 +3,7 @@
 // For example, supposing `aurelia-charts` resolves to `aurelia-charts/dist/index.js`,
 // Then if `aurelia-charts/pie` fails, we'll try `aurelia-charts/dist/pie`.
 import path = require("path");
-import { ResolveContext, Resolver } from "./interfaces";
+import { Resolver } from "./interfaces";
 import * as webpack from 'webpack';
 
 const subFolderTrial = Symbol();
