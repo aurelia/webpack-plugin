@@ -1,5 +1,6 @@
 import { IncludeDependency } from "./IncludeDependency";
 import * as webpack from 'webpack';
+import { DependencyOptionsEx } from "./interfaces";
 
 const TAP_NAME = "Aurelia:BaseInclude";
 const NullDependency = webpack.dependencies.NullDependency;

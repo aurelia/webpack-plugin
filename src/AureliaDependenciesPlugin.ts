@@ -3,7 +3,7 @@ import { IncludeDependency } from "./IncludeDependency";
 import * as estree from 'estree';
 import * as webpack from 'webpack';
 
-import { BasicEvaluatedExpression as $BasicEvaluatedExpression } from './interfaces';
+import { BasicEvaluatedExpression as $BasicEvaluatedExpression, DependencyOptions } from './interfaces';
 const BasicEvaluatedExpression: $BasicEvaluatedExpression = require("webpack/lib/javascript/BasicEvaluatedExpression");
 const TAP_NAME = "Aurelia:Dependencies";
 

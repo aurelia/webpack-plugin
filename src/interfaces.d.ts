@@ -40,3 +40,10 @@ export interface ReferencedExport {
 	 */
 	canMangle?: boolean;
 }
+
+export interface DependencyOptions {
+  chunk?: string;
+  exports?: string[];
+}
+
+export type DependencyOptionsEx = DependencyOptions & { name: string };

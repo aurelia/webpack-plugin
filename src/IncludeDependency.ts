@@ -1,7 +1,7 @@
 import { dependencyImports } from "./PreserveExportsPlugin";
 import { preserveModuleName } from "./PreserveModuleNamePlugin";
 import * as webpack from 'webpack';
-import { ReferencedExport } from "./interfaces";
+import { DependencyOptions, ReferencedExport } from "./interfaces";
 
 export class IncludeDependency extends webpack.dependencies.ModuleDependency {
   private options?: DependencyOptions;

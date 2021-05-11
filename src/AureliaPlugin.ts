@@ -10,6 +10,7 @@ import { PreserveExportsPlugin } from "./PreserveExportsPlugin";
 import { PreserveModuleNamePlugin } from "./PreserveModuleNamePlugin";
 import { SubFolderPlugin } from "./SubFolderPlugin";
 import * as webpack from 'webpack';
+import { DependencyOptionsEx } from "./interfaces";
 
 export type Polyfills = "es2015" | "es2016" | "esnext" | "none";
 

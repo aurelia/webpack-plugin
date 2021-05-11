@@ -1,6 +1,7 @@
 import { BaseIncludePlugin, AddDependency } from "./BaseIncludePlugin";
 import path = require("path");
 import * as webpack from 'webpack';
+import { DependencyOptionsEx } from "./interfaces";
 
 const TAP_NAME = "Aurelia:ModuleDependencies";
 
