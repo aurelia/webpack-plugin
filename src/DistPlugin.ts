@@ -11,8 +11,8 @@
 // but does not include a ./dist/native-modules
 import { Resolver } from 'enhanced-resolve';
 import * as webpack from 'webpack';
-import { dirname } from "path";
-import { ResolveContext } from './interfaces';
+// import { dirname } from "path";
+// import { ResolveContext } from './interfaces';
 
 export class DistPlugin {
   private dist: string;
@@ -31,31 +31,31 @@ export class DistPlugin {
     compiler.resolverFactory.hooks.resolver.for('normal').tap('DistPlugin', r => {
       resolver = r as Resolver;
     });
-    compiler.hooks.normalModuleFactory.tap('ResolverDistPlugin', moduleFactory => {
-      moduleFactory.hooks.beforeResolve.tapAsync('ResolverDistPlugin', (resolveData, callback) => {
+    compiler.hooks.normalModuleFactory.tap('DistPlugin', moduleFactory => {
+      moduleFactory.hooks.resolve.tapAsync('DistPlugin', (resolveData, callback) => {
         // If the request contains /dist/xxx/, try /dist/{dist}/xxx first
         let rewritten = resolveData.request.replace(/\/dist\/[^/]+\//i, this.dist);
         if (rewritten !== resolveData.request) {
-          resolver.resolve({}, dirname(rewritten), rewritten, {} as ResolveContext, (err, result) => {
-            if (result) {
-              callback(null, result);
-            } else {
-              callback();
-            }
-          });
-          // resolver.doResolve(
-          //   /* hooks to resolver (?) */resolver.hooks.result,
-          //   /* request (?) */{ ...resolveData, request: rewritten },
-          //   /* message (?) */ 'DistPlugin try resolve',
-          //   /* resolve context (?) */{},
-          //   (err: any, result: any) => {
-          //     if (result) {
-          //       callback(null, result);
-          //     } else {
-          //       callback();
-          //     }
+          // resolver.resolve({}, dirname(rewritten), rewritten, {} as ResolveContext, (err, result) => {
+          //   if (result) {
+          //     callback(null, result);
+          //   } else {
+          //     callback();
           //   }
-          // );
+          // });
+          resolver.doResolve(
+            /* hooks to resolver (?) */resolver.hooks.result,
+            /* request (?) */{ ...resolveData, request: rewritten },
+            /* message (?) */ 'DistPlugin try resolve',
+            /* resolve context (?) */{},
+            (err: any, result: any) => {
+              if (result) {
+                callback(null, result);
+              } else {
+                callback();
+              }
+            }
+          );
         } else {
           callback();
         }
