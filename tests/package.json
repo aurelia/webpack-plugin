@@ -32,5 +32,8 @@
     "aurelia-templating-binding": "^1.5.3",
     "aurelia-templating-resources": "^1.13.1",
     "aurelia-templating-router": "^1.4.0"
+  },
+  "devDependencies": {
+    "rimraf": "^3.0.2"
   }
 }

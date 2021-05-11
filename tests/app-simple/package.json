@@ -1,0 +1,13 @@
+{
+  "name": "app-simple",
+  "scripts": {
+    "dev": "webpack-dev-server",
+    "prebuild1": "npm run rimraf",
+    "build": "webpack",
+    "prebuild:watch": "npm run rimraf",
+    "build:watch": "webpack --watch",
+    "prebuild:prod": "npm run rimraf",
+    "build:prod": "webpack --env.prod=production",
+    "rimraf": "rimraf dist"
+  }
+}
