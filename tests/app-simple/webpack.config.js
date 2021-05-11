@@ -40,22 +40,18 @@ module.exports = (env = {}) => {
         aureliaConfig: ['basic']
       }),
       // Standard plugin to build index.html
-      new HtmlWebpackPlugin({
-        template: 'index.ejs'
-      }),
-      new CopyWebpackPlugin({
-        patterns: [
-          // Have all static files / asessts copied over
-          { from: 'static/**', to: '.' },
-          // Have base vendor css and javascript copied over
-          { context: 'node_modules/jquery/dist', from: 'jquery.min.js', to: 'static/js' },
-          { context: 'node_modules/bootstrap/dist/js', from: 'bootstrap.bundle.min.js', to: 'static/js' },
-          { context: 'node_modules/bootstrap/dist/css', from: '**', to: 'static/css', globOptions: { ignore: '**.map' } }
-        ],
-        options: {
-          // copyUnmodified: true
-        }
-      }),
+      // new HtmlWebpackPlugin({
+      //   template: 'index.ejs'
+      // }),
+      // new CopyWebpackPlugin({
+      //   patterns: [
+      //     // Have all static files / asessts copied over
+      //     { from: 'static/**', to: '.' },
+      //   ],
+      //   options: {
+      //     // copyUnmodified: true
+      //   }
+      // }),
     ]
   };
 };

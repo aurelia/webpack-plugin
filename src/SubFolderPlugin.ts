@@ -3,7 +3,7 @@
 // For example, supposing `aurelia-charts` resolves to `aurelia-charts/dist/index.js`,
 // Then if `aurelia-charts/pie` fails, we'll try `aurelia-charts/dist/pie`.
 import path = require("path");
-import { Resolver } from "./interfaces";
+import { ResolveContext, Resolver } from "./interfaces";
 import * as webpack from 'webpack';
 
 const subFolderTrial = Symbol();
@@ -44,11 +44,43 @@ export class SubFolderPlugin {
           return;
         }
 
-        let [, module, rest] = match;
+        let [, modulePath, rest] = match;
         // Try resolve just the module name to locate its actual root
-        let rootRequest = { ...resolveData, request: module };
+        let rootRequest = { ...resolveData, request: modulePath };
         // Note: if anything doesn't work while probing or trying alternate paths, 
         //       we just ignore the error and pretend nothing happened (i.e. call cb())
+        // resolver.resolve(
+        //   /* context */{},
+        //   /* dirname to start looking */path.dirname(resolveData.request),
+        //   /* request */path.basename(resolveData.request),
+
+        //   // /* message */"module sub-folder: identify root",
+        //   /* resolve context */{} as ResolveContext,
+        //   (err: any, result: { relativePath: string }) => {
+        //   if (!result || !result.relativePath.startsWith('./')) {
+        //     callback();
+        //     return;
+        //   }
+        //   // It worked, let's try a relative folder from there
+        //   let root = path.posix.dirname(result.relativePath);
+        //   let newRequest = ({ ...resolveData, request: root.replace(/^\./, modulePath) + rest });
+        //   newRequest[subFolderTrial] = true;
+        //   // newRequest.context[subFolderTrial] = true;
+        //   resolver.doResolve(
+        //     resolver.hooks.resolve,
+        //     newRequest,
+        //     "try module sub-folder: " + root,
+        //     {},
+        //     (err: Error, result: { relativePath: string }) => {
+        //       if (result) {
+        //         callback(null, result);
+        //       } else {
+        //         callback();
+        //       }
+        //     }
+        //   );
+        // });
+        debugger;
         resolver.doResolve(
           /* resolve hooks to invoke */resolver.hooks.resolve,
           /* request */rootRequest,
@@ -60,7 +92,7 @@ export class SubFolderPlugin {
           }
           // It worked, let's try a relative folder from there
           let root = path.posix.dirname(result.relativePath);
-          let newRequest = ({ ...resolveData, request: root.replace(/^\./, module) + rest });
+          let newRequest = ({ ...resolveData, request: root.replace(/^\./, modulePath) + rest });
           newRequest[subFolderTrial] = true;
           // newRequest.context[subFolderTrial] = true;
           resolver.doResolve(
