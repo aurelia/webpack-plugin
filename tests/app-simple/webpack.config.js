@@ -4,9 +4,8 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 const path = require('path');
 
 module.exports = (env = {}) => {
-  const isProduction = env.prod === 'production';
   return {
-    mode: isProduction ? 'production' : 'development',
+    mode: 'development',
     resolve: {
       extensions: [".ts", ".js"],
       modules: ["src", "node_modules"],
