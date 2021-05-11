@@ -34,7 +34,7 @@
     "postinstall": "cd tests && npm ci && cd app-simple && npm ci",
     "build": "tsc",
     "build:watch": "tsc --watch",
-    "test": "cd tests/app-simple && npm run build && npm run build:prod"
+    "test": "cd tests/app-simple && npm run rimraf && npm run build"
   },
   "repository": {
     "type": "git",

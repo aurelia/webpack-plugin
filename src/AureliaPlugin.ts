@@ -228,46 +228,28 @@ export class AureliaPlugin {
     // with aurelia-loader, while still enabling tree shaking all other exports.
     console.log('[Aurelia plugin] PreserveExportsPlugin');
     new PreserveExportsPlugin().apply(compiler);
-    console.log('[Aurelia plugin] --DONE applying plugins--')
+    console.log('[Aurelia plugin] --DONE applying plugins--');
+    console.log(compiler.options.entry);
+    if (typeof compiler.options.entry === 'function') {
+
+    } else {
+      compiler.options.entry.app.import
+    }
   }
 
   addEntry(options: webpack.WebpackOptionsNormalized, modules: string|string[]) {
     let webpackEntry = options.entry;
     let entries = Array.isArray(modules) ? modules : [modules];
-    if (typeof webpackEntry === "object" && !Array.isArray(webpackEntry)) {
-      if (this.options.entry) {
-        // Add runtime only to the entries defined on this plugin
-        let ks = this.options.entry;
-        if (!Array.isArray(ks)) ks = [ks];
-        ks.forEach(k => {
-          if (webpackEntry[k] === undefined) {
-            throw new Error('entry key "' + k + '" is not defined in Webpack build, cannot apply runtime.');
-          }
-          webpackEntry[k] = entries.concat(webpackEntry[k])
-        });
-      } else {
-        // Add runtime to each entry
-        for (let k in webpackEntry) {
-          if (!webpackEntry.hasOwnProperty(k)) {
-            continue;
-          }
-          let entry = webpackEntry[k];
-      // the following @ts-ignore are intentional
-      // by this time, webpack hasn't normalized the options yet
-      // even though the typings say normalized
-          // @ts-ignore
-          if (!Array.isArray(entry)) {
-          // @ts-ignore
-            entry = [entry];
-          }
-          // @ts-ignore
-          webpackEntry[k] = entries.concat(entry);
-        }
-      }
+    // todo:
+    // probably cant do much here?
+    if (typeof webpackEntry === 'function') {
+      return;
     }
-    else
-      // @ts-ignore
-      options.entry = entries.concat(webpackEntry);
+    // Add runtime to each entry
+    for (let k in webpackEntry) {
+      let entry = webpackEntry[k];
+      entry.import?.unshift(...entries);
+    }
   }
 };
 

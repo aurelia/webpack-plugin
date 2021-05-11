@@ -80,7 +80,6 @@ export class SubFolderPlugin {
         //     }
         //   );
         // });
-        debugger;
         resolver.doResolve(
           /* resolve hooks to invoke */resolver.hooks.resolve,
           /* request */rootRequest,
