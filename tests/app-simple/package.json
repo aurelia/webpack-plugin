@@ -9,5 +9,8 @@
     "prebuild:prod": "npm run rimraf",
     "build:prod": "webpack --env.prod=production",
     "rimraf": "rimraf dist"
+  },
+  "dependencies": {
+    "aurelia-webpack-plugin": "file:../.."
   }
 }
