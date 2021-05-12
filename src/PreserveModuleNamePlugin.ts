@@ -70,6 +70,7 @@ export class PreserveModuleNamePlugin {
           id = id.replace(/\\/g, "/");
           if (module.buildMeta)  // meta can be null if the module contains errors
             module.buildMeta["aurelia-id"] = id;
+          console.log({ id })
           if (!this.isDll)
             module.id = id;
         }
@@ -167,7 +168,11 @@ function fixNodeModule(module: webpack.NormalModule, allModules: webpack.NormalM
   // in case the package was located in a sub-node_modules (which can occur in special circumstances).
   // We also need to take care of scoped modules. If the name starts with @ we must keep two parts,
   // so @corp/bar is the proper module name.
-  let name = /\bnode_modules[\\/](?!.*\bnode_modules\b)((?:@[^\\/]+[\\/])?[^\\/]+)/i.exec(module.resource)![1];
+  let name = /\bnode_modules[\\/](?!.*\bnode_modules\b)((?:@[^\\/]+[\\/])?[^\\/]+)/i.exec(module.resource)?.[1];
+  if (!name) {
+    console.log('what is this', module.resource);
+    return;
+  }
   name = name.replace("\\", "/"); // normalize \ to / for scoped modules
   let entry = allModules.find(m => removeLoaders(m.rawRequest) === name);
   if (entry) 

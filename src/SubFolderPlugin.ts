@@ -11,8 +11,6 @@ const subFolderTrial = Symbol();
 export const resolveCache = {};
 
 export class SubFolderPlugin {
-  get pluginName() { return 'SubFolderPlugin'; }
-
   // TODO: verify the following code against commented apply method below
   // ===========================================
   //
@@ -57,8 +55,9 @@ export class SubFolderPlugin {
           // /* message */"module sub-folder: identify root",
           /* resolve context */{} as import('./interfaces').ResolveContext,
           (err: any, filePath: string, request) => {
-            debugger;
-            if (!filePath.startsWith('./')) {
+            // debugger;
+            if (err || !filePath.startsWith('./')) {
+              console.log('3333333333333333333333\n-------------------\n3333333333333333333333\n', { path: filePath, message: err?.message });
               callback();
               return;
             }
@@ -67,6 +66,7 @@ export class SubFolderPlugin {
             let newRequest = ({ ...resolveData, request: root.replace(/^\./, modulePath) + rest });
             newRequest[subFolderTrial] = true;
             // newRequest.context[subFolderTrial] = true;
+            console.log('---------\n-------------------\n-------------')
             resolver.doResolve(
               resolver.hooks.resolve,
               newRequest,

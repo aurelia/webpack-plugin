@@ -2,8 +2,77 @@ import { BaseIncludePlugin, AddDependency } from "./BaseIncludePlugin";
 import { Minimatch } from "minimatch";
 import * as webpack from 'webpack';
 import path = require("path");
+import { Resolver } from "enhanced-resolve";
+import { ResolveContext } from "./interfaces";
 
 const TAP_NAME = "Aurelia:GlobDependencies";
+
+export class GlobDependenciesPlugin extends BaseIncludePlugin {
+  private root = path.resolve();
+  private hash: { [module: string]: string[] };
+  private modules: { [module: string]: string[] }; // Same as hash, but names are resolved to actual resources
+
+  /**
+   * Each hash member is a module name, for which globbed value(s) will be added as dependencies
+   **/
+  constructor(hash: { [module: string]: string | string[] }) {
+    super();
+    for (let module in hash) {
+      let glob = hash[module];
+      if (!Array.isArray(glob))
+        hash[module] = [glob];
+    }
+    this.hash = hash as { [module: string]: string[] };
+  }
+
+  apply(compiler: webpack.Compiler) {
+    const hashKeys = Object.getOwnPropertyNames(this.hash);
+    if (hashKeys.length === 0)
+      return;
+
+    compiler.hooks.beforeCompile.tapPromise(TAP_NAME, () => {
+      // create a new resolver, to avoid premature creation of the main resolver
+      // this is potentially an issue, as this resolver won't be able to resolve like the actual one
+      // with all the o
+      const resolver = compiler.resolverFactory.get('normal', {});
+      // Map the modules passed in ctor to actual resources (files) so that we can
+      // recognize them no matter what the rawRequest was (loaders, relative paths, etc.)
+      this.modules = { };
+      return Promise
+        .all(hashKeys.map(moduleName => new Promise<void>(resolve => {
+          resolver.resolve({}, this.root, moduleName, {} as ResolveContext, (err, resource) => {
+            this.modules[resource as string] = this.hash[moduleName];
+            resolve();
+          });
+        })))
+        .then(() => {});
+    });
+
+    super.apply(compiler);
+  }
+
+  parser(compilation: webpack.Compilation, parser: webpack.javascript.JavascriptParser, addDependency: AddDependency) {
+    const resolveFolders = compilation.options.resolve.modules!;
+    // `resolveFolders` can be absolute paths, but by definition this plugin only 
+    // looks for files in subfolders of the current `root` path.
+    const normalizers = resolveFolders.map(x => path.relative(this.root, x))
+                                      .filter(x => !x.startsWith(".."))
+                                      .map(x => new RegExp("^" + x + "/", "ig"));
+
+    parser.hooks.program.tap(TAP_NAME, () => {
+      const globs = this.modules[parser.state.module.resource];
+      if (!globs)
+        return;
+
+      for (let glob of globs) 
+        for (let file of findFiles(this.root, glob, compilation.inputFileSystem as typeof import('fs'))) {
+          file = file.replace(/\\/g, "/");
+          // normalizers.forEach(x => file = file.replace(x, ""));
+          addDependency(file);
+        }
+    });
+  }
+};
 
 declare module "minimatch" {
   interface IMinimatch {
@@ -36,64 +105,3 @@ function* findFiles(root: string, glob: string, fs: typeof import('fs')) {
     }
   }
 }
-
-export class GlobDependenciesPlugin extends BaseIncludePlugin {
-  private root = path.resolve();
-  private hash: { [module: string]: string[] };
-  private modules: { [module: string]: string[] }; // Same as hash, but names are resolved to actual resources
-
-  /**
-   * Each hash member is a module name, for which globbed value(s) will be added as dependencies
-   **/
-  constructor(hash: { [module: string]: string | string[] }) {
-    super();
-    for (let module in hash) {
-      let glob = hash[module];
-      if (!Array.isArray(glob))
-        hash[module] = [glob];
-    }    
-    this.hash = hash as { [module: string]: string[] };
-  }
-
-  apply(compiler: webpack.Compiler) {
-    const hashKeys = Object.getOwnPropertyNames(this.hash);
-    if (hashKeys.length === 0) return;
-
-    compiler.hooks.beforeCompile.tapPromise(TAP_NAME, () => {
-      // Map the modules passed in ctor to actual resources (files) so that we can
-      // recognize them no matter what the rawRequest was (loaders, relative paths, etc.)
-      this.modules = { };
-      const resolver = compiler.resolverFactory.get("normal", {});
-      return Promise.all(
-        hashKeys.map(module => new Promise<void>(resolve => {
-          resolver.resolve(null!, this.root, module, {}, (err, resource) => {
-            this.modules[resource as string] = this.hash[module];
-            resolve();
-          });
-        }))) as unknown as Promise<void>;
-    });
-
-    super.apply(compiler);
-  }
-
-  parser(compilation: webpack.Compilation, parser: webpack.javascript.JavascriptParser, addDependency: AddDependency) {
-    const resolveFolders = compilation.options.resolve.modules!;
-    // `resolveFolders` can be absolute paths, but by definition this plugin only 
-    // looks for files in subfolders of the current `root` path.
-    const normalizers = resolveFolders.map(x => path.relative(this.root, x))
-                                      .filter(x => !x.startsWith(".."))
-                                      .map(x => new RegExp("^" + x + "/", "ig"));
-
-    parser.hooks.program.tap(TAP_NAME, () => {      
-      const globs = this.modules[parser.state.module.resource];
-      if (!globs) return;
-
-      for (let glob of globs) 
-        for (let file of findFiles(this.root, glob, compilation.inputFileSystem as typeof import('fs'))) {
-          file = file.replace(/\\/g, "/");
-          normalizers.forEach(x => file = file.replace(x, ""));
-          addDependency(file);
-        }
-    });
-  }
-};

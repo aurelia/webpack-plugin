@@ -11,21 +11,25 @@ export class AureliaDependenciesPlugin {
 
   constructor(...methods: string[]) {
     // Always include PLATFORM.moduleName as it's what used in libs.
-    if (!methods.includes("PLATFORM.moduleName"))
+    if (!methods.includes("PLATFORM.moduleName")) {
       methods.push("PLATFORM.moduleName");
+    }
     this.parserPlugin = new ParserPlugin(methods);
   }
 
   apply(compiler: webpack.Compiler) {
+    compiler.hooks.beforeCompile.tap(TAP_NAME, params => {
+      const normalModuleFactory = params.normalModuleFactory;
+
+      normalModuleFactory.hooks.parser.for("javascript/auto").tap(TAP_NAME, parser => {
+        this.parserPlugin.apply(parser);
+      });
+    });
     compiler.hooks.compilation.tap(TAP_NAME, (compilation, params) => {
       const normalModuleFactory = params.normalModuleFactory;
 
       compilation.dependencyFactories.set(AureliaDependency, normalModuleFactory);
       compilation.dependencyTemplates.set(AureliaDependency, new Template());
-
-      normalModuleFactory.hooks.parser.for("javascript/auto").tap(TAP_NAME, parser => {
-        this.parserPlugin.apply(parser);
-      });
     });
   }
 }
@@ -77,6 +81,7 @@ class ParserPlugin {
       if (isIdentifier(expr.property, 'moduleName')
         && isIdentifier(expr.object, 'PLATFORM')
       ) {
+        debugger;
         return new BasicEvaluatedExpression()
           .setIdentifier("PLATFORM.moduleName")
           .setRange(expr.range!);
@@ -105,11 +110,47 @@ class ParserPlugin {
       return undefined;
     });
 
-    hooks.call.for('javascript/auto').tap(TAP_NAME, (expr: estree.CallExpression) => {
+    // hooks.evaluate.for('MemberExpression').tap(TAP_NAME, expr => {
+    //   // console.log('ESMMMMMMMMMMMMMMM\nESMMMMMMMMMMMMMMM\nESMMMMMMMMMMMMMMM\nESMMMMMMMMMMMMMMM');
+    //   return undefined;
+    // });
+
+    hooks.call.for('moduleName').tap(TAP_NAME, expr => {
+      console.log(expr);
+    });
+    hooks.call.for('PLATFORM.moduleName').tap(TAP_NAME, expr => {
+      console.log(expr);
+    });
+    hooks.callMemberChain.for('moduleName').tap(TAP_NAME, expr => {
+      console.log(expr);
+    });
+    hooks.callMemberChain.for('PLATFORM.moduleName').tap(TAP_NAME, expr => {
+      console.log(expr);
+    });
+
+    hooks.evaluate.for('CallExpression').tap(TAP_NAME, (expr: estree.CallExpression) => {
+      if (!parser.state.current.resource.includes('node_modules'))
+        console.log(parser.state.current.resource);
+      // console.log('moduleName')
+      const calleeee = expr.callee;
+      // if (expr.type === 'CallExpression' && calleeee.type !== 'MemberExpression' && calleeee.type !== 'Identifier') {
+      //   console.log(calleeee);
+      //   debugger;
+      // }
+      if (
+        calleeee.type === 'MemberExpression'
+          && calleeee.object.type === 'Identifier' && calleeee.object.name === 'PLATFORM'
+          && calleeee.property.type === 'Identifier' && calleeee.property.name === 'moduleName'
+        || calleeee.type === 'Identifier'
+          && calleeee.name === 'PLATFORM.moduleName'
+      ) {
+        console.log('calling PLATFORM.moduleName');
+        console.log('arguments:', expr.arguments);
+      }
       if (expr.type !== 'CallExpression'
         || !this.methods.includes((expr.callee as estree.Identifier).name)
       ) {
-        return;
+        return undefined;
       }
       if (expr.arguments.length === 0 || expr.arguments.length > 2) {
         return;
@@ -122,7 +163,8 @@ class ParserPlugin {
       if (expr.arguments.length === 1) {
         // Normal module dependency
         // PLATFORM.moduleName('some-module')
-        return addDependency(param1.string!, expr.range!);
+        addDependency(param1.string!, expr.range!);
+        return;
       }
 
       let options: DependencyOptions | undefined;
@@ -166,7 +208,10 @@ class ParserPlugin {
         // Unknown PLATFORM.moduleName() signature
         return;
       }
-      return addDependency(param1.string!, expr.range!, options);
+      console.log('adjusted for', expr);
+      debugger;
+      addDependency(param1.string!, expr.range!, options);
+      return;
     });
   }
 }

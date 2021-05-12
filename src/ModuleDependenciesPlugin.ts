@@ -47,15 +47,21 @@ export class ModuleDependenciesPlugin extends BaseIncludePlugin {
       // Map the modules passed in ctor to actual resources (files) so that we can
       // recognize them no matter what the rawRequest was (loaders, relative paths, etc.)
       this.modules = { };
-      const resolver = compiler.resolverFactory.get("normal", {});
-      return Promise.all(
-        hashKeys.map(module => new Promise<void>(resolve => {
-          resolver.resolve(null!, this.root, module, {}, (err, resource) => {
-            this.modules[resource as string] = this.hash[module];
-            resolve();
-          });
-        })
-      )) as unknown as Promise<void>;
+      const resolver = compiler.resolverFactory.get("normal");
+      return Promise
+        .all(
+          hashKeys.map(module => new Promise<void>(resolve => {
+            console.log('Resolving at::::::::::', this.root);
+            resolver.resolve({}, this.root, module, {}, (err, resource) => {
+              if (err) {
+                debugger;
+              }
+              this.modules[resource as string] = this.hash[module];
+              resolve();
+            });
+          })
+        ))
+        .then(() => {});
     });
 
     super.apply(compiler);
@@ -65,7 +71,9 @@ export class ModuleDependenciesPlugin extends BaseIncludePlugin {
     parser.hooks.program.tap(TAP_NAME, () => {
       // We try to match the resource, or the initial module request.
       const deps = this.modules[parser.state.module.resource];
-      if (deps) deps.forEach(addDependency);
+      if (deps) {
+        deps.forEach(addDependency);
+      }
     });
   }
 }

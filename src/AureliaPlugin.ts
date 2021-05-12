@@ -15,6 +15,9 @@ import { DependencyOptionsEx } from "./interfaces";
 export type Polyfills = "es2015" | "es2016" | "esnext" | "none";
 export type AureliaModuleConfig = keyof typeof configModuleNames | 'standard' | 'basic';
 export interface Options {
+  /**
+   * if true, include everything inside src folder
+   */
   includeAll: false | string;
   
   aureliaApp?: string;
@@ -229,12 +232,6 @@ export class AureliaPlugin {
     console.log('[Aurelia plugin] PreserveExportsPlugin');
     new PreserveExportsPlugin().apply(compiler);
     console.log('[Aurelia plugin] --DONE applying plugins--');
-    console.log(compiler.options.entry);
-    if (typeof compiler.options.entry === 'function') {
-
-    } else {
-      compiler.options.entry.app.import
-    }
   }
 
   addEntry(options: webpack.WebpackOptionsNormalized, modules: string|string[]) {

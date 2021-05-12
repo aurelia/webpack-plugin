@@ -14,7 +14,7 @@ export class IncludeDependency extends webpack.dependencies.ModuleDependency {
 
   // @ts-expect-error
   get type() {
-    return "aurelia module";
+    return "aurelia dependency module";
   }
 
   // getReference() {
@@ -28,6 +28,7 @@ export class IncludeDependency extends webpack.dependencies.ModuleDependency {
   // TODO:
   // verify this
   getReferencedExports(moduleGraph: webpack.ModuleGraph): (string[] | ReferencedExport)[] {
+    debugger;
     return this.options?.exports
       ? [{ name: this.options.exports, canMangle: false }]
       : webpack.Dependency.NO_EXPORTS_REFERENCED;
