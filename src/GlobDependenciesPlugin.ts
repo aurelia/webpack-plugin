@@ -41,6 +41,9 @@ export class GlobDependenciesPlugin extends BaseIncludePlugin {
       return Promise
         .all(hashKeys.map(moduleName => new Promise<void>(resolve => {
           resolver.resolve({}, this.root, moduleName, {} as ResolveContext, (err, resource) => {
+            if (err) {
+              debugger;
+            }
             this.modules[resource as string] = this.hash[moduleName];
             resolve();
           });

@@ -13,8 +13,6 @@ import { Resolver } from 'enhanced-resolve';
 import * as webpack from 'webpack';
 import * as path from 'path';
 import { ResolveContext, ResolveRequest } from './interfaces';
-// import { dirname } from "path";
-// import { ResolveContext } from './interfaces';
 
 export class DistPlugin {
   private rawDist: string;
@@ -25,40 +23,19 @@ export class DistPlugin {
     this.dist = `/dist/${dist}/`;
   }
 
-  // TODO: verify the following code against commented apply method below
-  // ===========================================
-  //
   apply(resolver: Resolver) {
-    if (!this.rawDist) {
+    if (!this.rawDist)
       return;
-    }
-    resolver
-      .getHook("before-described-resolve")
-      .tapAsync("Aurelia:Dist", (request: ResolveRequest, resolveContext: object, cb: (err?: any, result?: any) => void) => {
-        // If the request contains /dist/xxx/, try /dist/{dist}/ first
-        let rewritten = request.request ? request.request.replace(/\/dist\/[^/]+\//i, this.dist) : '';
-        if (rewritten !== request.request) {
-          let newRequest = Object.assign({}, request, { request: rewritten });
-          resolver.doResolve(resolver.getHook("described-resolve"), newRequest, "try alternate " + this.dist, {}, cb);
-        }
-        else
-          cb(); // Path does not contain /dist/xxx/, continue normally
-      });
+    resolver.getHook("before-described-resolve")
+            .tapAsync("Aurelia:Dist", (request: ResolveRequest, resolveContext: object, cb: (err?: any, result?: any) => void) => {
+      // If the request contains /dist/xxx/, try /dist/{dist}/ first
+      let rewritten = request.request?.replace(/\/dist\/[^/]+\//i, this.dist) ?? '';
+      if (rewritten !== request.request) {
+        let newRequest = Object.assign({}, request, { request: rewritten });
+        resolver.doResolve(resolver.getHook("described-resolve"), newRequest, "try alternate " + this.dist, {}, cb);
+      }
+      else
+        cb(); // Path does not contain /dist/xxx/, continue normally
+    });
   }
-
-  // apply(resolver: webpack.Resolver) {
-  //   if (!this.dist)
-  //     return;
-  //   resolver.getHook("before-described-resolve")
-  //           .tapAsync("Aurelia:Dist", (request, resolveContext: object, cb: (err?: any, result?: any) => void) => {
-  //     // If the request contains /dist/xxx/, try /dist/{dist}/ first
-  //     let rewritten = request.request.replace(/\/dist\/[^/]+\//i, this.dist);
-  //     if (rewritten !== request.request) {
-  //       let newRequest = Object.assign({}, request, { request: rewritten });
-  //       resolver.doResolve(resolver.getHook("described-resolve"), newRequest, "try alternate " + this.dist, {}, cb);
-  //     }
-  //     else
-  //       cb(); // Path does not contain /dist/xxx/, continue normally
-  //   });
-  // }
 };
