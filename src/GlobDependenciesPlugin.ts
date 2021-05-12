@@ -63,22 +63,19 @@ export class GlobDependenciesPlugin extends BaseIncludePlugin {
       return;
 
     compiler.hooks.beforeCompile.tapPromise(TAP_NAME, () => {
-      // create a new resolver, to avoid premature creation of the main resolver
-      // this is potentially an issue, as this resolver won't be able to resolve like the actual one
-      // with all the o
-      const resolver = compiler.resolverFactory.get('normal');
       // Map the modules passed in ctor to actual resources (files) so that we can
       // recognize them no matter what the rawRequest was (loaders, relative paths, etc.)
       this.modules = { };
+      const resolver = compiler.resolverFactory.get('normal');
       return Promise.all(
-        hashKeys.map(moduleName => new Promise<void>(resolve => {
-          resolver.resolve({}, this.root, moduleName, {} as ResolveContext, (err, resource) => {
+        hashKeys.map(module => new Promise<void>(resolve => {
+          resolver.resolve({}, this.root, module, {} as ResolveContext, (err, resource) => {
             if (err) {
               debugger;
               resolve();
               return;
             }
-            this.modules[resource as string] = this.hash[moduleName];
+            this.modules[resource as string] = this.hash[module];
             resolve();
           });
         })))
@@ -98,8 +95,7 @@ export class GlobDependenciesPlugin extends BaseIncludePlugin {
 
     parser.hooks.program.tap(TAP_NAME, () => {
       const globs = this.modules[parser.state.module.resource];
-      if (!globs)
-        return;
+      if (!globs) return;
 
       for (let glob of globs) 
         for (let file of findFiles(this.root, glob, compilation.inputFileSystem as typeof import('fs'))) {

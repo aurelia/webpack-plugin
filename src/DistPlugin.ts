@@ -10,9 +10,7 @@
 // The alias configuration above will fail the build if a third party lib also uses ./dist/commonjs
 // but does not include a ./dist/native-modules
 import { Resolver } from 'enhanced-resolve';
-import * as webpack from 'webpack';
-import * as path from 'path';
-import { ResolveContext, ResolveRequest } from './interfaces';
+import { ResolveRequest } from './interfaces';
 
 export class DistPlugin {
   private rawDist: string;
