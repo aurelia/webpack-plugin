@@ -20,8 +20,6 @@ export class DistPlugin {
   private rawDist: string;
   private dist: string;
 
-  get pluginName() { return 'DistPlugin'; }
-
   constructor(dist: string) {
     this.rawDist = dist;
     this.dist = `/dist/${dist}/`;
@@ -30,113 +28,22 @@ export class DistPlugin {
   // TODO: verify the following code against commented apply method below
   // ===========================================
   //
-  apply(compiler: webpack.Compiler) {
+  apply(resolver: Resolver) {
     if (!this.rawDist) {
       return;
     }
-    let resolver: Resolver;
-    compiler.resolverFactory.hooks.resolver.for('normal').tap('DistPlugin', r => {
-      resolver = r as Resolver;
-      resolver
-        .getHook("before-described-resolve")
-        .tapAsync("Aurelia:Dist", (request: ResolveRequest, resolveContext: object, cb: (err?: any, result?: any) => void) => {
-          // If the request contains /dist/xxx/, try /dist/{dist}/ first
-          let rewritten = request.request ? request.request.replace(/\/dist\/[^/]+\//i, this.dist) : '';
-          if (rewritten !== request.request) {
-            let newRequest = Object.assign({}, request, { request: rewritten });
-            resolver.doResolve(resolver.getHook("described-resolve"), newRequest, "try alternate " + this.dist, {}, cb);
-          }
-          else
-            cb(); // Path does not contain /dist/xxx/, continue normally
-        });
-    });
-    return;
-    compiler.hooks.normalModuleFactory.tap('DistPlugin', moduleFactory => {
-      moduleFactory.hooks.resolve.tapAsync('DistPlugin', (resolveData, callback) => {
-        debugger
-        // let callback: any;
-        let rewritten = resolveData.request.replace(/\/dist\/[^/]+\//i, this.dist);
-        console.log('RESOLVING', path.dirname(rewritten), path.basename(rewritten));
-        try {
-          resolver.resolve({}, rewritten, path.basename(rewritten), {} as ResolveContext, (err, result) => {
-            if (!err) {
-              debugger
-              callback(null, result);
-            } else {
-              console.log({ rewritten, request: resolveData.request })
-              callback();
-            }
-          });
-        } catch (e) {
-          console.log('Failed to resolve', path.dirname(rewritten), path.basename(rewritten), '\nContinuing...');
-          callback();
+    resolver
+      .getHook("before-described-resolve")
+      .tapAsync("Aurelia:Dist", (request: ResolveRequest, resolveContext: object, cb: (err?: any, result?: any) => void) => {
+        // If the request contains /dist/xxx/, try /dist/{dist}/ first
+        let rewritten = request.request ? request.request.replace(/\/dist\/[^/]+\//i, this.dist) : '';
+        if (rewritten !== request.request) {
+          let newRequest = Object.assign({}, request, { request: rewritten });
+          resolver.doResolve(resolver.getHook("described-resolve"), newRequest, "try alternate " + this.dist, {}, cb);
         }
-        return;
-        // console.log('Before resolve', path.dirname(resolveData.request), path.basename(resolveData.request));
-        // If the request contains /dist/xxx/, try /dist/{dist}/xxx first
-        try {
-          resolver.doResolve(
-            resolver.hooks.resolve,
-            { request: rewritten },
-            'trying to resolve with dist',
-            {},
-            // path.dirname(resolveData.request), path.basename(resolveData.request), {} as ResolveContext,
-            (err?: Error, result?: any) => {
-              if (!err) {
-                debugger
-                callback(null, result);
-              } else {
-                console.log({ rewritten, request: resolveData.request })
-                callback();
-              }
-            }
-          );
-        } catch (e) {
-          debugger;
-          callback();
-        }
-        return;
-        return new Promise(r => callback = r);
-        // let rewritten = resolveData.request.replace(/\/dist\/[^/]+\//i, this.dist);
-        console.log({ rewritten, request: resolveData.request });
-        if (rewritten !== resolveData.request) {
-          resolver.resolve({}, path.dirname(rewritten), path.basename(rewritten), {} as ResolveContext, (err, result) => {
-            if (!err) {
-              debugger
-              callback(null, result);
-            } else {
-              console.log({ rewritten, request: resolveData.request })
-              callback();
-            }
-          });
-          // resolver.doResolve(
-          //   /* hooks to resolver (?) */resolver.hooks.result,
-          //   /* request (?) */{ ...resolveData, request: rewritten },
-          //   /* message (?) */ 'DistPlugin try resolve',
-          //   /* resolve context (?) */{},
-          //   (err: any, result: any) => {
-          //     if (result) {
-          //       callback(null, result);
-          //     } else {
-          //       callback();
-          //     }
-          //   }
-          // );
-        } else {
-          callback();
-        }
-        // try {
-        //   compiler.inputFileSystem.stat(rewritten, (err, result) => {
-        //     if (!err) {
-        //       resolveData.request = rewritten;
-        //     }
-        //     callback();
-        //   });
-        // } catch {
-        //   callback();
-        // }
+        else
+          cb(); // Path does not contain /dist/xxx/, continue normally
       });
-    });
   }
 
   // apply(resolver: webpack.Resolver) {

@@ -131,23 +131,14 @@ export class AureliaPlugin {
     if (opts.dist) {
       console.log('[Aurelia plugin] DistPlugin');
       // This plugin enables easy switching to a different module distribution (default for Aurelia is dist/commonjs).
-      // let resolve = compiler.options.resolve;
-      // let plugins = resolve.plugins ??= [];
-      // plugins.push(new DistPlugin(opts.dist));
-      new DistPlugin(opts.dist).apply(compiler);
+      (compiler.options.resolve.plugins ??= []).push(new DistPlugin(opts.dist));
     }
 
     if (!opts.noModulePathResolve) {
       console.log('[Aurelia plugin] SubFolderPlugin');
       // This plugin enables sub-path in modules that are not at the root (e.g. in a /dist folder),
       // for example aurelia-chart/pie might resolve to aurelia-chart/dist/commonjs/pie
-      new SubFolderPlugin().apply(compiler);
-      // todo:
-      // verify the line above against the following
-      // ===========================================
-      // let resolve = compiler.options.resolve;
-      // let plugins = resolve.plugins || (resolve.plugins = []);
-      // plugins.push(new SubFolderPlugin());
+      (compiler.options.resolve.plugins ??= []).push(new SubFolderPlugin());
     }
 
     if (opts.includeAll) {

@@ -34,7 +34,7 @@ export class GlobDependenciesPlugin extends BaseIncludePlugin {
       // create a new resolver, to avoid premature creation of the main resolver
       // this is potentially an issue, as this resolver won't be able to resolve like the actual one
       // with all the o
-      const resolver = compiler.resolverFactory.get('normal', {});
+      const resolver = compiler.resolverFactory.get('normal');
       // Map the modules passed in ctor to actual resources (files) so that we can
       // recognize them no matter what the rawRequest was (loaders, relative paths, etc.)
       this.modules = { };
@@ -67,6 +67,7 @@ export class GlobDependenciesPlugin extends BaseIncludePlugin {
       for (let glob of globs) 
         for (let file of findFiles(this.root, glob, compilation.inputFileSystem as typeof import('fs'))) {
           file = file.replace(/\\/g, "/");
+          // todo: uncomment this
           // normalizers.forEach(x => file = file.replace(x, ""));
           addDependency(file);
         }
