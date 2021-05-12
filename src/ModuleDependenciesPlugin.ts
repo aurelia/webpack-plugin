@@ -1,5 +1,5 @@
 import { BaseIncludePlugin, AddDependency } from "./BaseIncludePlugin";
-import path = require("path");
+import * as path from "path";
 import * as webpack from 'webpack';
 import { DependencyOptionsEx } from "./interfaces";
 
@@ -51,10 +51,14 @@ export class ModuleDependenciesPlugin extends BaseIncludePlugin {
       return Promise
         .all(
           hashKeys.map(module => new Promise<void>(resolve => {
-            console.log('Resolving at::::::::::', this.root);
+            console.log('Resolving at::::::::::', this.root, module);
             resolver.resolve({}, this.root, module, {}, (err, resource) => {
               if (err) {
-                debugger;
+                console.log('error resolving', module);
+                console.log(err.message);
+                // debugger;
+                resolve();
+                return;
               }
               this.modules[resource as string] = this.hash[module];
               resolve();

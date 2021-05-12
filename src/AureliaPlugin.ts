@@ -129,20 +129,17 @@ export class AureliaPlugin {
     let globalDependencies: (string|DependencyOptionsEx)[] = [];
 
     if (opts.dist) {
-      console.log('[Aurelia plugin] DistPlugin');
       // This plugin enables easy switching to a different module distribution (default for Aurelia is dist/commonjs).
       (compiler.options.resolve.plugins ??= []).push(new DistPlugin(opts.dist));
     }
 
     if (!opts.noModulePathResolve) {
-      console.log('[Aurelia plugin] SubFolderPlugin');
       // This plugin enables sub-path in modules that are not at the root (e.g. in a /dist folder),
       // for example aurelia-chart/pie might resolve to aurelia-chart/dist/commonjs/pie
       (compiler.options.resolve.plugins ??= []).push(new SubFolderPlugin());
     }
 
     if (opts.includeAll) {
-      console.log('[Aurelia plugin] includeAll');
       // Grab everything approach
 
       // This plugin ensures that everything in /src is included in the bundle.
@@ -176,15 +173,12 @@ export class AureliaPlugin {
 
     if (!opts.noHtmlLoader) {
       // Ensure that we trace HTML dependencies (always required because of 3rd party libs)
-      let module = compiler.options.module;
-      let rules = module.rules;
       // Note that this loader will be in last place, which is important 
       // because it will process the file first, before any other loader.
-      rules.push({ test: /\.html?$/i, use: "aurelia-webpack-plugin/html-requires-loader" });
+      compiler.options.module.rules.push({ test: /\.html?$/i, use: "aurelia-webpack-plugin/html-requires-loader" });
     }
 
     if (!opts.noInlineView) {
-      console.log('[Aurelia plugin] InlineViewDependenciesPlugin');
       new InlineViewDependenciesPlugin().apply(compiler);
     }
 

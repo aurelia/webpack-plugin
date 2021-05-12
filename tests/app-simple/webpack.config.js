@@ -12,9 +12,6 @@ module.exports = (env = {}) => {
     resolve: {
       extensions: [".ts", ".js"],
       modules: ["src", "node_modules"],
-      alias: {
-        // 'aurelia-pal': path.resolve(__dirname, '../node_modules/aurelia-pal')
-      }
     },
     entry: {
       // application entry file is app and 
@@ -29,7 +26,7 @@ module.exports = (env = {}) => {
         {
           test: /\.ts$/,
           use: 'ts-loader',
-          exclude: path.resolve(__dirname, 'node_modules')
+          exclude: /node_modules/
         },
         {
           test: /\.html$/,
@@ -45,7 +42,7 @@ module.exports = (env = {}) => {
         dist: 'es2015',
         aureliaApp: 'main',
         // aureliaConfig: ['basic'],
-        // includeAll: 'src'
+        includeAll: 'src'
       }),
       // Standard plugin to build index.html
       // new HtmlWebpackPlugin({
