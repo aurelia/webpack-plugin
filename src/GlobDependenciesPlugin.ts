@@ -1,11 +1,43 @@
 import { BaseIncludePlugin, AddDependency } from "./BaseIncludePlugin";
 import { Minimatch } from "minimatch";
 import * as webpack from 'webpack';
-import path = require("path");
-import { Resolver } from "enhanced-resolve";
+import * as path from "path";
 import { ResolveContext } from "./interfaces";
 
 const TAP_NAME = "Aurelia:GlobDependencies";
+
+declare module "minimatch" {
+  interface IMinimatch {
+    match(fname: string, partial: boolean): boolean; // Missing overload in current minimatch tds
+  }
+}
+
+function* findFiles(root: string, glob: string, fs: typeof import('fs')) {
+  // An easiest, naive approach consist of listing all files and then pass them through minimatch.
+  // This is a bad idea as `root` typically includes node_modules, which can contain *lots* of files.
+  // So we have to test partial paths to prune them early on.
+  const m = new Minimatch(glob);  
+  const queue = [''];
+  while (true) {
+    let folder = queue.pop();
+    if (folder === undefined) return;
+    let full = path.resolve(root, folder);
+    for (let name of fs.readdirSync(full)) {
+      let stats = fs.statSync(path.resolve(full, name));
+      if (stats.isDirectory()) {
+        let subfolder = path.join(folder, name);
+        if (m.match(subfolder, /*partial:*/ true))
+          queue.push(subfolder);
+      }
+      else if (stats.isFile()) {
+        let file = path.join(folder, name);
+        if (m.match(file))
+          yield file;
+      }
+    }
+  }
+}
+
 
 export class GlobDependenciesPlugin extends BaseIncludePlugin {
   private root = path.resolve();
@@ -38,11 +70,13 @@ export class GlobDependenciesPlugin extends BaseIncludePlugin {
       // Map the modules passed in ctor to actual resources (files) so that we can
       // recognize them no matter what the rawRequest was (loaders, relative paths, etc.)
       this.modules = { };
-      return Promise
-        .all(hashKeys.map(moduleName => new Promise<void>(resolve => {
+      return Promise.all(
+        hashKeys.map(moduleName => new Promise<void>(resolve => {
           resolver.resolve({}, this.root, moduleName, {} as ResolveContext, (err, resource) => {
             if (err) {
               debugger;
+              resolve();
+              return;
             }
             this.modules[resource as string] = this.hash[moduleName];
             resolve();
@@ -77,35 +111,3 @@ export class GlobDependenciesPlugin extends BaseIncludePlugin {
     });
   }
 };
-
-declare module "minimatch" {
-  interface IMinimatch {
-    match(fname: string, partial: boolean): boolean; // Missing overload in current minimatch tds
-  }
-}
-
-function* findFiles(root: string, glob: string, fs: typeof import('fs')) {
-  // An easiest, naive approach consist of listing all files and then pass them through minimatch.
-  // This is a bad idea as `root` typically includes node_modules, which can contain *lots* of files.
-  // So we have to test partial paths to prune them early on.
-  const m = new Minimatch(glob);  
-  const queue = [''];
-  while (true) {
-    let folder = queue.pop();
-    if (folder === undefined) return;
-    let full = path.resolve(root, folder);
-    for (let name of fs.readdirSync(full)) {
-      let stats = fs.statSync(path.resolve(full, name));
-      if (stats.isDirectory()) {
-        let subfolder = path.join(folder, name);
-        if (m.match(subfolder, /*partial:*/ true))
-          queue.push(subfolder);
-      }
-      else if (stats.isFile()) {
-        let file = path.join(folder, name);
-        if (m.match(file))
-          yield file;
-      }
-    }
-  }
-}
