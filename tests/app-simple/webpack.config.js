@@ -8,9 +8,13 @@ Error.stackTraceLimit = Infinity;
 module.exports = (env = {}) => {
   return {
     mode: 'development',
+    target: 'web',
     resolve: {
       extensions: [".ts", ".js"],
       modules: ["src", "node_modules"],
+      alias: {
+        // 'aurelia-pal': path.resolve(__dirname, '../node_modules/aurelia-pal')
+      }
     },
     entry: {
       // application entry file is app and 
@@ -18,7 +22,7 @@ module.exports = (env = {}) => {
     },
     output: {
       // If production, add a hash to burst cache
-      filename: '[name].[hash].js'
+      filename: '[name].js'
     },
     module: {
       rules: [
@@ -38,7 +42,10 @@ module.exports = (env = {}) => {
     },
     plugins: [
       new AureliaPlugin({
-        aureliaConfig: ['basic']
+        dist: 'es2015',
+        aureliaApp: 'main',
+        // aureliaConfig: ['basic'],
+        // includeAll: 'src'
       }),
       // Standard plugin to build index.html
       // new HtmlWebpackPlugin({
