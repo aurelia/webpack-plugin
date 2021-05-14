@@ -197,10 +197,6 @@ export class AureliaPlugin {
         .tap('AureliaPlugin', (chunk) => {
           compilation.addRuntimeModule(chunk, new AureliaExposeWebpackInternal());
         });
-      // compilation.hooks.addEntry.tap('AureliaPlugin', (dep, entryOptions) => {
-        
-      // })
-      // compilation.addRuntimeModule(new AureliaExposeWebpackInternal());
     })
 
     // This plugin traces dependencies in code that are wrapped in PLATFORM.moduleName() calls

@@ -3,7 +3,6 @@ import * as estree from 'estree';
 import * as webpack from 'webpack';
 
 import { BasicEvaluatedExpression as $BasicEvaluatedExpression, DependencyOptions } from './interfaces';
-import { createLogger } from "./logger";
 const BasicEvaluatedExpression: $BasicEvaluatedExpression = require("webpack/lib/javascript/BasicEvaluatedExpression");
 const TAP_NAME = "Aurelia:Dependencies";
 
@@ -12,20 +11,13 @@ export class AureliaDependenciesPlugin {
 
   constructor(...methods: string[]) {
     // Always include PLATFORM.moduleName as it's what used in libs.
-    if (!methods.includes("PLATFORM_moduleName")) {
-      methods.push("PLATFORM_moduleName");
+    if (!methods.includes("PLATFORM.moduleName")) {
+      methods.push("PLATFORM.moduleName");
     }
     this.parserPlugin = new ParserPlugin(methods);
   }
 
   apply(compiler: webpack.Compiler) {
-    // compiler.hooks.beforeCompile.tap(TAP_NAME, params => {
-    //   const normalModuleFactory = params.normalModuleFactory;
-
-    //   normalModuleFactory.hooks.parser.for("javascript/auto").tap(TAP_NAME, parser => {
-    //     this.parserPlugin.apply(parser);
-    //   });
-    // });
     compiler.hooks.compilation.tap(TAP_NAME, (compilation, params) => {
       const normalModuleFactory = params.normalModuleFactory;
 
@@ -43,10 +35,6 @@ export class AureliaDependenciesPlugin {
   }
 }
 
-function isIdentifier(expr: estree.Expression | estree.Super, name: string): expr is estree.Identifier {
-  return expr.type === 'Identifier' && expr.name === name;
-}
-
 class AureliaDependency extends IncludeDependency {
   constructor(request: string, 
               public range: [number, number], 
@@ -62,8 +50,6 @@ class Template {
 }
 
 class ParserPlugin {
-  logger = createLogger('ParserPlugin');
-
   constructor(private methods: string[]) {
   }
 
@@ -71,8 +57,6 @@ class ParserPlugin {
 
     const addDependency = (module: string, range: [number, number], options?: DependencyOptions) => {
       let dep = new AureliaDependency(module, range, options);
-      console.log('\n');
-      this.logger.log('Adding dependencies', parser.state.current.resource, module, options?.exports ?? []);
       parser.state.current.addDependency(dep);
       return true;
     }
@@ -83,126 +67,25 @@ class ParserPlugin {
 
     const hooks = parser.hooks;
 
-    // This covers native ES module, for example:
-    //    import { PLATFORM } from "aurelia-pal";
-    //    PLATFORM.moduleName("id");
-    hooks.evaluateIdentifier.for('PLATFORM.moduleName').tap(TAP_NAME, (expr) => {
-      const evaluated = new BasicEvaluatedExpression()
-        .setIdentifier("PLATFORM_moduleName")
-        .setRange(expr.range!);
-      if (parser.state.current.resource.includes('boostrapper')) {
-        debugger
+    hooks.evaluate.for('MemberExpression').tap(TAP_NAME, (expr: estree.MemberExpression) => {
+      if (expr.property.type === 'Identifier'
+        && expr.property.name === 'moduleName'
+        // PLATFORM.moduleName(...)
+        && (expr.object.type === 'Identifier' && expr.object.name === 'PLATFORM'
+          // _aureliaPal.PLATFORM.moduleName(...)
+          || expr.object.type === 'MemberExpression'
+            && expr.object.property.type === 'Identifier'
+            && expr.object.property.name === 'PLATFORM'
+        )
+      ) {
+        return new BasicEvaluatedExpression()
+          .setIdentifier('PLATFORM.moduleName', undefined, () => [])
+          .setRange(expr.range!);
       }
-      evaluated.getMembers = () => {
-        return [];
-      };
-      return evaluated;
-      // if (isIdentifier(expr.property, 'moduleName')
-      //   && isIdentifier(expr.object, 'PLATFORM')
-      // ) {
-      //   debugger;
-      // }
       return undefined;
     });
-    hooks.call.for('PLATFORM_moduleName').tap(TAP_NAME, expr => {
-      if (expr.type !== 'CallExpression'
-        || expr.callee.type !== 'MemberExpression'
-        || expr.callee.property.type !== 'Identifier'
-        || expr.callee.property.name !== 'moduleName'
-        || expr.callee.object.type !== 'Identifier'
-        || expr.callee.object.name !== 'PLATFORM'
-      ) {
-        return undefined;
-      }
-      if (expr.arguments.length === 0 || expr.arguments.length > 2) {
-        return;
-      }
-      parser.evaluateExpression
-      let [arg1, arg2] = expr.arguments as estree.Expression[];
-      let param1 = parser.evaluateExpression(arg1);
-      if (expr.arguments.length === 1) {
-        // Normal module dependency
-        // PLATFORM.moduleName('some-module')
-        addDependency(param1!.string!, expr.range!);
-        return true;
-      }
-      return;
-    });
-    // hooks.call.for('PLATFORM.moduleName').tap(TAP_NAME, expr => {
-    //   debugger;
-    //   return false;
-    // });
-    // hooks.call.for('moduleName').tap(TAP_NAME, expr => {
-    //   debugger;
-    //   return false;
-    // });
 
-    // This covers commonjs modules, for example:
-    //    const _aureliaPal = require("aurelia-pal");
-    //    _aureliaPal.PLATFORM.moduleName("id");    
-    // Or (note: no renaming supported):
-    //    const PLATFORM = require("aurelia-pal").PLATFORM;
-    //    PLATFORM.moduleName("id");
-    // hooks.evaluate.for('javascript/auto').tap(TAP_NAME, (expr: estree.MemberExpression) => {
-    //   if (expr.type === 'MemberExpression'
-    //     && isIdentifier(expr.property, "moduleName")
-    //     && (
-    //       expr.object.type === "MemberExpression" && isIdentifier(expr.object.property, "PLATFORM")
-    //       || expr.object.type === "Identifier" && expr.object.name === "PLATFORM"
-    //     )
-    //   ) {
-    //     return new BasicEvaluatedExpression()
-    //       .setIdentifier("PLATFORM.moduleName")
-    //       .setRange(expr.range!);
-    //   }
-    //   return undefined;
-    // });
-    // hooks.evaluate.for('MemberExpression').tap(TAP_NAME, (expr: estree.MemberExpression) => {
-    //   if (parser.state.current.resource.includes('bootstrapper') && expr.property['name'] === 'moduleName') {
-    //     debugger;
-    //     return new BasicEvaluatedExpression().setIdentifier('PLATFORM_moduleName').setRange(expr.range!);
-    //   }
-    //   return undefined;
-    // })
-    // hooks.callMemberChainOfCallMemberChain.for('PLATFORM').tap(TAP_NAME, (expr, props) => {
-    //   debugger;
-    // });
-    // hooks.callMemberChainOfCallMemberChain.for('moduleName').tap(TAP_NAME, (expr, props) => {
-    //   debugger;
-    //   new BasicEvaluatedExpression().getMembers = () => [];
-    // });
-    
-    hooks.evaluateCallExpressionMember.for('moduleName').tap(TAP_NAME, (expr) => {
-      if (parser.state.current.resource.includes('bootstrapper')) {
-        debugger;
-      }
-      return new BasicEvaluatedExpression().setExpression(expr);
-    })
-    
-    hooks.evaluateCallExpressionMember.for('PLATFORM.moduleName').tap(TAP_NAME, (expr) => {
-      if (parser.state.current.resource.includes('bootstrapper')) {
-        debugger;
-      }
-      return new BasicEvaluatedExpression().setExpression(expr);
-    })
-
-    hooks.evaluate.for('CallExpression').tap(TAP_NAME, (expr: estree.CallExpression) => {
-      const calleeee = expr.callee;
-      if (
-        calleeee.type === 'MemberExpression'
-          && calleeee.object.type === 'Identifier' && calleeee.object.name === 'PLATFORM'
-          && calleeee.property.type === 'Identifier' && calleeee.property.name === 'moduleName'
-        || calleeee.type === 'Identifier'
-          && calleeee.name === 'PLATFORM.moduleName'
-      ) {
-        console.log('calling PLATFORM.moduleName');
-        console.log('arguments:', expr.arguments);
-      }
-      if (expr.type !== 'CallExpression'
-        || !this.methods.includes((expr.callee as estree.Identifier).name)
-      ) {
-        return undefined;
-      }
+    hooks.call.for('PLATFORM.moduleName').tap(TAP_NAME, (expr: estree.CallExpression) => {
       if (expr.arguments.length === 0 || expr.arguments.length > 2) {
         return;
       }
@@ -214,8 +97,7 @@ class ParserPlugin {
       if (expr.arguments.length === 1) {
         // Normal module dependency
         // PLATFORM.moduleName('some-module')
-        addDependency(param1.string!, expr.range!);
-        return;
+        return addDependency(param1.string!, expr.range!);
       }
 
       let options: DependencyOptions | undefined;
@@ -259,10 +141,7 @@ class ParserPlugin {
         // Unknown PLATFORM.moduleName() signature
         return;
       }
-      console.log('adjusted for', expr);
-      debugger;
-      addDependency(param1.string!, expr.range!, options);
-      return;
+      return addDependency(param1.string!, expr.range!, options);
     });
   }
 }

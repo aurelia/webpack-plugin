@@ -53,16 +53,13 @@ export class ModuleDependenciesPlugin extends BaseIncludePlugin {
       return Promise
         .all(
           hashKeys.map(module => new Promise<void>(resolve => {
-            console.log('Resolving at::::::::::', this.root, module);
             resolver.resolve({}, this.root, module, {}, (err, resource) => {
               if (err) {
                 console.log('error resolving', module);
                 console.log(err.message);
-                // debugger;
                 resolve();
                 return;
               }
-              console.log(`RESOLVED "${module}" as "${resource}"`);
               this.modules[resource as string] = {
                 module: module,
                 deps: this.hash[module],
