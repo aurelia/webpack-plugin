@@ -9,7 +9,7 @@ import { ModuleDependenciesPlugin, ModuleDependenciesPluginOptions } from "./Mod
 import { PreserveExportsPlugin } from "./PreserveExportsPlugin";
 import { PreserveModuleNamePlugin } from "./PreserveModuleNamePlugin";
 import { SubFolderPlugin } from "./SubFolderPlugin";
-import * as webpack from 'webpack';
+import * as Webpack from 'webpack';
 import { DependencyOptionsEx } from "./interfaces";
 
 export type Polyfills = "es2015" | "es2016" | "esnext" | "none";
@@ -37,7 +37,7 @@ export interface Options {
   noWebpackLoader: boolean;
   moduleMethods: string[];
   viewsFor: string;
-  viewsExtensions: string | Convention | (string | Convention)[];
+  viewsExtensions: string | Convention | (string|Convention)[];
 }
 
 // See comments inside the module to understand why this is used
@@ -68,7 +68,7 @@ export class AureliaPlugin {
       viewsFor: "**/!(tslib)*.{ts,js}",
       viewsExtensions: ".html",
     },
-      options);
+    options);
 
     this.options.features = Object.assign({
       ie: true,
@@ -78,7 +78,7 @@ export class AureliaPlugin {
     }, options.features);
   }
 
-  apply(compiler: webpack.Compiler) {
+  apply(compiler: Webpack.Compiler) {
     const opts = this.options;
     const features = opts.features;
     let needsEmptyEntry = false;
@@ -88,7 +88,7 @@ export class AureliaPlugin {
 
     // Make sure the loaders are easy to load at the root like `aurelia-webpack-plugin/html-resource-loader`
     let resolveLoader = compiler.options.resolveLoader;
-    let alias = resolveLoader.alias ??= {};
+    let alias = resolveLoader.alias || (resolveLoader.alias = {});
     alias["aurelia-webpack-plugin"] = "aurelia-webpack-plugin/dist";
     // Our async! loader is in fact just bundle-loader!.
     alias["async"] = "bundle-loader";
@@ -126,17 +126,21 @@ export class AureliaPlugin {
       // Custom config is performed in use code and can use `.moduleName()` like normal.
       "aurelia-framework": getConfigModules(opts.aureliaConfig),
     };
-    let globalDependencies: (string | DependencyOptionsEx)[] = [];
+    let globalDependencies: (string|DependencyOptionsEx)[] = [];
 
     if (opts.dist) {
       // This plugin enables easy switching to a different module distribution (default for Aurelia is dist/commonjs).
-      (compiler.options.resolve.plugins ??= []).push(new DistPlugin(opts.dist));
+      let resolve = compiler.options.resolve;
+      let plugins = resolve.plugins || (resolve.plugins = []);
+      plugins.push(new DistPlugin(opts.dist));
     }
 
     if (!opts.noModulePathResolve) {
       // This plugin enables sub-path in modules that are not at the root (e.g. in a /dist folder),
       // for example aurelia-chart/pie might resolve to aurelia-chart/dist/commonjs/pie
-      (compiler.options.resolve.plugins ??= []).push(new SubFolderPlugin());
+      let resolve = compiler.options.resolve;
+      let plugins = resolve.plugins || (resolve.plugins = []);
+      plugins.push(new SubFolderPlugin());
     }
 
     if (opts.includeAll) {
@@ -151,7 +155,7 @@ export class AureliaPlugin {
     else if (opts.aureliaApp) {
       // Add aurelia-app entry point. 
       // When using includeAll, we assume it's already included
-      globalDependencies.push('aurelia-framework', { name: opts.aureliaApp, exports: ["configure"] });
+      globalDependencies.push({ name: opts.aureliaApp, exports: ["configure"] });
     }
 
     if (!dllPlugin && dllRefPlugins.length > 0) {
@@ -160,8 +164,8 @@ export class AureliaPlugin {
       let aureliaModules = dllRefPlugins.map(plugin => {
         let content = plugin["options"].manifest.content;
         return Object.keys(content)
-          .map(k => content[k].buildMeta["aurelia-id"])
-          .filter(id => !!id) as string[];
+                     .map(k => content[k].buildMeta["aurelia-id"])
+                     .filter(id => !!id) as string[];
       });
       globalDependencies = globalDependencies.concat(...aureliaModules);
     }
@@ -193,41 +197,33 @@ export class AureliaPlugin {
 
     compiler.hooks.compilation.tap('AureliaPlugin', (compilation) => {
       compilation.hooks.runtimeRequirementInTree
-        .for(webpack.RuntimeGlobals.nodeModuleDecorator)
+        .for(Webpack.RuntimeGlobals.definePropertyGetters)
         .tap('AureliaPlugin', (chunk) => {
           compilation.addRuntimeModule(chunk, new AureliaExposeWebpackInternal());
         });
-    })
+    });
 
-    // This plugin traces dependencies in code that are wrapped in PLATFORM.moduleName() calls
-    console.log('[Aurelia plugin] AureliaDependenciesPlugin');
-    new AureliaDependenciesPlugin(...opts.moduleMethods).apply(compiler);
     // Aurelia libs contain a few global defines to cut out unused features
-    console.log('[Aurelia plugin] DefinePlugin');
     new DefinePlugin(defines).apply(compiler);
     // Adds some dependencies that are not documented by `PLATFORM.moduleName`
-    console.log('[Aurelia plugin] ModuleDependenciesPlugin');
     new ModuleDependenciesPlugin(dependencies).apply(compiler);
+    // This plugin traces dependencies in code that are wrapped in PLATFORM.moduleName() calls
+    new AureliaDependenciesPlugin(...opts.moduleMethods).apply(compiler);
     // This plugin adds dependencies traced by html-requires-loader
     // Note: the config extension point for this one is html-requires-loader.attributes.
-    console.log('[Aurelia plugin] HtmlDependenciesPlugin');
     new HtmlDependenciesPlugin().apply(compiler);
     // This plugin looks for companion files by swapping extensions,
     // e.g. the view of a ViewModel. @useView and co. should use PLATFORM.moduleName().
     // We use it always even with `includeAll` because libs often don't `@useView` (they should).
-    console.log('[Aurelia plugin] ConventionDependenciesPlugin');
     new ConventionDependenciesPlugin(opts.viewsFor, opts.viewsExtensions).apply(compiler);
     // This plugin preserves module names for dynamic loading by aurelia-loader
-    console.log('[Aurelia plugin] PreserveModuleNamePlugin');
     new PreserveModuleNamePlugin(dllPlugin).apply(compiler);
     // This plugin supports preserving specific exports names when dynamically loading modules
     // with aurelia-loader, while still enabling tree shaking all other exports.
-    console.log('[Aurelia plugin] PreserveExportsPlugin');
     new PreserveExportsPlugin().apply(compiler);
-    console.log('[Aurelia plugin] --DONE applying plugins--');
   }
 
-  addEntry(options: webpack.WebpackOptionsNormalized, modules: string | string[]) {
+  addEntry(options: Webpack.WebpackOptionsNormalized, modules: string|string[]) {
     let webpackEntry = options.entry;
     let entries = Array.isArray(modules) ? modules : [modules];
     // todo:
@@ -291,7 +287,7 @@ function definePolyfills(defines: any, polyfills: Polyfills) {
   // "none" or invalid option.
 }
 
-class AureliaExposeWebpackInternal extends webpack.RuntimeModule {
+class AureliaExposeWebpackInternal extends Webpack.RuntimeModule {
   constructor() {
     super("Aurelia expose webpack internal");
   }
@@ -300,7 +296,7 @@ class AureliaExposeWebpackInternal extends webpack.RuntimeModule {
    * @returns {string} runtime code
    */
   generate() {
-    return webpack.Template.asString([
+    return Webpack.Template.asString([
       "__webpack_require__.m = __webpack_require__.m || __webpack_modules__",
       "__webpack_require__.c = __webpack_require__.c || __webpack_module_cache__",
     ]);
