@@ -3,6 +3,7 @@ import * as estree from 'estree';
 import * as webpack from 'webpack';
 
 import { BasicEvaluatedExpression as $BasicEvaluatedExpression, DependencyOptions } from './interfaces';
+import { createLogger } from "./logger";
 const BasicEvaluatedExpression: $BasicEvaluatedExpression = require("webpack/lib/javascript/BasicEvaluatedExpression");
 const TAP_NAME = "Aurelia:Dependencies";
 
@@ -11,25 +12,33 @@ export class AureliaDependenciesPlugin {
 
   constructor(...methods: string[]) {
     // Always include PLATFORM.moduleName as it's what used in libs.
-    if (!methods.includes("PLATFORM.moduleName")) {
-      methods.push("PLATFORM.moduleName");
+    if (!methods.includes("PLATFORM_moduleName")) {
+      methods.push("PLATFORM_moduleName");
     }
     this.parserPlugin = new ParserPlugin(methods);
   }
 
   apply(compiler: webpack.Compiler) {
-    compiler.hooks.beforeCompile.tap(TAP_NAME, params => {
-      const normalModuleFactory = params.normalModuleFactory;
+    // compiler.hooks.beforeCompile.tap(TAP_NAME, params => {
+    //   const normalModuleFactory = params.normalModuleFactory;
 
-      normalModuleFactory.hooks.parser.for("javascript/auto").tap(TAP_NAME, parser => {
-        this.parserPlugin.apply(parser);
-      });
-    });
+    //   normalModuleFactory.hooks.parser.for("javascript/auto").tap(TAP_NAME, parser => {
+    //     this.parserPlugin.apply(parser);
+    //   });
+    // });
     compiler.hooks.compilation.tap(TAP_NAME, (compilation, params) => {
       const normalModuleFactory = params.normalModuleFactory;
 
       compilation.dependencyFactories.set(AureliaDependency, normalModuleFactory);
       compilation.dependencyTemplates.set(AureliaDependency, new Template());
+
+      const handler = (parser: webpack.javascript.JavascriptParser) => {
+        this.parserPlugin.apply(parser);
+      }
+
+      normalModuleFactory.hooks.parser.for("javascript/dynamic").tap(TAP_NAME, handler);
+      normalModuleFactory.hooks.parser.for("javascript/auto").tap(TAP_NAME, handler);
+      normalModuleFactory.hooks.parser.for("javascript/esm").tap(TAP_NAME, handler);
     });
   }
 }
@@ -48,22 +57,22 @@ class AureliaDependency extends IncludeDependency {
 
 class Template {
   apply(dep: AureliaDependency, source: webpack.sources.ReplaceSource) {
-    // TODO:
-    // ================================
-    // verify against v4 code:
-    // source.replace(dep.range[0], dep.range[1] - 1, "'" + dep.request.replace(/^async(?:\?[^!]*)?!/, "") + "'");
     source.replace(dep.range[0], dep.range[1] - 1, "'" + dep.request.replace(/^async(?:\?[^!]*)?!/, "") + "'");
   };
 }
 
 class ParserPlugin {
+  logger = createLogger('ParserPlugin');
+
   constructor(private methods: string[]) {
   }
 
   apply(parser: webpack.javascript.JavascriptParser) {
 
-    function addDependency(module: string, range: [number, number], options?: DependencyOptions) {
+    const addDependency = (module: string, range: [number, number], options?: DependencyOptions) => {
       let dep = new AureliaDependency(module, range, options);
+      console.log('\n');
+      this.logger.log('Adding dependencies', parser.state.current.resource, module, options?.exports ?? []);
       parser.state.current.addDependency(dep);
       return true;
     }
@@ -77,17 +86,56 @@ class ParserPlugin {
     // This covers native ES module, for example:
     //    import { PLATFORM } from "aurelia-pal";
     //    PLATFORM.moduleName("id");
-    hooks.evaluateIdentifier.for('javascript/auto').tap(TAP_NAME, (expr: estree.MemberExpression) => {
-      if (isIdentifier(expr.property, 'moduleName')
-        && isIdentifier(expr.object, 'PLATFORM')
-      ) {
-        debugger;
-        return new BasicEvaluatedExpression()
-          .setIdentifier("PLATFORM.moduleName")
-          .setRange(expr.range!);
+    hooks.evaluateIdentifier.for('PLATFORM.moduleName').tap(TAP_NAME, (expr) => {
+      const evaluated = new BasicEvaluatedExpression()
+        .setIdentifier("PLATFORM_moduleName")
+        .setRange(expr.range!);
+      if (parser.state.current.resource.includes('boostrapper')) {
+        debugger
       }
+      evaluated.getMembers = () => {
+        return [];
+      };
+      return evaluated;
+      // if (isIdentifier(expr.property, 'moduleName')
+      //   && isIdentifier(expr.object, 'PLATFORM')
+      // ) {
+      //   debugger;
+      // }
       return undefined;
     });
+    hooks.call.for('PLATFORM_moduleName').tap(TAP_NAME, expr => {
+      if (expr.type !== 'CallExpression'
+        || expr.callee.type !== 'MemberExpression'
+        || expr.callee.property.type !== 'Identifier'
+        || expr.callee.property.name !== 'moduleName'
+        || expr.callee.object.type !== 'Identifier'
+        || expr.callee.object.name !== 'PLATFORM'
+      ) {
+        return undefined;
+      }
+      if (expr.arguments.length === 0 || expr.arguments.length > 2) {
+        return;
+      }
+      parser.evaluateExpression
+      let [arg1, arg2] = expr.arguments as estree.Expression[];
+      let param1 = parser.evaluateExpression(arg1);
+      if (expr.arguments.length === 1) {
+        // Normal module dependency
+        // PLATFORM.moduleName('some-module')
+        addDependency(param1!.string!, expr.range!);
+        return true;
+      }
+      return;
+    });
+    // hooks.call.for('PLATFORM.moduleName').tap(TAP_NAME, expr => {
+    //   debugger;
+    //   return false;
+    // });
+    // hooks.call.for('moduleName').tap(TAP_NAME, expr => {
+    //   debugger;
+    //   return false;
+    // });
 
     // This covers commonjs modules, for example:
     //    const _aureliaPal = require("aurelia-pal");
@@ -95,48 +143,51 @@ class ParserPlugin {
     // Or (note: no renaming supported):
     //    const PLATFORM = require("aurelia-pal").PLATFORM;
     //    PLATFORM.moduleName("id");
-    hooks.evaluate.for('javascript/auto').tap(TAP_NAME, (expr: estree.MemberExpression) => {
-      if (expr.type === 'MemberExpression'
-        && isIdentifier(expr.property, "moduleName")
-        && (
-          expr.object.type === "MemberExpression" && isIdentifier(expr.object.property, "PLATFORM")
-          || expr.object.type === "Identifier" && expr.object.name === "PLATFORM"
-        )
-      ) {
-        return new BasicEvaluatedExpression()
-          .setIdentifier("PLATFORM.moduleName")
-          .setRange(expr.range!);
-      }
-      return undefined;
-    });
-
-    // hooks.evaluate.for('MemberExpression').tap(TAP_NAME, expr => {
-    //   // console.log('ESMMMMMMMMMMMMMMM\nESMMMMMMMMMMMMMMM\nESMMMMMMMMMMMMMMM\nESMMMMMMMMMMMMMMM');
+    // hooks.evaluate.for('javascript/auto').tap(TAP_NAME, (expr: estree.MemberExpression) => {
+    //   if (expr.type === 'MemberExpression'
+    //     && isIdentifier(expr.property, "moduleName")
+    //     && (
+    //       expr.object.type === "MemberExpression" && isIdentifier(expr.object.property, "PLATFORM")
+    //       || expr.object.type === "Identifier" && expr.object.name === "PLATFORM"
+    //     )
+    //   ) {
+    //     return new BasicEvaluatedExpression()
+    //       .setIdentifier("PLATFORM.moduleName")
+    //       .setRange(expr.range!);
+    //   }
     //   return undefined;
     // });
-
-    hooks.call.for('moduleName').tap(TAP_NAME, expr => {
-      console.log(expr);
-    });
-    hooks.call.for('PLATFORM.moduleName').tap(TAP_NAME, expr => {
-      console.log(expr);
-    });
-    hooks.callMemberChain.for('moduleName').tap(TAP_NAME, expr => {
-      console.log(expr);
-    });
-    hooks.callMemberChain.for('PLATFORM.moduleName').tap(TAP_NAME, expr => {
-      console.log(expr);
-    });
+    // hooks.evaluate.for('MemberExpression').tap(TAP_NAME, (expr: estree.MemberExpression) => {
+    //   if (parser.state.current.resource.includes('bootstrapper') && expr.property['name'] === 'moduleName') {
+    //     debugger;
+    //     return new BasicEvaluatedExpression().setIdentifier('PLATFORM_moduleName').setRange(expr.range!);
+    //   }
+    //   return undefined;
+    // })
+    // hooks.callMemberChainOfCallMemberChain.for('PLATFORM').tap(TAP_NAME, (expr, props) => {
+    //   debugger;
+    // });
+    // hooks.callMemberChainOfCallMemberChain.for('moduleName').tap(TAP_NAME, (expr, props) => {
+    //   debugger;
+    //   new BasicEvaluatedExpression().getMembers = () => [];
+    // });
+    
+    hooks.evaluateCallExpressionMember.for('moduleName').tap(TAP_NAME, (expr) => {
+      if (parser.state.current.resource.includes('bootstrapper')) {
+        debugger;
+      }
+      return new BasicEvaluatedExpression().setExpression(expr);
+    })
+    
+    hooks.evaluateCallExpressionMember.for('PLATFORM.moduleName').tap(TAP_NAME, (expr) => {
+      if (parser.state.current.resource.includes('bootstrapper')) {
+        debugger;
+      }
+      return new BasicEvaluatedExpression().setExpression(expr);
+    })
 
     hooks.evaluate.for('CallExpression').tap(TAP_NAME, (expr: estree.CallExpression) => {
-      if (!parser.state.current.resource.includes('node_modules'))
-        console.log(parser.state.current.resource);
-      // console.log('moduleName')
       const calleeee = expr.callee;
-      // if (expr.type === 'CallExpression' && calleeee.type !== 'MemberExpression' && calleeee.type !== 'Identifier') {
-      //   console.log(calleeee);
-      //   debugger;
-      // }
       if (
         calleeee.type === 'MemberExpression'
           && calleeee.object.type === 'Identifier' && calleeee.object.name === 'PLATFORM'

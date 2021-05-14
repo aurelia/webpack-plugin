@@ -2,6 +2,7 @@ import { BaseIncludePlugin, AddDependency } from "./BaseIncludePlugin";
 import * as path from "path";
 import * as webpack from 'webpack';
 import { DependencyOptionsEx } from "./interfaces";
+import { createLogger } from "./logger";
 
 const TAP_NAME = "Aurelia:ModuleDependencies";
 
@@ -16,7 +17,8 @@ export interface ModuleDependenciesPluginOptions {
 export class ModuleDependenciesPlugin extends BaseIncludePlugin {
   root = path.resolve();
   hash: { [name: string]: (string | DependencyOptionsEx)[] };
-  modules: { [module: string]: (string | DependencyOptionsEx)[] }; // Same has hash but with module names resolved to actual resources
+  // modules: { [module: string]: (string | DependencyOptionsEx)[] }; // Same has hash but with module names resolved to actual resources
+  modules: { [module: string]: { module: string; resource: string; deps: (string | DependencyOptionsEx)[] } }
 
   /**
    * Each hash member is a module name, for which additional module names (or options) are added as dependencies.
@@ -60,7 +62,12 @@ export class ModuleDependenciesPlugin extends BaseIncludePlugin {
                 resolve();
                 return;
               }
-              this.modules[resource as string] = this.hash[module];
+              console.log(`RESOLVED "${module}" as "${resource}"`);
+              this.modules[resource as string] = {
+                module: module,
+                deps: this.hash[module],
+                resource: resource as string
+              };
               resolve();
             });
           })
@@ -74,8 +81,10 @@ export class ModuleDependenciesPlugin extends BaseIncludePlugin {
   parser(compilation: webpack.Compilation, parser: webpack.javascript.JavascriptParser, addDependency: AddDependency) {
     parser.hooks.program.tap(TAP_NAME, () => {
       // We try to match the resource, or the initial module request.
-      const deps = this.modules[parser.state.module.resource];
+      const { module, deps, resource } = this.modules[parser.state.module.resource] || {};
       if (deps) {
+        console.log('\n')
+        this.logger.log('Adding deps for:\n\t', parser.state.module.resource, '\n\t', JSON.stringify(deps));
         deps.forEach(addDependency);
       }
     });

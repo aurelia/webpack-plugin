@@ -19,7 +19,7 @@ export interface Options {
    * if true, include everything inside src folder
    */
   includeAll: false | string;
-  
+
   aureliaApp?: string;
   aureliaConfig: AureliaModuleConfig | AureliaModuleConfig[];
   pal?: string;
@@ -37,7 +37,7 @@ export interface Options {
   noWebpackLoader: boolean;
   moduleMethods: string[];
   viewsFor: string;
-  viewsExtensions: string | Convention | (string|Convention)[];
+  viewsExtensions: string | Convention | (string | Convention)[];
 }
 
 // See comments inside the module to understand why this is used
@@ -51,7 +51,7 @@ export class AureliaPlugin {
       includeAll: <false>false,
       aureliaConfig: ["standard", "developmentLogging"],
       dist: "native-modules",
-      features: { },
+      features: {},
       moduleMethods: [],
       noHtmlLoader: false,
       // Undocumented safety switch
@@ -68,7 +68,7 @@ export class AureliaPlugin {
       viewsFor: "**/!(tslib)*.{ts,js}",
       viewsExtensions: ".html",
     },
-    options);
+      options);
 
     this.options.features = Object.assign({
       ie: true,
@@ -126,7 +126,7 @@ export class AureliaPlugin {
       // Custom config is performed in use code and can use `.moduleName()` like normal.
       "aurelia-framework": getConfigModules(opts.aureliaConfig),
     };
-    let globalDependencies: (string|DependencyOptionsEx)[] = [];
+    let globalDependencies: (string | DependencyOptionsEx)[] = [];
 
     if (opts.dist) {
       // This plugin enables easy switching to a different module distribution (default for Aurelia is dist/commonjs).
@@ -151,7 +151,7 @@ export class AureliaPlugin {
     else if (opts.aureliaApp) {
       // Add aurelia-app entry point. 
       // When using includeAll, we assume it's already included
-      globalDependencies.push({ name: opts.aureliaApp, exports: ["configure"] });
+      globalDependencies.push('aurelia-framework', { name: opts.aureliaApp, exports: ["configure"] });
     }
 
     if (!dllPlugin && dllRefPlugins.length > 0) {
@@ -160,8 +160,8 @@ export class AureliaPlugin {
       let aureliaModules = dllRefPlugins.map(plugin => {
         let content = plugin["options"].manifest.content;
         return Object.keys(content)
-                     .map(k => content[k].buildMeta["aurelia-id"])
-                     .filter(id => !!id) as string[];
+          .map(k => content[k].buildMeta["aurelia-id"])
+          .filter(id => !!id) as string[];
       });
       globalDependencies = globalDependencies.concat(...aureliaModules);
     }
@@ -190,16 +190,28 @@ export class AureliaPlugin {
     if (needsEmptyEntry) {
       this.addEntry(compiler.options, emptyEntryModule);
     }
-  
+
+    compiler.hooks.compilation.tap('AureliaPlugin', (compilation) => {
+      compilation.hooks.runtimeRequirementInTree
+        .for(webpack.RuntimeGlobals.nodeModuleDecorator)
+        .tap('AureliaPlugin', (chunk) => {
+          compilation.addRuntimeModule(chunk, new AureliaExposeWebpackInternal());
+        });
+      // compilation.hooks.addEntry.tap('AureliaPlugin', (dep, entryOptions) => {
+        
+      // })
+      // compilation.addRuntimeModule(new AureliaExposeWebpackInternal());
+    })
+
+    // This plugin traces dependencies in code that are wrapped in PLATFORM.moduleName() calls
+    console.log('[Aurelia plugin] AureliaDependenciesPlugin');
+    new AureliaDependenciesPlugin(...opts.moduleMethods).apply(compiler);
     // Aurelia libs contain a few global defines to cut out unused features
     console.log('[Aurelia plugin] DefinePlugin');
     new DefinePlugin(defines).apply(compiler);
     // Adds some dependencies that are not documented by `PLATFORM.moduleName`
     console.log('[Aurelia plugin] ModuleDependenciesPlugin');
     new ModuleDependenciesPlugin(dependencies).apply(compiler);
-    // This plugin traces dependencies in code that are wrapped in PLATFORM.moduleName() calls
-    console.log('[Aurelia plugin] AureliaDependenciesPlugin');
-    new AureliaDependenciesPlugin(...opts.moduleMethods).apply(compiler);
     // This plugin adds dependencies traced by html-requires-loader
     // Note: the config extension point for this one is html-requires-loader.attributes.
     console.log('[Aurelia plugin] HtmlDependenciesPlugin');
@@ -219,7 +231,7 @@ export class AureliaPlugin {
     console.log('[Aurelia plugin] --DONE applying plugins--');
   }
 
-  addEntry(options: webpack.WebpackOptionsNormalized, modules: string|string[]) {
+  addEntry(options: webpack.WebpackOptionsNormalized, modules: string | string[]) {
     let webpackEntry = options.entry;
     let entries = Array.isArray(modules) ? modules : [modules];
     // todo:
@@ -254,12 +266,12 @@ let configModuleNames = {
   "developmentLogging": "aurelia-logging-console",
 };
 // "configure" is the only method used by .plugin()
-for (let c in configModuleNames) 
+for (let c in configModuleNames)
   configModules[c] = { name: configModuleNames[c], exports: ["configure"] };
 // developmentLogging has a pre-task that uses ConsoleAppender
 configModules["developmentLogging"].exports!.push("ConsoleAppender");
 
-function getConfigModules(config: string | string[]) {  
+function getConfigModules(config: string | string[]) {
   if (!config) return undefined;
   if (!Array.isArray(config)) config = [config];
 
@@ -281,4 +293,20 @@ function definePolyfills(defines: any, polyfills: Polyfills) {
   if (polyfills === "esnext") return;
   defines.FEATURE_NO_ESNEXT = "true";
   // "none" or invalid option.
+}
+
+class AureliaExposeWebpackInternal extends webpack.RuntimeModule {
+  constructor() {
+    super("Aurelia expose webpack internal");
+  }
+
+  /**
+   * @returns {string} runtime code
+   */
+  generate() {
+    return webpack.Template.asString([
+      "__webpack_require__.m = __webpack_require__.m || __webpack_modules__",
+      "__webpack_require__.c = __webpack_require__.c || __webpack_module_cache__",
+    ]);
+  }
 }

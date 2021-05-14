@@ -31,7 +31,6 @@
     "runtime"
   ],
   "scripts": {
-    "postinstall": "cd tests/app-simple && npm ci",
     "build": "tsc",
     "build:watch": "tsc --watch",
     "test": "cd tests/app-simple && npm run build",
@@ -44,6 +43,7 @@
   "dependencies": {
     "aurelia-loader-webpack": "^2.1.0",
     "bundle-loader": "^0.5.6",
+    "html-loader": "^0.5.5",
     "minimatch": "^3.0.4"
   },
   "peerDependencies": {
@@ -75,7 +75,6 @@
     "aurelia-templating-resources": "^1.13.1",
     "aurelia-templating-router": "^1.4.0",
     "copy-webpack-plugin": "^8.1.1",
-    "html-loader": "^0.5.5",
     "html-webpack-plugin": "^5.3.1",
     "rimraf": "^3.0.2",
     "ts-loader": "^9.1.2",

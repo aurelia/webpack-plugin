@@ -71,7 +71,6 @@ export class GlobDependenciesPlugin extends BaseIncludePlugin {
         hashKeys.map(module => new Promise<void>(resolve => {
           resolver.resolve({}, this.root, module, {} as ResolveContext, (err, resource) => {
             if (err) {
-              debugger;
               resolve();
               return;
             }
@@ -102,6 +101,7 @@ export class GlobDependenciesPlugin extends BaseIncludePlugin {
           file = file.replace(/\\/g, "/");
           // todo: uncomment this
           // normalizers.forEach(x => file = file.replace(x, ""));
+          this.logger.log('adding dependency to:', parser.state.current.resource, '\n\tdep:', file);
           addDependency(file);
         }
     });

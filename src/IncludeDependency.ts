@@ -28,7 +28,7 @@ export class IncludeDependency extends webpack.dependencies.ModuleDependency {
   // TODO:
   // verify this
   getReferencedExports(moduleGraph: webpack.ModuleGraph): (string[] | ReferencedExport)[] {
-    debugger;
+    // debugger;
     return this.options?.exports
       ? [{ name: this.options.exports, canMangle: false }]
       : webpack.Dependency.NO_EXPORTS_REFERENCED;

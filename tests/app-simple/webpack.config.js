@@ -5,14 +5,24 @@ const path = require('path');
 
 Error.stackTraceLimit = Infinity;
 
+/**
+ * @returns {import('webpack').Configuration}
+ */
 module.exports = (env = {}) => {
   return {
     mode: 'development',
     target: 'web',
     resolve: {
       extensions: [".ts", ".js"],
-      modules: ["src", "node_modules"],
+      modules: [
+        path.resolve(__dirname, "src"),
+        'node_modules'
+      ],
+      alias: {
+        src: path.resolve(__dirname, 'src')
+      }
     },
+    context: path.resolve(__dirname, 'src'),
     entry: {
       // application entry file is app and 
       app: ["aurelia-bootstrapper"],
@@ -40,9 +50,9 @@ module.exports = (env = {}) => {
     plugins: [
       new AureliaPlugin({
         dist: 'es2015',
-        aureliaApp: 'main',
+        // aureliaApp: 'main',
         // aureliaConfig: ['basic'],
-        includeAll: 'src'
+        // includeAll: 'src'
       }),
       // Standard plugin to build index.html
       // new HtmlWebpackPlugin({

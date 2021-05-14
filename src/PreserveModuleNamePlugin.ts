@@ -1,9 +1,11 @@
 import path = require("path");
 import * as webpack from 'webpack';
+import { createLogger } from "./logger";
 
 export const preserveModuleName = Symbol();
 
 const TAP_NAME = "Aurelia:PreserveModuleName";
+const logger = createLogger('PreserveModuleNamePlugin');
 
 // This plugins preserves the module names of IncludeDependency and 
 // AureliaDependency so that they can be dynamically requested by 
@@ -11,6 +13,7 @@ const TAP_NAME = "Aurelia:PreserveModuleName";
 // All other dependencies are handled by webpack itself and don't
 // need special treatment.
 export class PreserveModuleNamePlugin {
+
   constructor(private isDll: boolean = false) {
   }
 
@@ -70,7 +73,7 @@ export class PreserveModuleNamePlugin {
           id = id.replace(/\\/g, "/");
           if (module.buildMeta)  // meta can be null if the module contains errors
             module.buildMeta["aurelia-id"] = id;
-          console.log({ id })
+          // console.log({ module: module.resource, id })
           if (!this.isDll)
             module.id = id;
         }
@@ -82,12 +85,16 @@ export class PreserveModuleNamePlugin {
 function getPreservedModules(modules: webpack.NormalModule[], compilation: webpack.Compilation) {
   return new Set(
     modules.filter(m => {
+      // console.log('Requested module', m.request)
       // Some modules might have [preserveModuleName] already set, see ConventionDependenciesPlugin.
       let value = m[preserveModuleName];
       for (const connection of compilation.moduleGraph.getIncomingConnections(m)) {
         // todo: verify against commented code below
-        if (!connection?.dependency?.[preserveModuleName])
+        if (!connection?.dependency?.[preserveModuleName]) {
           continue;
+        }
+
+        // console.log('module with connection (being required by others)', m.resource, m.id);
 
         value = true;
         let req = removeLoaders((connection.dependency as webpack.dependencies.ModuleDependency).request);

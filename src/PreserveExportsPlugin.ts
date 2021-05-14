@@ -52,7 +52,7 @@ function getModuleExports(module: webpack.NormalModule, moduleGraph: webpack.Mod
     exportsInfo[moduleExports] = _set = new Set();
     exportsInfo[nativeIsUsed] = exportsInfo.isModuleUsed;
     exportsInfo.getUsedName = function(name, runtime) {
-      console.log('getUsedName', name);
+      // console.log('getUsedName', name);
       return _set.has(name)
         ? name
         : this[nativeIsUsed](name, runtime);
