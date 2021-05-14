@@ -44,6 +44,9 @@ class ParserPlugin {
         // PLATFORM.moduleName(...)
         && (expr.object.type === 'Identifier' && expr.object.name === 'PLATFORM'
           // _aureliaPal.PLATFORM.moduleName(...)
+          // require('aurelia-pal').PLATFORM.moduleName(...)
+          // import('aurelia-pal').then(pal => pal.PLATFORM.moduleName(...))
+          // import('aurelia-pal').then({ PLATFORM } => PLATFORM.moduleName(...))
           || expr.object.type === 'MemberExpression'
             && expr.object.property.type === 'Identifier'
             && expr.object.property.name === 'PLATFORM'
@@ -63,8 +66,8 @@ class ParserPlugin {
         }
 
         let [arg1, arg2] = expr.arguments as estree.Expression[];
-        let param1 = parser.evaluateExpression(arg1);
-        if (!param1?.isString())
+        let param1 = parser.evaluateExpression(arg1)!;
+        if (!param1.isString())
           return;
         if (expr.arguments.length === 1) {
           // Normal module dependency
@@ -74,7 +77,7 @@ class ParserPlugin {
 
         let options: DependencyOptions | undefined;
         let param2 = parser.evaluateExpression(arg2)!;
-        if (param2?.isString()) {
+        if (param2.isString()) {
           // Async module dependency
           // PLATFORM.moduleName('some-module', 'chunk name');
           options = { chunk: param2.string };
@@ -83,27 +86,16 @@ class ParserPlugin {
           // Module dependency with extended options
           // PLATFORM.moduleName('some-module', { option: value });
           options = {};
-          // NOTE:
-          // casting here is likely to be correct, as we can declare the following not supported:
-          // PLATFORM.moduleName('some-module', { ...options })
           for (let prop of arg2.properties) {
-            if (prop.type !== 'Property'
-              || prop.method
-              // theoretically, PLATFORM.moduleName('..', { ['chunk']: '' })
-              // works, but ... not a lot of sense supporting it
-              || prop.computed
-              || prop.key.type !== "Identifier"
-            )
-              continue;
-
-            let value = parser.evaluateExpression(prop.value as estree.Literal);
+            if (prop.type !== 'Property' || prop.key.type !== "Identifier") continue;
+            let value = parser.evaluateExpression(prop.value as estree.Literal)!;
             switch (prop.key.name) {
               case "chunk":
-                if (value?.isString()) 
+                if (value.isString()) 
                   options.chunk = value.string;
                 break;
               case "exports":
-                if (value?.isArray() && value.items!.every(v => v.isString()))
+                if (value.isArray() && value.items!.every(v => v.isString()))
                   options.exports = value.items!.map(v => v.string!);
                 break;
             }
