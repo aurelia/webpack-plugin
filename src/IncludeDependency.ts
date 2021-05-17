@@ -2,9 +2,6 @@ import { dependencyImports } from "./PreserveExportsPlugin";
 import { preserveModuleName } from "./PreserveModuleNamePlugin";
 import * as webpack from 'webpack';
 import { DependencyOptions, ReferencedExport } from "./interfaces";
-import { createLogger } from "./logger";
-
-const logger = createLogger('IncludeDependency');
 
 export class IncludeDependency extends webpack.dependencies.ModuleDependency {
   protected options?: DependencyOptions;

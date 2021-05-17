@@ -1,7 +1,7 @@
-import * as webpack from 'webpack';
+import * as Webpack from "webpack";
 export declare const preserveModuleName: unique symbol;
 export declare class PreserveModuleNamePlugin {
     private isDll;
     constructor(isDll?: boolean);
-    apply(compiler: webpack.Compiler): void;
+    apply(compiler: Webpack.Compiler): void;
 }

@@ -9,8 +9,7 @@
 // if the alternate distribution does not exist.
 // The alias configuration above will fail the build if a third party lib also uses ./dist/commonjs
 // but does not include a ./dist/native-modules
-import { Resolver } from 'enhanced-resolve';
-import { ResolveRequest } from './interfaces';
+import { Resolver, ResolveRequest } from './interfaces';
 
 export class DistPlugin {
   private rawDist: string;

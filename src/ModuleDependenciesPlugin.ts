@@ -1,6 +1,6 @@
 import { BaseIncludePlugin, AddDependency } from "./BaseIncludePlugin";
 import * as path from "path";
-import * as webpack from 'webpack';
+import * as Webpack from 'webpack';
 import { DependencyOptionsEx } from "./interfaces";
 
 const TAP_NAME = "Aurelia:ModuleDependencies";
@@ -39,7 +39,7 @@ export class ModuleDependenciesPlugin extends BaseIncludePlugin {
     this.hash = hash as { [name: string]: (string | DependencyOptionsEx)[] };
   }
 
-  apply(compiler: webpack.Compiler) {
+  apply(compiler: Webpack.Compiler) {
     const hashKeys = Object.getOwnPropertyNames(this.hash);
     if (hashKeys.length === 0) return;
 
@@ -47,7 +47,7 @@ export class ModuleDependenciesPlugin extends BaseIncludePlugin {
       // Map the modules passed in ctor to actual resources (files) so that we can
       // recognize them no matter what the rawRequest was (loaders, relative paths, etc.)
       this.modules = { };
-      const resolver = compiler.resolverFactory.get("normal");
+      const resolver = compiler.resolverFactory.get("normal", {});
       return Promise.all(
         hashKeys.map(module => new Promise(resolve => {
           resolver.resolve({}, this.root, module, {}, (err, resource) => {
@@ -67,7 +67,7 @@ export class ModuleDependenciesPlugin extends BaseIncludePlugin {
     super.apply(compiler);
   }
 
-  parser(compilation: webpack.Compilation, parser: webpack.javascript.JavascriptParser, addDependency: AddDependency) {
+  parser(compilation: Webpack.Compilation, parser: Webpack.javascript.JavascriptParser, addDependency: AddDependency) {
     parser.hooks.program.tap(TAP_NAME, () => {
       // We try to match the resource, or the initial module request.
       const deps = this.modules[parser.state.module.resource];

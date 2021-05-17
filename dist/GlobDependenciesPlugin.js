@@ -53,15 +53,15 @@ class GlobDependenciesPlugin extends BaseIncludePlugin_1.BaseIncludePlugin {
             // Map the modules passed in ctor to actual resources (files) so that we can
             // recognize them no matter what the rawRequest was (loaders, relative paths, etc.)
             this.modules = {};
-            const resolver = compiler.resolverFactory.get('normal');
+            const resolver = compiler.resolverFactory.get("normal", {});
             return Promise.all(hashKeys.map(module => new Promise(resolve => {
                 resolver.resolve({}, this.root, module, {}, (err, resource) => {
                     if (err) {
-                        resolve();
+                        resolve(undefined);
                         return;
                     }
                     this.modules[resource] = this.hash[module];
-                    resolve();
+                    resolve(undefined);
                 });
             })))
                 .then(() => { });

@@ -1,6 +1,6 @@
 import { BaseIncludePlugin, AddDependency } from "./BaseIncludePlugin";
 import { Minimatch } from "minimatch";
-import * as webpack from 'webpack';
+import * as Webpack from 'webpack';
 import * as path from "path";
 import { ResolveContext } from "./interfaces";
 
@@ -57,7 +57,7 @@ export class GlobDependenciesPlugin extends BaseIncludePlugin {
     this.hash = hash as { [module: string]: string[] };
   }
 
-  apply(compiler: webpack.Compiler) {
+  apply(compiler: Webpack.Compiler) {
     const hashKeys = Object.getOwnPropertyNames(this.hash);
     if (hashKeys.length === 0)
       return;
@@ -66,16 +66,16 @@ export class GlobDependenciesPlugin extends BaseIncludePlugin {
       // Map the modules passed in ctor to actual resources (files) so that we can
       // recognize them no matter what the rawRequest was (loaders, relative paths, etc.)
       this.modules = { };
-      const resolver = compiler.resolverFactory.get('normal');
+      const resolver = compiler.resolverFactory.get("normal", {});
       return Promise.all(
-        hashKeys.map(module => new Promise<void>(resolve => {
+        hashKeys.map(module => new Promise(resolve => {
           resolver.resolve({}, this.root, module, {} as ResolveContext, (err, resource) => {
             if (err) {
-              resolve();
+              resolve(undefined);
               return;
             }
             this.modules[resource as string] = this.hash[module];
-            resolve();
+            resolve(undefined);
           });
         })))
         .then(() => {});
@@ -84,7 +84,7 @@ export class GlobDependenciesPlugin extends BaseIncludePlugin {
     super.apply(compiler);
   }
 
-  parser(compilation: webpack.Compilation, parser: webpack.javascript.JavascriptParser, addDependency: AddDependency) {
+  parser(compilation: Webpack.Compilation, parser: Webpack.javascript.JavascriptParser, addDependency: AddDependency) {
     const resolveFolders = compilation.options.resolve.modules!;
     // `resolveFolders` can be absolute paths, but by definition this plugin only 
     // looks for files in subfolders of the current `root` path.

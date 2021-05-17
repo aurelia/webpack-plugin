@@ -10,8 +10,7 @@ const subFolderTrial = Symbol();
 exports.resolveCache = {};
 class SubFolderPlugin {
     apply(resolver) {
-        resolver
-            .getHook("after-resolve")
+        resolver.getHook("after-resolve")
             .tapAsync("Aurelia:SubFolder", (request, resolveContext, cb) => {
             // Only look for request not starting with a dot (module names)
             // and followed by a path (slash). Support @scoped/modules.

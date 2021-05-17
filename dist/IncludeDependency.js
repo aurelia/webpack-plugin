@@ -4,8 +4,6 @@ exports.Template = exports.IncludeDependency = void 0;
 const PreserveExportsPlugin_1 = require("./PreserveExportsPlugin");
 const PreserveModuleNamePlugin_1 = require("./PreserveModuleNamePlugin");
 const webpack = require("webpack");
-const logger_1 = require("./logger");
-const logger = logger_1.createLogger('IncludeDependency');
 class IncludeDependency extends webpack.dependencies.ModuleDependency {
     constructor(request, options) {
         let chunk = options && options.chunk;

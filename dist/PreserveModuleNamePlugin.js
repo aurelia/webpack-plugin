@@ -75,15 +75,13 @@ exports.PreserveModuleNamePlugin = PreserveModuleNamePlugin;
 function getPreservedModules(modules, compilation) {
     return new Set(modules.filter(m => {
         var _a;
-        // console.log('Requested module', m.request)
         // Some modules might have [preserveModuleName] already set, see ConventionDependenciesPlugin.
         let value = m[exports.preserveModuleName];
-        for (const connection of compilation.moduleGraph.getIncomingConnections(m)) {
+        for (let connection of compilation.moduleGraph.getIncomingConnections(m)) {
             // todo: verify against commented code below
             if (!((_a = connection === null || connection === void 0 ? void 0 : connection.dependency) === null || _a === void 0 ? void 0 : _a[exports.preserveModuleName])) {
                 continue;
             }
-            // console.log('module with connection (being required by others)', m.resource, m.id);
             value = true;
             let req = removeLoaders(connection.dependency.request);
             // We try to find an absolute string and set that as the module [preserveModuleName], as it's the best id.
@@ -92,16 +90,6 @@ function getPreservedModules(modules, compilation) {
                 return true;
             }
         }
-        // for (let r of m.reasons) {
-        //   if (!r?.dependency?.[preserveModuleName]) continue;
-        //   value = true;
-        //   let req = removeLoaders((r.dependency as webpack.dependencies.ModuleDependency).request);
-        //   // We try to find an absolute string and set that as the module [preserveModuleName], as it's the best id.
-        //   if (req && !req.startsWith(".")) {
-        //     m[preserveModuleName] = req;
-        //     return true;
-        //   }
-        // }
         return !!value;
     }));
 }
@@ -142,7 +130,7 @@ function makeModuleRelative(roots, resource) {
 }
 function fixNodeModule(module, allModules) {
     var _a;
-    if (!/\bnode_modules\b/i.test(module.request))
+    if (!/\bnode_modules\b/i.test(module.resource))
         return null;
     // The problem with node_modules is that often the root of the module is not /node_modules/my-lib
     // Webpack is going to look for `main` in `project.json` to find where the main file actually is.

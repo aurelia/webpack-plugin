@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PreserveExportsPlugin = exports.dependencyImports = void 0;
-const webpack = require("webpack");
+const Webpack = require("webpack");
 exports.dependencyImports = Symbol();
 const moduleExports = Symbol();
 const nativeGetUsedName = Symbol();
@@ -9,17 +9,17 @@ const useAllExports = Symbol();
 const TAP_NAME = "Aurelia:PreserveExports";
 function getModuleExports(module, moduleGraph) {
     let exportsInfo = moduleGraph.getExportsInfo(module);
-    let _set = exportsInfo[moduleExports];
-    if (!_set) {
-        exportsInfo[moduleExports] = _set = new Set();
+    let set = exportsInfo[moduleExports];
+    if (!set) {
+        exportsInfo[moduleExports] = set = new Set();
         exportsInfo[nativeGetUsedName] = exportsInfo.getUsedName;
         exportsInfo.getUsedName = function (name, runtime) {
-            return _set.has(name)
+            return set.has(name)
                 ? name
                 : this[nativeGetUsedName](name, runtime);
         };
     }
-    return _set;
+    return set;
 }
 class PreserveExportsPlugin {
     apply(compiler) {
@@ -36,7 +36,7 @@ class PreserveExportsPlugin {
                         if (exportsInfo[useAllExports]) {
                             return;
                         }
-                        if (imports === webpack.Dependency.EXPORTS_OBJECT_REFERENCED) {
+                        if (imports === Webpack.Dependency.EXPORTS_OBJECT_REFERENCED) {
                             exportsInfo[nativeGetUsedName] = exportsInfo.getUsedName;
                             exportsInfo[useAllExports] = exportsInfo.getUsedName = function (name, runtime) {
                                 return name;

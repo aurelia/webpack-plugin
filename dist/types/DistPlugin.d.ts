@@ -1,4 +1,4 @@
-import { Resolver } from 'enhanced-resolve';
+import { Resolver } from './interfaces';
 export declare class DistPlugin {
     private rawDist;
     private dist;
