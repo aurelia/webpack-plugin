@@ -1,4 +1,5 @@
+import { Resolver } from "./interfaces";
 export declare const resolveCache: {};
 export declare class SubFolderPlugin {
-    apply(resolver: Webpack.Resolver): void;
+    apply(resolver: Resolver): void;
 }

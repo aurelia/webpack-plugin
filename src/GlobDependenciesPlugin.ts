@@ -101,7 +101,6 @@ export class GlobDependenciesPlugin extends BaseIncludePlugin {
           file = file.replace(/\\/g, "/");
           // todo: uncomment this
           // normalizers.forEach(x => file = file.replace(x, ""));
-          this.logger.log('adding dependency to:', parser.state.current.resource, '\n\tdep:', file);
           addDependency(file);
         }
     });

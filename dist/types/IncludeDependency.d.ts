@@ -1,17 +1,14 @@
 import { dependencyImports } from "./PreserveExportsPlugin";
 import { preserveModuleName } from "./PreserveModuleNamePlugin";
-import ModuleDependency = require("webpack/lib/dependencies/ModuleDependency");
-import NullDependency = require("webpack/lib/dependencies/NullDependency");
-export declare class IncludeDependency extends ModuleDependency {
-    private options?;
+import * as webpack from 'webpack';
+import { DependencyOptions, ReferencedExport } from "./interfaces";
+export declare class IncludeDependency extends webpack.dependencies.ModuleDependency {
+    protected options?: DependencyOptions;
     constructor(request: string, options?: DependencyOptions);
-    readonly type: string;
-    getReference(): {
-        module: Webpack.Module | null;
-        importedNames: boolean | string[];
-    } | null;
-    readonly [preserveModuleName]: boolean;
-    readonly [dependencyImports]: string[] | undefined;
+    get type(): string;
+    getReferencedExports(moduleGraph: webpack.ModuleGraph): (string[] | ReferencedExport)[];
+    get [preserveModuleName](): boolean;
+    get [dependencyImports](): string[] | undefined;
 }
-export declare type NullDependencyTemplate = typeof NullDependency.Template;
+export declare type NullDependencyTemplate = typeof webpack.dependencies.NullDependency.Template;
 export declare const Template: NullDependencyTemplate;

@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.AureliaPlugin = void 0;
 const webpack_1 = require("webpack");
 const AureliaDependenciesPlugin_1 = require("./AureliaDependenciesPlugin");
 const ConventionDependenciesPlugin_1 = require("./ConventionDependenciesPlugin");
@@ -11,6 +12,7 @@ const ModuleDependenciesPlugin_1 = require("./ModuleDependenciesPlugin");
 const PreserveExportsPlugin_1 = require("./PreserveExportsPlugin");
 const PreserveModuleNamePlugin_1 = require("./PreserveModuleNamePlugin");
 const SubFolderPlugin_1 = require("./SubFolderPlugin");
+const Webpack = require("webpack");
 // See comments inside the module to understand why this is used
 const emptyEntryModule = "aurelia-webpack-plugin/runtime/empty-entry";
 class AureliaPlugin {
@@ -81,7 +83,7 @@ class AureliaPlugin {
         // because they are determined at build-time.
         const dependencies = {
             // PAL for target
-            "aurelia-bootstrapper": "pal" in opts ? opts.pal : getPAL(compiler.options.target),
+            "aurelia-bootstrapper": "pal" in opts ? opts.pal : { name: getPAL(compiler.options.target), exports: ['initialize'] },
             // `aurelia-framework` exposes configuration helpers like `.standardConfiguration()`,
             // that load plugins, but we can't know if they are actually used or not.
             // User indicates what he uses at build time in `aureliaConfig` option.
@@ -132,11 +134,9 @@ class AureliaPlugin {
         }
         if (!opts.noHtmlLoader) {
             // Ensure that we trace HTML dependencies (always required because of 3rd party libs)
-            let module = compiler.options.module;
-            let rules = module.rules || module.loaders || (module.rules = []);
             // Note that this loader will be in last place, which is important 
             // because it will process the file first, before any other loader.
-            rules.push({ test: /\.html?$/i, use: "aurelia-webpack-plugin/html-requires-loader" });
+            compiler.options.module.rules.push({ test: /\.html?$/i, use: "aurelia-webpack-plugin/html-requires-loader" });
         }
         if (!opts.noInlineView) {
             new InlineViewDependenciesPlugin_1.InlineViewDependenciesPlugin().apply(compiler);
@@ -148,9 +148,16 @@ class AureliaPlugin {
         if (needsEmptyEntry) {
             this.addEntry(compiler.options, emptyEntryModule);
         }
+        compiler.hooks.compilation.tap('AureliaPlugin', (compilation) => {
+            compilation.hooks.runtimeRequirementInTree
+                .for(Webpack.RuntimeGlobals.definePropertyGetters)
+                .tap('AureliaPlugin', (chunk) => {
+                compilation.addRuntimeModule(chunk, new AureliaExposeWebpackInternal());
+            });
+        });
         // Aurelia libs contain a few global defines to cut out unused features
         new webpack_1.DefinePlugin(defines).apply(compiler);
-        // Adds some dependencies that are not documented by `PLATFORM.moduleName`      
+        // Adds some dependencies that are not documented by `PLATFORM.moduleName`
         new ModuleDependenciesPlugin_1.ModuleDependenciesPlugin(dependencies).apply(compiler);
         // This plugin traces dependencies in code that are wrapped in PLATFORM.moduleName() calls
         new AureliaDependenciesPlugin_1.AureliaDependenciesPlugin(...opts.moduleMethods).apply(compiler);
@@ -168,37 +175,19 @@ class AureliaPlugin {
         new PreserveExportsPlugin_1.PreserveExportsPlugin().apply(compiler);
     }
     addEntry(options, modules) {
+        var _a;
         let webpackEntry = options.entry;
         let entries = Array.isArray(modules) ? modules : [modules];
-        if (typeof webpackEntry === "object" && !Array.isArray(webpackEntry)) {
-            if (this.options.entry) {
-                // Add runtime only to the entries defined on this plugin
-                let ks = this.options.entry;
-                if (!Array.isArray(ks))
-                    ks = [ks];
-                ks.forEach(k => {
-                    if (webpackEntry[k] === undefined) {
-                        throw new Error('entry key "' + k + '" is not defined in Webpack build, cannot apply runtime.');
-                    }
-                    webpackEntry[k] = entries.concat(webpackEntry[k]);
-                });
-            }
-            else {
-                // Add runtime to each entry
-                for (let k in webpackEntry) {
-                    if (!webpackEntry.hasOwnProperty(k)) {
-                        continue;
-                    }
-                    let entry = webpackEntry[k];
-                    if (!Array.isArray(entry)) {
-                        entry = [entry];
-                    }
-                    webpackEntry[k] = entries.concat(entry);
-                }
-            }
+        // todo:
+        // probably cant do much here?
+        if (typeof webpackEntry === 'function') {
+            return;
         }
-        else
-            options.entry = entries.concat(webpackEntry);
+        // Add runtime to each entry
+        for (let k in webpackEntry) {
+            let entry = webpackEntry[k];
+            (_a = entry.import) === null || _a === void 0 ? void 0 : _a.unshift(...entries);
+        }
     }
 }
 exports.AureliaPlugin = AureliaPlugin;
@@ -251,4 +240,18 @@ function definePolyfills(defines, polyfills) {
         return;
     defines.FEATURE_NO_ESNEXT = "true";
     // "none" or invalid option.
+}
+class AureliaExposeWebpackInternal extends Webpack.RuntimeModule {
+    constructor() {
+        super("Aurelia expose webpack internal");
+    }
+    /**
+     * @returns {string} runtime code
+     */
+    generate() {
+        return Webpack.Template.asString([
+            "__webpack_require__.m = __webpack_require__.m || __webpack_modules__",
+            "__webpack_require__.c = __webpack_require__.c || __webpack_module_cache__",
+        ]);
+    }
 }

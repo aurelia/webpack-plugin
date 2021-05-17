@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.SubFolderPlugin = exports.resolveCache = void 0;
 // This plugin tries to redirect failing request that look like `module/something`
 // into `module/path-to-main/something`.
 // For example, supposing `aurelia-charts` resolves to `aurelia-charts/dist/index.js`,
@@ -9,7 +10,8 @@ const subFolderTrial = Symbol();
 exports.resolveCache = {};
 class SubFolderPlugin {
     apply(resolver) {
-        resolver.getHook("after-resolve")
+        resolver
+            .getHook("after-resolve")
             .tapAsync("Aurelia:SubFolder", (request, resolveContext, cb) => {
             // Only look for request not starting with a dot (module names)
             // and followed by a path (slash). Support @scoped/modules.

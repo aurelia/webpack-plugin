@@ -1,4 +1,5 @@
+import * as webpack from 'webpack';
 export declare const dependencyImports: unique symbol;
 export declare class PreserveExportsPlugin {
-    apply(compiler: Webpack.Compiler): void;
+    apply(compiler: webpack.Compiler): void;
 }

@@ -9,7 +9,6 @@ const NullDependency = webpack.dependencies.NullDependency;
 export type AddDependency = (request: string | DependencyOptionsEx) => void;
 
 export class BaseIncludePlugin {
-  protected logger = createLogger(this.constructor.name);
 
   apply(compiler: webpack.Compiler) {
     compiler.hooks.compilation.tap(TAP_NAME, (compilation, data) => {
@@ -21,8 +20,6 @@ export class BaseIncludePlugin {
         const addDependency = (request: string | DependencyOptionsEx) => {
           let options = typeof request === 'object' ? request : undefined;
           let name = options ? options.name : (request as string);
-          console.log('\n');
-          this.logger.log('Adding dependency for:\n\t', parser.state.current.resource, '\n\t', JSON.stringify({ name, options }));
 
           parser.state.current.addDependency(new IncludeDependency(name, options));
         }

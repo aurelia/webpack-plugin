@@ -1,27 +1,19 @@
 "use strict";
-// This plugin tries to convert a request containing `/dist/xxx/` to the configured distribution if it exists.
-// For example new DistPlugin('native-modules') will turn 
-//    ./dist/commonjs/aurelia-framework.js 
-// into 
-//    ./dist/native-modules/aurelia-framework.js
-// This is very similar to configuring 
-//    resolve.alias = { './dist/commonjs': './dist/native-modules' }
-// except it applies no matter the original dist subfolder and it falls back to the original path
-// if the alternate distribution does not exist.
-// The alias configuration above will fail the build if a third party lib also uses ./dist/commonjs
-// but does not include a ./dist/native-modules
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.DistPlugin = void 0;
 class DistPlugin {
     constructor(dist) {
+        this.rawDist = dist;
         this.dist = `/dist/${dist}/`;
     }
     apply(resolver) {
-        if (!this.dist)
+        if (!this.rawDist)
             return;
         resolver.getHook("before-described-resolve")
             .tapAsync("Aurelia:Dist", (request, resolveContext, cb) => {
+            var _a, _b;
             // If the request contains /dist/xxx/, try /dist/{dist}/ first
-            let rewritten = request.request.replace(/\/dist\/[^/]+\//i, this.dist);
+            let rewritten = (_b = (_a = request.request) === null || _a === void 0 ? void 0 : _a.replace(/\/dist\/[^/]+\//i, this.dist)) !== null && _b !== void 0 ? _b : '';
             if (rewritten !== request.request) {
                 let newRequest = Object.assign({}, request, { request: rewritten });
                 resolver.doResolve(resolver.getHook("described-resolve"), newRequest, "try alternate " + this.dist, {}, cb);

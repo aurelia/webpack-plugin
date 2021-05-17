@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.GlobDependenciesPlugin = void 0;
 const BaseIncludePlugin_1 = require("./BaseIncludePlugin");
 const minimatch_1 = require("minimatch");
 const path = require("path");
@@ -52,13 +53,18 @@ class GlobDependenciesPlugin extends BaseIncludePlugin_1.BaseIncludePlugin {
             // Map the modules passed in ctor to actual resources (files) so that we can
             // recognize them no matter what the rawRequest was (loaders, relative paths, etc.)
             this.modules = {};
-            const resolver = compiler.resolverFactory.get("normal", {});
+            const resolver = compiler.resolverFactory.get('normal');
             return Promise.all(hashKeys.map(module => new Promise(resolve => {
-                resolver.resolve(null, this.root, module, {}, (err, resource) => {
+                resolver.resolve({}, this.root, module, {}, (err, resource) => {
+                    if (err) {
+                        resolve();
+                        return;
+                    }
                     this.modules[resource] = this.hash[module];
                     resolve();
                 });
-            })));
+            })))
+                .then(() => { });
         });
         super.apply(compiler);
     }
@@ -76,7 +82,8 @@ class GlobDependenciesPlugin extends BaseIncludePlugin_1.BaseIncludePlugin {
             for (let glob of globs)
                 for (let file of findFiles(this.root, glob, compilation.inputFileSystem)) {
                     file = file.replace(/\\/g, "/");
-                    normalizers.forEach(x => file = file.replace(x, ""));
+                    // todo: uncomment this
+                    // normalizers.forEach(x => file = file.replace(x, ""));
                     addDependency(file);
                 }
         });
