@@ -2,9 +2,12 @@ import { dependencyImports } from "./PreserveExportsPlugin";
 import { preserveModuleName } from "./PreserveModuleNamePlugin";
 import * as webpack from 'webpack';
 import { DependencyOptions, ReferencedExport } from "./interfaces";
+import { createLogger } from "./logger";
+
+const logger = createLogger('IncludeDependency');
 
 export class IncludeDependency extends webpack.dependencies.ModuleDependency {
-  private options?: DependencyOptions;
+  protected options?: DependencyOptions;
 
   constructor(request: string, options?: DependencyOptions) {
     let chunk = options && options.chunk;
@@ -14,21 +17,10 @@ export class IncludeDependency extends webpack.dependencies.ModuleDependency {
 
   // @ts-expect-error
   get type() {
-    return "aurelia dependency module";
+    return IncludeDependency.name;
   }
 
-  // getReference() {
-  //   let importedNames = this.options && this.options.exports;
-  //   // this['getReferencedExports']
-  //   return importedNames ? 
-  //     { module: this.module, importedNames } :
-  //     super.getReference();
-  // }
-
-  // TODO:
-  // verify this
   getReferencedExports(moduleGraph: webpack.ModuleGraph): (string[] | ReferencedExport)[] {
-    // debugger;
     return this.options?.exports
       ? [{ name: this.options.exports, canMangle: false }]
       : webpack.Dependency.NO_EXPORTS_REFERENCED;
@@ -39,7 +31,7 @@ export class IncludeDependency extends webpack.dependencies.ModuleDependency {
   }
 
   get [dependencyImports]() {
-    return this.options && this.options.exports;
+    return this.options?.exports;
   }
 };
 

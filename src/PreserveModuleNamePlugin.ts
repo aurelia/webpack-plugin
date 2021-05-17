@@ -177,7 +177,7 @@ function fixNodeModule(module: webpack.NormalModule, allModules: webpack.NormalM
   // so @corp/bar is the proper module name.
   let name = /\bnode_modules[\\/](?!.*\bnode_modules\b)((?:@[^\\/]+[\\/])?[^\\/]+)/i.exec(module.resource)?.[1];
   if (!name) {
-    console.log('what is this', module.resource);
+    logger.log('issue while fixing node modules: not a node module', module.resource);
     return;
   }
   name = name.replace("\\", "/"); // normalize \ to / for scoped modules

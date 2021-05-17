@@ -3,6 +3,7 @@ import * as estree from 'estree';
 import * as webpack from 'webpack';
 
 import { BasicEvaluatedExpression as $BasicEvaluatedExpression, DependencyOptions } from './interfaces';
+import { dependencyImports } from "./PreserveExportsPlugin";
 const BasicEvaluatedExpression: $BasicEvaluatedExpression = require("webpack/lib/javascript/BasicEvaluatedExpression");
 const TAP_NAME = "Aurelia:Dependencies";
 
@@ -11,6 +12,14 @@ class AureliaDependency extends IncludeDependency {
               public range: [number, number], 
               options?: DependencyOptions) {
     super(request, options);
+  }
+
+  get type() {
+    return `${super.type}/AureliaDependency`;
+  }
+
+  get [dependencyImports]() {
+    return webpack.Dependency.EXPORTS_OBJECT_REFERENCED as any;
   }
 }
 

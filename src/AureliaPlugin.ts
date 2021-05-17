@@ -119,7 +119,7 @@ export class AureliaPlugin {
     // because they are determined at build-time.
     const dependencies: ModuleDependenciesPluginOptions = {
       // PAL for target
-      "aurelia-bootstrapper": "pal" in opts ? opts.pal : getPAL(compiler.options.target as string),
+      "aurelia-bootstrapper": "pal" in opts ? opts.pal : { name: getPAL(compiler.options.target as string), exports: ['initialize'] },
       // `aurelia-framework` exposes configuration helpers like `.standardConfiguration()`,
       // that load plugins, but we can't know if they are actually used or not.
       // User indicates what he uses at build time in `aureliaConfig` option.
