@@ -96,7 +96,6 @@ class AureliaPlugin {
             let resolve = compiler.options.resolve;
             let plugins = resolve.plugins || (resolve.plugins = []);
             plugins.push(new DistPlugin_1.DistPlugin(opts.dist));
-            // plugins.push(new DistPlugin({}));
         }
         if (!opts.noModulePathResolve) {
             // This plugin enables sub-path in modules that are not at the root (e.g. in a /dist folder),
@@ -153,7 +152,6 @@ class AureliaPlugin {
             compilation.hooks.runtimeRequirementInTree
                 .for(Webpack.RuntimeGlobals.definePropertyGetters)
                 .tap('AureliaPlugin', (chunk) => {
-                compilation.addModule;
                 compilation.addRuntimeModule(chunk, new AureliaExposeWebpackInternal());
             });
         });

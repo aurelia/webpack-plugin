@@ -133,7 +133,6 @@ export class AureliaPlugin {
       let resolve = compiler.options.resolve;
       let plugins = resolve.plugins || (resolve.plugins = []);
       plugins.push(new DistPlugin(opts.dist));
-      // plugins.push(new DistPlugin({}));
     }
 
     if (!opts.noModulePathResolve) {
@@ -200,7 +199,6 @@ export class AureliaPlugin {
       compilation.hooks.runtimeRequirementInTree
         .for(Webpack.RuntimeGlobals.definePropertyGetters)
         .tap('AureliaPlugin', (chunk) => {
-          compilation.addModule
           compilation.addRuntimeModule(chunk, new AureliaExposeWebpackInternal());
         });
     });
