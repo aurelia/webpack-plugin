@@ -19,10 +19,9 @@ module.exports = (env = {}) => {
         'node_modules'
       ],
       alias: {
-        src: path.resolve(__dirname, 'src'),
+        // src: path.resolve(__dirname, 'src'),
       }
     },
-    context: path.resolve(__dirname, 'src'),
     entry: {
       // application entry file is app and 
       app: ["aurelia-bootstrapper"],
@@ -55,9 +54,9 @@ module.exports = (env = {}) => {
         // includeAll: 'src'
       }),
       // Standard plugin to build index.html
-      // new HtmlWebpackPlugin({
-      //   template: 'index.ejs'
-      // }),
+      new HtmlWebpackPlugin({
+        template: 'index.ejs'
+      }),
       // new CopyWebpackPlugin({
       //   patterns: [
       //     // Have all static files / asessts copied over
