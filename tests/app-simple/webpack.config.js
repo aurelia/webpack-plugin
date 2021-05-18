@@ -19,7 +19,7 @@ module.exports = (env = {}) => {
         'node_modules'
       ],
       alias: {
-        src: path.resolve(__dirname, 'src')
+        src: path.resolve(__dirname, 'src'),
       }
     },
     context: path.resolve(__dirname, 'src'),
