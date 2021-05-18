@@ -50,7 +50,7 @@ export class DistPlugin {
 
       let newRequest: Partial<ResolveRequest> = { path: $request.path, request: rewrittenPath, fullySpecified: false };
       let tobeNotifiedHook = resolver.ensureHook(targetHookName);
-      resolver.doResolve(tobeNotifiedHook, newRequest, "try alternate dist: " + dist + " with index file", resolveContext, (err: any, result: any) => {
+      resolver.doResolve(tobeNotifiedHook, newRequest, "try alternate dist: " + dist + " in only request", resolveContext, (err: any, result: any) => {
         if (err) return cb();
         if (typeof result?.path !== 'string') {
           return cb();
@@ -60,7 +60,7 @@ export class DistPlugin {
           return cb(null, result);
         }
         newRequest = { path: $request.path, request: rewrittenPath, fullySpecified: false };
-        resolver.doResolve(tobeNotifiedHook, newRequest, "try alternate dist with non index file", resolveContext, (err: any, result: any) => {
+        resolver.doResolve(tobeNotifiedHook, newRequest, "try alternate dist " + dist + " in full path", resolveContext, (err: any, result: any) => {
           if (err) return cb();
           if (result) return cb(null, result);
           return cb();

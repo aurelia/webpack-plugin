@@ -34,7 +34,7 @@ export class SubFolderPlugin {
         // It worked, let's try a relative folder from there
         let root = path.posix.dirname(result.relativePath);
         let newRequest = Object.assign({}, request, { request: root.replace(/^\./, module) + rest });
-        (newRequest.context as any)[subFolderTrial] = true;
+        newRequest.context[subFolderTrial] = true;
         resolver.doResolve(resolver.hooks.resolve, newRequest, "try module sub-folder: " + root, {}, (err: any, result: any) => {
           if (result) cb(null, result);
           else cb();

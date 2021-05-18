@@ -115,8 +115,7 @@ function aliasRelative(aliases: {[key: string]: string | false | string[] } | nu
   // Note that this only works with aliases pointing to folders, not files.
   // To have a "default" file in the folder, the following construct works:
   // alias: { "mod$": "src/index.js", "mod": "src" }
-  if (!aliases)
-    return null;
+  if (!aliases) return null;
 
   for (let name in aliases) {
     let target = aliases[name];
@@ -127,8 +126,7 @@ function aliasRelative(aliases: {[key: string]: string | false | string[] } | nu
       continue;
     let root = path.resolve(target);
     let relative = path.relative(root, resource);
-    if (relative.startsWith(".."))
-      continue;
+    if (relative.startsWith("..")) continue;
     name = name.replace(/\$$/, ""); // A trailing $ indicates an exact match in webpack
     return relative ? name + "/" + relative : name;
   }
@@ -162,7 +160,7 @@ function fixNodeModule(module: Webpack.NormalModule, allModules: Webpack.NormalM
   // in case the package was located in a sub-node_modules (which can occur in special circumstances).
   // We also need to take care of scoped modules. If the name starts with @ we must keep two parts,
   // so @corp/bar is the proper module name.
-  let name = /\bnode_modules[\\/](?!.*\bnode_modules\b)((?:@[^\\/]+[\\/])?[^\\/]+)/i.exec(module.resource)?.[1];
+  let name = /\bnode_modules[\\/](?!.*\bnode_modules\b)((?:@[^\\/]+[\\/])?[^\\/]+)/i.exec(module.resource)![1];
   if (!name) {
     logger.log('issue while fixing node modules: not a node module', module.resource);
     return;

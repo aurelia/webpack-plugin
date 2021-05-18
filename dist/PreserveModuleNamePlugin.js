@@ -129,7 +129,6 @@ function makeModuleRelative(roots, resource) {
     return null;
 }
 function fixNodeModule(module, allModules) {
-    var _a;
     if (!/\bnode_modules\b/i.test(module.resource))
         return null;
     // The problem with node_modules is that often the root of the module is not /node_modules/my-lib
@@ -148,7 +147,7 @@ function fixNodeModule(module, allModules) {
     // in case the package was located in a sub-node_modules (which can occur in special circumstances).
     // We also need to take care of scoped modules. If the name starts with @ we must keep two parts,
     // so @corp/bar is the proper module name.
-    let name = (_a = /\bnode_modules[\\/](?!.*\bnode_modules\b)((?:@[^\\/]+[\\/])?[^\\/]+)/i.exec(module.resource)) === null || _a === void 0 ? void 0 : _a[1];
+    let name = /\bnode_modules[\\/](?!.*\bnode_modules\b)((?:@[^\\/]+[\\/])?[^\\/]+)/i.exec(module.resource)[1];
     if (!name) {
         logger.log('issue while fixing node modules: not a node module', module.resource);
         return;

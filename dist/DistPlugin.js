@@ -35,7 +35,7 @@ class DistPlugin {
             // Path does not contain /dist/xxx/, continue normally
             let newRequest = { path: $request.path, request: rewrittenPath, fullySpecified: false };
             let tobeNotifiedHook = resolver.ensureHook(targetHookName);
-            resolver.doResolve(tobeNotifiedHook, newRequest, "try alternate dist: " + dist + " with index file", resolveContext, (err, result) => {
+            resolver.doResolve(tobeNotifiedHook, newRequest, "try alternate dist: " + dist + " in only request", resolveContext, (err, result) => {
                 if (err)
                     return cb();
                 if (typeof (result === null || result === void 0 ? void 0 : result.path) !== 'string') {
@@ -46,7 +46,7 @@ class DistPlugin {
                     return cb(null, result);
                 }
                 newRequest = { path: $request.path, request: rewrittenPath, fullySpecified: false };
-                resolver.doResolve(tobeNotifiedHook, newRequest, "try alternate dist with non index file", resolveContext, (err, result) => {
+                resolver.doResolve(tobeNotifiedHook, newRequest, "try alternate dist " + dist + " in full path", resolveContext, (err, result) => {
                     if (err)
                         return cb();
                     if (result)
