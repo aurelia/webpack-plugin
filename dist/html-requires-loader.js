@@ -1,9 +1,6 @@
 "use strict";
 const parse = require("html-loader/lib/attributesParser");
 const _htmlSymbol = Symbol("HTML dependencies");
-// webpack.NormalModule.getCompilationHooks(compilation).loader.tap('...', (loader, data) => {
-// 
-// })
 function loader(content) {
     this.cacheable && this.cacheable();
     this._module[_htmlSymbol] = loader.modules(content);

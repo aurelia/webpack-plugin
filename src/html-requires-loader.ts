@@ -9,10 +9,6 @@ declare interface Loader {
 
 const _htmlSymbol = Symbol("HTML dependencies");
 
-// webpack.NormalModule.getCompilationHooks(compilation).loader.tap('...', (loader, data) => {
-// 
-// })
-
 function loader(this: Loader, content: string) {
   this.cacheable && this.cacheable();
   this._module[_htmlSymbol] = loader.modules(content);
