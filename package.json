@@ -40,8 +40,8 @@
     "test:prod": "cd tests/app-simple && npm run build:prod",
     "pretest:ci": "npm pack",
     "test:ci": "npm run test:ci:1 && cd ../../ && npm run test:ci:2",
-    "test:ci:1": "cd tests/app-basic && npm run install:plugin && npm run build && npm run build:prod",
-    "test:ci:2": "cd tests/app-simple && npm run install:plugin && npm run build && npm run build:prod"
+    "test:ci:1": "cd tests/app-basic && npm run install:plugin && npm run build:prod && npm run build",
+    "test:ci:2": "cd tests/app-simple && npm run install:plugin && npm run build:prod && npm run build"
   },
   "repository": {
     "type": "git",
