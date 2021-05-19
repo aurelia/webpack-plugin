@@ -2,7 +2,6 @@ import { BaseIncludePlugin, AddDependency } from "./BaseIncludePlugin";
 import { Minimatch } from "minimatch";
 import * as Webpack from 'webpack';
 import * as path from "path";
-import { ResolveContext } from "./interfaces";
 
 const TAP_NAME = "Aurelia:GlobDependencies";
 
@@ -98,8 +97,7 @@ export class GlobDependenciesPlugin extends BaseIncludePlugin {
       for (let glob of globs) 
         for (let file of findFiles(this.root, glob, compilation.inputFileSystem as typeof import('fs'))) {
           file = file.replace(/\\/g, "/");
-          // todo: uncomment this
-          // normalizers.forEach(x => file = file.replace(x, ""));
+          normalizers.forEach(x => file = file.replace(x, ""));
           addDependency(file);
         }
     });

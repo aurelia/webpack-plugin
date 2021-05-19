@@ -82,8 +82,7 @@ class GlobDependenciesPlugin extends BaseIncludePlugin_1.BaseIncludePlugin {
             for (let glob of globs)
                 for (let file of findFiles(this.root, glob, compilation.inputFileSystem)) {
                     file = file.replace(/\\/g, "/");
-                    // todo: uncomment this
-                    // normalizers.forEach(x => file = file.replace(x, ""));
+                    normalizers.forEach(x => file = file.replace(x, ""));
                     addDependency(file);
                 }
         });
