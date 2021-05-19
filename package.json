@@ -33,10 +33,14 @@
   "scripts": {
     "build": "tsc",
     "build:watch": "tsc --watch",
-    "test": "cd tests/app-simple && npm run build",
+    "test:1": "cd tests/app-basic && npm run test",
+    "test:2": "cd tests/app-simple && npm run test",
+    "test": "npm run test:2",
     "test:prod": "cd tests/app-simple && npm run build:prod",
     "pretest:ci": "npm pack",
-    "test:ci": "cd tests/app-simple && npm run install:plugin && npm run test"
+    "test:ci": "npm run test:ci:1 && cd ../../ && npm run test:ci:2",
+    "test:ci:1": "cd tests/app-basic && npm run install:plugin && npm run test && npm run test:prod",
+    "test:ci:2": "cd tests/app-simple && npm run install:plugin && npm run test && npm run test:prod"
   },
   "repository": {
     "type": "git",
