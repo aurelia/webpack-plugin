@@ -80,7 +80,7 @@ export class AureliaPlugin {
   options: Options;
 
   constructor(options: Partial<Options> = {}) {
-    this.options = Object.assign({
+    const opts = this.options = Object.assign({
       includeAll: <false>false,
       aureliaConfig: ["standard", "developmentLogging"],
       dist: "native-modules",
@@ -103,7 +103,10 @@ export class AureliaPlugin {
     },
     options);
 
-    this.options.features = Object.assign({
+    if (opts.entry) {
+      opts.entry = Array.isArray(opts.entry) ? opts.entry : [opts.entry];
+    }
+    opts.features = Object.assign({
       ie: true,
       svg: true,
       unparser: true,
@@ -266,6 +269,9 @@ export class AureliaPlugin {
     }
     // Add runtime to each entry
     for (let k in webpackEntry) {
+      if (this.options.entry?.includes(k) ?? false) {
+        throw new Error('entry key "' + k + '" is not defined in Webpack build, cannot apply runtime.');
+      }
       let entry = webpackEntry[k];
       entry.import?.unshift(...entries);
     }

@@ -17,7 +17,7 @@ const Webpack = require("webpack");
 const emptyEntryModule = "aurelia-webpack-plugin/runtime/empty-entry";
 class AureliaPlugin {
     constructor(options = {}) {
-        this.options = Object.assign({
+        const opts = this.options = Object.assign({
             includeAll: false,
             aureliaConfig: ["standard", "developmentLogging"],
             dist: "native-modules",
@@ -38,7 +38,10 @@ class AureliaPlugin {
             viewsFor: "**/!(tslib)*.{ts,js}",
             viewsExtensions: ".html",
         }, options);
-        this.options.features = Object.assign({
+        if (opts.entry) {
+            opts.entry = Array.isArray(opts.entry) ? opts.entry : [opts.entry];
+        }
+        opts.features = Object.assign({
             ie: true,
             svg: true,
             unparser: true,
@@ -175,7 +178,7 @@ class AureliaPlugin {
         new PreserveExportsPlugin_1.PreserveExportsPlugin().apply(compiler);
     }
     addEntry(options, modules) {
-        var _a;
+        var _a, _b, _c;
         let webpackEntry = options.entry;
         let entries = Array.isArray(modules) ? modules : [modules];
         // todo:
@@ -185,8 +188,11 @@ class AureliaPlugin {
         }
         // Add runtime to each entry
         for (let k in webpackEntry) {
+            if ((_b = (_a = this.options.entry) === null || _a === void 0 ? void 0 : _a.includes(k)) !== null && _b !== void 0 ? _b : false) {
+                throw new Error('entry key "' + k + '" is not defined in Webpack build, cannot apply runtime.');
+            }
             let entry = webpackEntry[k];
-            (_a = entry.import) === null || _a === void 0 ? void 0 : _a.unshift(...entries);
+            (_c = entry.import) === null || _c === void 0 ? void 0 : _c.unshift(...entries);
         }
     }
 }
