@@ -4,7 +4,8 @@
     "dev": "webpack-dev-server",
     "build": "webpack --stats-error-details",
     "build:prod": "webpack --mode=production",
-    "install:plugin": "npm install ../../aurelia-webpack-plugin-5.0.0.tgz",
+    "build:ci": "npm run build -- --no-stats",
+    "install:plugin": "npm install ../../",
     "rimraf": "rimraf dist/**/*.js"
   },
   "dependencies": {

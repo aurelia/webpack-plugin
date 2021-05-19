@@ -73,9 +73,10 @@ export class PreserveModuleNamePlugin {
           id = id.replace(/\\/g, "/");
           if (module.buildMeta)  // meta can be null if the module contains errors
             module.buildMeta["aurelia-id"] = id;
-          // console.log({ module: module.resource, id })
-          if (!this.isDll)
-            module.id = id;
+
+          if (!this.isDll) {
+            compilation.chunkGraph.setModuleId(module, id);
+          }
         }
       });
     });
