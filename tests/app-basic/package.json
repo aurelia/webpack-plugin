@@ -1,0 +1,12 @@
+{
+  "name": "app-basic",
+  "scripts": {
+    "dev": "webpack-dev-server",
+    "build": "webpack --stats-error-details",
+    "build:prod": "webpack --mode=production",
+    "rimraf": "rimraf dist/**/*.js"
+  },
+  "dependencies": {
+    "aurelia-webpack-plugin": "file:../.."
+  }
+}

@@ -22,17 +22,20 @@ class DistPlugin {
             .tapAsync(tapName, resolveHandlerDoResolve);
         function determineRewrittenPath(filePath, resolveContext) {
             let innerRequest = path.normalize(filePath);
-            // If the request contains /dist/xxx/, try /dist/{dist}/ first
             let rewrittenPath = path.normalize(innerRequest.replace(/[\/\\]dist[\/\\][^/\\]+[\/\\]?/i, dist)).replace(/[\/\\]$/, '');
             return rewrittenPath;
         }
+        // If the request contains /dist/xxx/, try /dist/{rawDist}/
+        // ----
+        // this involves two steps:
+        // - first always resolve the request to find the absolute path
+        // - 2nd tries to swap /dist/xxxx/ with /dist/{rawDist}/ if possible
         function resolveHandlerDoResolve(request, resolveContext, cb) {
             let $request = Object.assign({}, request);
             let innerRequest = $request.request;
             if (!innerRequest)
                 return cb();
             let rewrittenPath = determineRewrittenPath(innerRequest, resolveContext);
-            // Path does not contain /dist/xxx/, continue normally
             let newRequest = { path: $request.path, request: rewrittenPath, fullySpecified: false };
             let tobeNotifiedHook = resolver.ensureHook(targetHookName);
             resolver.doResolve(tobeNotifiedHook, newRequest, "try alternate dist: " + dist + " in only request", resolveContext, (err, result) => {

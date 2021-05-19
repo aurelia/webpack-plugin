@@ -37,16 +37,20 @@ export class DistPlugin {
 
     function determineRewrittenPath(filePath: string, resolveContext: ResolveContext) {
       let innerRequest = path.normalize(filePath);
-      // If the request contains /dist/xxx/, try /dist/{dist}/ first
       let rewrittenPath = path.normalize(innerRequest.replace(/[\/\\]dist[\/\\][^/\\]+[\/\\]?/i, dist)).replace(/[\/\\]$/, '');
       return rewrittenPath;
     }
+
+    // If the request contains /dist/xxx/, try /dist/{rawDist}/
+    // ----
+    // this involves two steps:
+    // - first always resolve the request to find the absolute path
+    // - 2nd tries to swap /dist/xxxx/ with /dist/{rawDist}/ if possible
     function resolveHandlerDoResolve(request: ResolveRequest, resolveContext: ResolveContext, cb: (err?: any, result?: any) => void) {
       let $request = { ...request };
       let innerRequest = $request.request;
       if (!innerRequest) return cb();
       let rewrittenPath = determineRewrittenPath(innerRequest, resolveContext);
-      // Path does not contain /dist/xxx/, continue normally
 
       let newRequest: Partial<ResolveRequest> = { path: $request.path, request: rewrittenPath, fullySpecified: false };
       let tobeNotifiedHook = resolver.ensureHook(targetHookName);

@@ -47,21 +47,12 @@ module.exports = (env = {}) => {
     },
     plugins: [
       new AureliaPlugin({
-        dist: 'es2015'
+        aureliaConfig: ['basic'],
       }),
       // Standard plugin to build index.html
       new HtmlWebpackPlugin({
         template: 'index.ejs'
-      }),
-      // new CopyWebpackPlugin({
-      //   patterns: [
-      //     // Have all static files / asessts copied over
-      //     { from: 'static/**', to: '.' },
-      //   ],
-      //   options: {
-      //     // copyUnmodified: true
-      //   }
-      // }),
+      })
     ]
   };
 };
