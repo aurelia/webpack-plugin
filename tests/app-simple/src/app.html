@@ -1,4 +1,8 @@
 <template>
+  <require from="resources/elements/name-tag"></require>
+  <require from="resources/elements/heading.html"></require>
+  <heading value.bind="message"></heading>
   Hello, how are you feeling today ${appDate.toJSON()}:
-  <img src='static/feelings-wheel.jpg' style='display: block; width: 100%;'>
+
+  <name-tag value.bind="'Aurelia'"></name-tag>
 </template>
