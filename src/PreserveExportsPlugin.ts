@@ -1,18 +1,22 @@
+import * as Webpack from 'webpack';
+
 export const dependencyImports = Symbol();
 const moduleExports = Symbol();
-const nativeIsUsed = Symbol();
+const nativeGetUsedName = Symbol();
+const useAllExports = Symbol();
 
 const TAP_NAME = "Aurelia:PreserveExports";
 
-function getModuleExports(module: Webpack.Module) {
-  let set = module[moduleExports];
+function getModuleExports(module: Webpack.NormalModule, moduleGraph: Webpack.ModuleGraph) {
+  let exportsInfo = moduleGraph.getExportsInfo(module);
+  let set: Set<any> = exportsInfo[moduleExports];
   if (!set) {
-    module[moduleExports] = set = new Set();
-    module[nativeIsUsed] = module.isUsed;
-    module.isUsed = function (this: Webpack.Module, name) {
-    return this[moduleExports].has(name) ?
-      name :
-      module[nativeIsUsed](name);
+    exportsInfo[moduleExports] = set = new Set();
+    exportsInfo[nativeGetUsedName] = exportsInfo.getUsedName;
+    exportsInfo.getUsedName = function(name, runtime) {
+      return set.has(name)
+        ? name
+        : this[nativeGetUsedName](name, runtime);
     };
   }
   return set;
@@ -21,18 +25,32 @@ function getModuleExports(module: Webpack.Module) {
 export class PreserveExportsPlugin {
   apply(compiler: Webpack.Compiler) {
     compiler.hooks.compilation.tap(TAP_NAME, compilation => {
-      compilation.hooks.finishModules.tap(TAP_NAME, modules => {        
-        for (let module of modules) {
-          for (let reason of module.reasons) {
-            let dep = reason.dependency;
-            let imports = dep[dependencyImports];
-            if (!imports) continue;            
-            let set = getModuleExports(module);
-            for (let e of imports)
-              set.add(e);
+      compilation.hooks.finishModules.tap(TAP_NAME, modules => {
+        for (let module of modules as Iterable<Webpack.NormalModule>) {
+          for (const connection of compilation.moduleGraph.getIncomingConnections(module)) {
+            let dep = connection.dependency;
+            let imports = dep?.[dependencyImports];
+            if (!imports) {
+              continue;
+            }
+
+            let exportsInfo = compilation.moduleGraph.getExportsInfo(module);
+            if (exportsInfo[useAllExports]) {
+              return;
+            }
+            if (imports === Webpack.Dependency.EXPORTS_OBJECT_REFERENCED) {
+              exportsInfo[nativeGetUsedName] = exportsInfo.getUsedName;
+              exportsInfo[useAllExports] = exportsInfo.getUsedName = function(name: string | string[], runtime) {
+                return name;
+              };
+            } else {
+              let set = getModuleExports(module, compilation.moduleGraph);
+              for (let e of imports)
+                set.add(e);
+            }
           }
         }
       });
     });
   }
-};
+}

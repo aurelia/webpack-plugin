@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.GlobDependenciesPlugin = void 0;
 const BaseIncludePlugin_1 = require("./BaseIncludePlugin");
 const minimatch_1 = require("minimatch");
 const path = require("path");
@@ -54,11 +55,16 @@ class GlobDependenciesPlugin extends BaseIncludePlugin_1.BaseIncludePlugin {
             this.modules = {};
             const resolver = compiler.resolverFactory.get("normal", {});
             return Promise.all(hashKeys.map(module => new Promise(resolve => {
-                resolver.resolve(null, this.root, module, {}, (err, resource) => {
+                resolver.resolve({}, this.root, module, {}, (err, resource) => {
+                    if (err) {
+                        resolve(undefined);
+                        return;
+                    }
                     this.modules[resource] = this.hash[module];
-                    resolve();
+                    resolve(undefined);
                 });
-            })));
+            })))
+                .then(() => { });
         });
         super.apply(compiler);
     }

@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.ConventionDependenciesPlugin = void 0;
 const BaseIncludePlugin_1 = require("./BaseIncludePlugin");
 const PreserveModuleNamePlugin_1 = require("./PreserveModuleNamePlugin");
 const minimatch = require("minimatch");
@@ -13,28 +14,33 @@ class ConventionDependenciesPlugin extends BaseIncludePlugin_1.BaseIncludePlugin
         this.glob = glob;
         if (!Array.isArray(conventions))
             conventions = [conventions];
-        this.conventions = conventions.map(c => typeof c === "string" ?
-            swapExtension.bind(null, c) :
-            c);
+        this.conventions = conventions.map(c => typeof c === "string"
+            ? swapExtension.bind(null, c)
+            : c);
     }
     parser(compilation, parser, addDependency) {
         const root = path.resolve();
         parser.hooks.program.tap("Aurelia:ConventionDependencies", () => {
             const { resource: file, rawRequest } = parser.state.current;
-            if (!file)
+            if (!file) {
                 return;
+            }
             // We don't want to bring in dependencies of the async! loader
-            if (/^async[!?]/.test(rawRequest))
+            if (/^async[!?]/.test(rawRequest)) {
                 return;
-            if (!minimatch(path.relative(root, file), this.glob))
+            }
+            if (!minimatch(path.relative(root, file), this.glob)) {
                 return;
+            }
             for (let c of this.conventions) {
                 try {
                     const probe = c(file);
-                    compilation.inputFileSystem.statSync(probe); // Check if file exists
+                    // Check if file exists
+                    compilation.inputFileSystem.statSync(probe);
                     let relative = path.relative(path.dirname(file), probe);
-                    if (!relative.startsWith("."))
+                    if (!relative.startsWith(".")) {
                         relative = "./" + relative;
+                    }
                     addDependency(relative);
                     // If the module has a conventional dependency, make sure we preserve its name as well.
                     // This solves the pattern where a VM is statically loaded, e.g. `import { ViewModel } from "x"`

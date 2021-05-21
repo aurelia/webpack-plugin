@@ -1,6 +1,6 @@
 {
   "name": "aurelia-webpack-plugin",
-  "version": "4.0.0",
+  "version": "5.0.0",
   "description": "A plugin for webpack that enables bundling Aurelia applications.",
   "keywords": [
     "aurelia",
@@ -25,9 +25,26 @@
     }
   ],
   "main": "dist/index.js",
-  "files": [ "dist", "runtime" ],
+  "types": "dist/types/index.d.ts",
+  "files": [
+    "dist",
+    "runtime"
+  ],
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "test:1": "cd tests/app-basic && npm run build",
+    "test:2": "cd tests/app-simple && npm run build",
+    "test:3": "cd tests/app-router && npm run build",
+    "test:4": "cd tests/app-3rd-party-plugin && npm run build",
+    "test": "npm run test:4",
+    "test:prod": "cd tests/app-simple && npm run build:prod",
+    "pretest:ci": "npm pack",
+    "test:ci": "npm run test:ci:1 && cd ../../ && npm run test:ci:2",
+    "test:ci:1": "cd tests/app-basic && npm run install:plugin && npm run build:ci",
+    "test:ci:2": "cd tests/app-simple && npm run install:plugin && npm run build:ci",
+    "test:ci:3": "cd tests/app-router && npm run install:plugin && npm run build:ci",
+    "test:ci:4": "cd tests/app-3rd-party-plugin && npm run install:plugin && npm run build:ci"
   },
   "repository": {
     "type": "git",
@@ -40,16 +57,41 @@
     "minimatch": "^3.0.4"
   },
   "peerDependencies": {
-    "webpack": ">= 4.0.0"
+    "webpack": ">= 5.0.0"
   },
   "devDependencies": {
     "@types/minimatch": "^3.0.3",
     "@types/node": "^9.4.6",
-    "typescript": "^2.7.2"
-  },
-  "aurelia": {
-    "documentation": {
-      "articles": []
-    }
+    "aurelia-binding": "^2.5.4",
+    "aurelia-bootstrapper": "^2.3.3",
+    "aurelia-chart": "^0.3.4",
+    "aurelia-dependency-injection": "^1.5.2",
+    "aurelia-event-aggregator": "^1.0.3",
+    "aurelia-framework": "^1.3.1",
+    "aurelia-history": "^1.2.1",
+    "aurelia-history-browser": "^1.4.0",
+    "aurelia-loader": "^1.0.2",
+    "aurelia-logging": "^1.5.2",
+    "aurelia-logging-console": "^1.1.1",
+    "aurelia-metadata": "^1.0.7",
+    "aurelia-pal": "^1.8.2",
+    "aurelia-pal-browser": "^1.8.1",
+    "aurelia-path": "^1.1.5",
+    "aurelia-polyfills": "^1.3.4",
+    "aurelia-route-recognizer": "^1.3.2",
+    "aurelia-router": "^1.7.1",
+    "aurelia-task-queue": "^1.3.3",
+    "aurelia-templating": "^1.10.4",
+    "aurelia-templating-binding": "^1.5.3",
+    "aurelia-templating-resources": "^1.13.1",
+    "aurelia-templating-router": "^1.4.0",
+    "copy-webpack-plugin": "^8.1.1",
+    "html-webpack-plugin": "^5.3.1",
+    "rimraf": "^3.0.2",
+    "ts-loader": "^9.1.2",
+    "tslib": "^2.2.0",
+    "typescript": "^4.2.4",
+    "webpack": "^5.37.0",
+    "webpack-cli": "^4.7.0"
   }
 }

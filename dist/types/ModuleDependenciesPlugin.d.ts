@@ -1,4 +1,6 @@
 import { BaseIncludePlugin, AddDependency } from "./BaseIncludePlugin";
+import * as Webpack from 'webpack';
+import { DependencyOptionsEx } from "./interfaces";
 export interface ModuleDependenciesPluginOptions {
     [module: string]: undefined | string | DependencyOptionsEx | (undefined | string | DependencyOptionsEx)[];
 }
@@ -15,5 +17,5 @@ export declare class ModuleDependenciesPlugin extends BaseIncludePlugin {
      */
     constructor(hash: ModuleDependenciesPluginOptions);
     apply(compiler: Webpack.Compiler): void;
-    parser(compilation: Webpack.Compilation, parser: Webpack.Parser, addDependency: AddDependency): void;
+    parser(compilation: Webpack.Compilation, parser: Webpack.javascript.JavascriptParser, addDependency: AddDependency): void;
 }

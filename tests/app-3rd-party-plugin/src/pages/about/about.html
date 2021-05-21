@@ -1,0 +1,19 @@
+<template>
+  <require from="./resources/copyright.html"></require>
+
+  <chart
+    type="pie"
+    data.bind="{
+      labels: ['Red', 'Orange', 'Yellow', 'Green', 'Blue'],
+      datasets: [
+        {
+          label: 'Dataset 1',
+          data: [100, 120, 130],
+          backgroundColor: ['red', 'green', 'blue'],
+        }
+      ]
+    }"
+    native-options.to-view="{ segmentShowStroke: true, segmentStrokeColor: '#fff', segmentStrokeWidth: 2 }"></chart>
+
+  <copyright></copyright>
+</template>

@@ -1,10 +1,18 @@
+import * as webpack from 'webpack';
 import parse = require("html-loader/lib/attributesParser");
+
+declare interface Loader {
+  _module: webpack.NormalModule;
+  cacheable?(): void;
+  async(): (...args: unknown[]) => unknown;
+}
 
 const _htmlSymbol = Symbol("HTML dependencies");
 
-function loader(this: Webpack.Loader, content: string) {
+function loader(this: Loader, content: string) {
   this.cacheable && this.cacheable();
   this._module[_htmlSymbol] = loader.modules(content);
+
   return content;
 }
 

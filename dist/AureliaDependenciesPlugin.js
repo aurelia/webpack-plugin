@@ -1,12 +1,21 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.AureliaDependenciesPlugin = void 0;
 const IncludeDependency_1 = require("./IncludeDependency");
-const BasicEvaluatedExpression = require("webpack/lib/BasicEvaluatedExpression");
+const webpack = require("webpack");
+const PreserveExportsPlugin_1 = require("./PreserveExportsPlugin");
+const BasicEvaluatedExpression = require("webpack/lib/javascript/BasicEvaluatedExpression");
 const TAP_NAME = "Aurelia:Dependencies";
 class AureliaDependency extends IncludeDependency_1.IncludeDependency {
     constructor(request, range, options) {
         super(request, options);
         this.range = range;
+    }
+    get type() {
+        return `${super.type}/AureliaDependency`;
+    }
+    get [PreserveExportsPlugin_1.dependencyImports]() {
+        return webpack.Dependency.EXPORTS_OBJECT_REFERENCED;
     }
 }
 class Template {
@@ -29,35 +38,29 @@ class ParserPlugin {
         // So we must first trick it into thinking PLATFORM.moduleName is an unbound identifier
         // in the various situations where it is not.
         const hooks = parser.hooks;
-        // This covers native ES module, for example:
-        //    import { PLATFORM } from "aurelia-pal";
-        //    PLATFORM.moduleName("id");
-        hooks.evaluateIdentifier.tap("imported var.moduleName", TAP_NAME, (expr) => {
-            if (expr.property.name === "moduleName" &&
-                expr.object.name === "PLATFORM" &&
-                expr.object.type === "Identifier") {
-                return new BasicEvaluatedExpression().setIdentifier("PLATFORM.moduleName").setRange(expr.range);
-            }
-            return undefined;
-        });
-        // This covers commonjs modules, for example:
-        //    const _aureliaPal = require("aurelia-pal");
-        //    _aureliaPal.PLATFORM.moduleName("id");    
-        // Or (note: no renaming supported):
-        //    const PLATFORM = require("aurelia-pal").PLATFORM;
-        //    PLATFORM.moduleName("id");
-        hooks.evaluate.tap("MemberExpression", TAP_NAME, expr => {
-            if (expr.property.name === "moduleName" &&
-                (expr.object.type === "MemberExpression" && expr.object.property.name === "PLATFORM" ||
-                    expr.object.type === "Identifier" && expr.object.name === "PLATFORM")) {
-                return new BasicEvaluatedExpression().setIdentifier("PLATFORM.moduleName").setRange(expr.range);
+        hooks.evaluate.for('MemberExpression').tap(TAP_NAME, (expr) => {
+            if (expr.property.type === 'Identifier'
+                && expr.property.name === 'moduleName'
+                // PLATFORM.moduleName(...)
+                && (expr.object.type === 'Identifier' && expr.object.name === 'PLATFORM'
+                    // _aureliaPal.PLATFORM.moduleName(...)
+                    // require('aurelia-pal').PLATFORM.moduleName(...)
+                    // import('aurelia-pal').then(pal => pal.PLATFORM.moduleName(...))
+                    // import('aurelia-pal').then({ PLATFORM } => PLATFORM.moduleName(...))
+                    || expr.object.type === 'MemberExpression'
+                        && expr.object.property.type === 'Identifier'
+                        && expr.object.property.name === 'PLATFORM')) {
+                return new BasicEvaluatedExpression()
+                    .setIdentifier('PLATFORM.moduleName', undefined, () => [])
+                    .setRange(expr.range);
             }
             return undefined;
         });
         for (let method of this.methods) {
-            hooks.call.tap(method, TAP_NAME, (expr) => {
-                if (expr.arguments.length === 0 || expr.arguments.length > 2)
+            hooks.call.for(method).tap(TAP_NAME, (expr) => {
+                if (expr.arguments.length === 0 || expr.arguments.length > 2) {
                     return;
+                }
                 let [arg1, arg2] = expr.arguments;
                 let param1 = parser.evaluateExpression(arg1);
                 if (!param1.isString())
@@ -79,7 +82,7 @@ class ParserPlugin {
                     // PLATFORM.moduleName('some-module', { option: value });
                     options = {};
                     for (let prop of arg2.properties) {
-                        if (prop.key.type !== "Identifier")
+                        if (prop.type !== 'Property' || prop.key.type !== "Identifier")
                             continue;
                         let value = parser.evaluateExpression(prop.value);
                         switch (prop.key.name) {
@@ -106,8 +109,9 @@ class ParserPlugin {
 class AureliaDependenciesPlugin {
     constructor(...methods) {
         // Always include PLATFORM.moduleName as it's what used in libs.
-        if (!methods.includes("PLATFORM.moduleName"))
+        if (!methods.includes("PLATFORM.moduleName")) {
             methods.push("PLATFORM.moduleName");
+        }
         this.parserPlugin = new ParserPlugin(methods);
     }
     apply(compiler) {
@@ -115,11 +119,13 @@ class AureliaDependenciesPlugin {
             const normalModuleFactory = params.normalModuleFactory;
             compilation.dependencyFactories.set(AureliaDependency, normalModuleFactory);
             compilation.dependencyTemplates.set(AureliaDependency, new Template());
-            normalModuleFactory.hooks.parser.for("javascript/auto").tap(TAP_NAME, parser => {
+            const handler = (parser) => {
                 this.parserPlugin.apply(parser);
-            });
+            };
+            normalModuleFactory.hooks.parser.for("javascript/dynamic").tap(TAP_NAME, handler);
+            normalModuleFactory.hooks.parser.for("javascript/auto").tap(TAP_NAME, handler);
+            normalModuleFactory.hooks.parser.for("javascript/esm").tap(TAP_NAME, handler);
         });
     }
 }
 exports.AureliaDependenciesPlugin = AureliaDependenciesPlugin;
-;

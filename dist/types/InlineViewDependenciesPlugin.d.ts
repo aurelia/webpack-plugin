@@ -1,4 +1,5 @@
 import { BaseIncludePlugin, AddDependency } from "./BaseIncludePlugin";
+import * as webpack from 'webpack';
 export declare class InlineViewDependenciesPlugin extends BaseIncludePlugin {
-    parser(compilation: Webpack.Compilation, parser: Webpack.Parser, add: AddDependency): void;
+    parser(compilation: webpack.Compilation, parser: webpack.javascript.JavascriptParser, add: AddDependency): void;
 }

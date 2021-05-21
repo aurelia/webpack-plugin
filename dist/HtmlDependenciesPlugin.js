@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.HtmlDependenciesPlugin = void 0;
 const BaseIncludePlugin_1 = require("./BaseIncludePlugin");
 const html_requires_loader_1 = require("./html-requires-loader");
 class HtmlDependenciesPlugin extends BaseIncludePlugin_1.BaseIncludePlugin {

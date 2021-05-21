@@ -1,5 +1,7 @@
 import { BaseIncludePlugin, AddDependency } from "./BaseIncludePlugin";
-import path = require("path");
+import * as path from "path";
+import * as Webpack from 'webpack';
+import { DependencyOptionsEx } from "./interfaces";
 
 const TAP_NAME = "Aurelia:ModuleDependencies";
 
@@ -48,18 +50,24 @@ export class ModuleDependenciesPlugin extends BaseIncludePlugin {
       const resolver = compiler.resolverFactory.get("normal", {});
       return Promise.all(
         hashKeys.map(module => new Promise(resolve => {
-          resolver.resolve(null, this.root, module, {}, (err, resource) => {
-            this.modules[resource] = this.hash[module];
-            resolve();
+          resolver.resolve({}, this.root, module, {}, (err, resource) => {
+            if (err) {
+              console.log('error resolving', module);
+              console.log(err.message);
+              resolve(undefined);
+              return;
+            }
+            this.modules[resource as string] = this.hash[module];
+            resolve(undefined);
           });
         })
-      ));
+      )).then(() => {});
     });
 
     super.apply(compiler);
   }
 
-  parser(compilation: Webpack.Compilation, parser: Webpack.Parser, addDependency: AddDependency) {
+  parser(compilation: Webpack.Compilation, parser: Webpack.javascript.JavascriptParser, addDependency: AddDependency) {
     parser.hooks.program.tap(TAP_NAME, () => {
       // We try to match the resource, or the initial module request.
       const deps = this.modules[parser.state.module.resource];

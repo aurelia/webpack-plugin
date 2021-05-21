@@ -1,10 +1,10 @@
 import { dependencyImports } from "./PreserveExportsPlugin";
 import { preserveModuleName } from "./PreserveModuleNamePlugin";
-import ModuleDependency = require("webpack/lib/dependencies/ModuleDependency");
-import NullDependency = require("webpack/lib/dependencies/NullDependency");
+import * as webpack from 'webpack';
+import { DependencyOptions, ReferencedExport } from "./interfaces";
 
-export class IncludeDependency extends ModuleDependency {  
-  private options?: DependencyOptions;
+export class IncludeDependency extends webpack.dependencies.ModuleDependency {
+  protected options?: DependencyOptions;
 
   constructor(request: string, options?: DependencyOptions) {
     let chunk = options && options.chunk;
@@ -12,15 +12,15 @@ export class IncludeDependency extends ModuleDependency {
     this.options = options;
   }
 
+  // @ts-expect-error
   get type() {
-    return "aurelia module";
+    return IncludeDependency.name;
   }
 
-  getReference() {
-    let importedNames = this.options && this.options.exports;
-    return importedNames ? 
-      { module: this.module, importedNames } :
-      super.getReference();
+  getReferencedExports(moduleGraph: webpack.ModuleGraph): (string[] | ReferencedExport)[] {
+    return this.options?.exports
+      ? [{ name: this.options.exports, canMangle: false }]
+      : webpack.Dependency.NO_EXPORTS_REFERENCED;
   }
 
   get [preserveModuleName]() {
@@ -28,9 +28,9 @@ export class IncludeDependency extends ModuleDependency {
   }
 
   get [dependencyImports]() {
-    return this.options && this.options.exports;
+    return this.options?.exports;
   }
 };
 
-export type NullDependencyTemplate = typeof NullDependency.Template;
-export const Template: NullDependencyTemplate = NullDependency.Template;
+export type NullDependencyTemplate = typeof webpack.dependencies.NullDependency.Template;
+export const Template: NullDependencyTemplate = webpack.dependencies.NullDependency.Template;

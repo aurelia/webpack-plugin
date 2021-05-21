@@ -13,8 +13,10 @@
     "noImplicitAny": true,
     "noImplicitThis": true,
     "noImplicitReturns": true,
-    "noUnusedLocals": true,
+    "noUnusedLocals": false,
     "strictNullChecks": true,
-    "suppressImplicitAnyIndexErrors": true
-  }
+    "suppressImplicitAnyIndexErrors": true,
+    "skipLibCheck": true
+  },
+  "include": ["src"]
 }

@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.ModuleDependenciesPlugin = void 0;
 const BaseIncludePlugin_1 = require("./BaseIncludePlugin");
 const path = require("path");
 const TAP_NAME = "Aurelia:ModuleDependencies";
@@ -36,11 +37,17 @@ class ModuleDependenciesPlugin extends BaseIncludePlugin_1.BaseIncludePlugin {
             this.modules = {};
             const resolver = compiler.resolverFactory.get("normal", {});
             return Promise.all(hashKeys.map(module => new Promise(resolve => {
-                resolver.resolve(null, this.root, module, {}, (err, resource) => {
+                resolver.resolve({}, this.root, module, {}, (err, resource) => {
+                    if (err) {
+                        console.log('error resolving', module);
+                        console.log(err.message);
+                        resolve(undefined);
+                        return;
+                    }
                     this.modules[resource] = this.hash[module];
-                    resolve();
+                    resolve(undefined);
                 });
-            })));
+            }))).then(() => { });
         });
         super.apply(compiler);
     }

@@ -1,3 +1,4 @@
+import * as Webpack from "webpack";
 export declare const preserveModuleName: unique symbol;
 export declare class PreserveModuleNamePlugin {
     private isDll;

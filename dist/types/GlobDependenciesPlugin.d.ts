@@ -1,4 +1,5 @@
 import { BaseIncludePlugin, AddDependency } from "./BaseIncludePlugin";
+import * as Webpack from 'webpack';
 declare module "minimatch" {
     interface IMinimatch {
         match(fname: string, partial: boolean): boolean;
@@ -15,5 +16,5 @@ export declare class GlobDependenciesPlugin extends BaseIncludePlugin {
         [module: string]: string | string[];
     });
     apply(compiler: Webpack.Compiler): void;
-    parser(compilation: Webpack.Compilation, parser: Webpack.Parser, addDependency: AddDependency): void;
+    parser(compilation: Webpack.Compilation, parser: Webpack.javascript.JavascriptParser, addDependency: AddDependency): void;
 }

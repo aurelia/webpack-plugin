@@ -1,8 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.PreserveModuleNamePlugin = exports.preserveModuleName = void 0;
 const path = require("path");
+const logger_1 = require("./logger");
 exports.preserveModuleName = Symbol();
 const TAP_NAME = "Aurelia:PreserveModuleName";
+const logger = logger_1.createLogger('PreserveModuleNamePlugin');
 // This plugins preserves the module names of IncludeDependency and 
 // AureliaDependency so that they can be dynamically requested by 
 // aurelia-loader.
@@ -14,20 +17,28 @@ class PreserveModuleNamePlugin {
     }
     apply(compiler) {
         compiler.hooks.compilation.tap(TAP_NAME, compilation => {
-            compilation.hooks.beforeModuleIds.tap(TAP_NAME, modules => {
-                let { modules: roots, extensions, alias } = compilation.options.resolve;
+            compilation.hooks.beforeModuleIds.tap(TAP_NAME, $modules => {
+                let modules = Array.from($modules);
+                let { modules: m, extensions: e, alias: a } = compilation.options.resolve;
+                let roots = m;
+                let extensions = e;
+                // if it's not an object, it's pretty hard to guess how to map to common usage of alias
+                // temporarily not handle anything that is not a record of aliases
+                let alias = a == null || a instanceof Array ? {} : a;
                 roots = roots.map(x => path.resolve(x));
                 const normalizers = extensions.map(x => new RegExp(x.replace(/\./g, "\\.") + "$", "i"));
                 // ModuleConcatenationPlugin merges modules into new ConcatenatedModule
                 let modulesBeforeConcat = modules.slice();
                 for (let i = 0; i < modulesBeforeConcat.length; i++) {
                     let m = modulesBeforeConcat[i];
+                    // TODO: verify if this still works
+                    // ==================================================
                     // We don't `import ConcatenatedModule` and then `m instanceof ConcatenatedModule`
                     // because it was introduced in Webpack 3.0 and we're still compatible with 2.x at the moment.
                     if (m.constructor.name === "ConcatenatedModule")
                         modulesBeforeConcat.splice(i--, 1, ...m["modules"]);
                 }
-                for (let module of getPreservedModules(modules)) {
+                for (let module of getPreservedModules(modules, compilation)) {
                     // Even though it's imported by Aurelia, it's still possible that the module
                     // became the _root_ of a ConcatenatedModule.
                     // We use `constructor.name` rather than `instanceof` for compat. with Webpack 2.
@@ -49,10 +60,11 @@ class PreserveModuleNamePlugin {
                     if (/^async[?!]/.test(realModule.rawRequest))
                         id = "async!" + id;
                     id = id.replace(/\\/g, "/");
-                    if (module.buildMeta)
+                    if (module.buildMeta) // meta can be null if the module contains errors
                         module.buildMeta["aurelia-id"] = id;
-                    if (!this.isDll)
-                        module.id = id;
+                    if (!this.isDll) {
+                        compilation.chunkGraph.setModuleId(module, id);
+                    }
                 }
             });
         });
@@ -60,15 +72,18 @@ class PreserveModuleNamePlugin {
 }
 exports.PreserveModuleNamePlugin = PreserveModuleNamePlugin;
 ;
-function getPreservedModules(modules) {
+function getPreservedModules(modules, compilation) {
     return new Set(modules.filter(m => {
+        var _a;
         // Some modules might have [preserveModuleName] already set, see ConventionDependenciesPlugin.
         let value = m[exports.preserveModuleName];
-        for (let r of m.reasons) {
-            if (!r.dependency || !r.dependency[exports.preserveModuleName])
+        for (let connection of compilation.moduleGraph.getIncomingConnections(m)) {
+            // todo: verify against commented code below
+            if (!((_a = connection === null || connection === void 0 ? void 0 : connection.dependency) === null || _a === void 0 ? void 0 : _a[exports.preserveModuleName])) {
                 continue;
+            }
             value = true;
-            let req = removeLoaders(r.dependency.request);
+            let req = removeLoaders(connection.dependency.request);
             // We try to find an absolute string and set that as the module [preserveModuleName], as it's the best id.
             if (req && !req.startsWith(".")) {
                 m[exports.preserveModuleName] = req;
@@ -90,7 +105,13 @@ function aliasRelative(aliases, resource) {
     if (!aliases)
         return null;
     for (let name in aliases) {
-        let root = path.resolve(aliases[name]);
+        let target = aliases[name];
+        // TODO:
+        // not sure how to handle anything other than a simple mapping yet
+        // just ignore for now
+        if (typeof target !== 'string')
+            continue;
+        let root = path.resolve(target);
         let relative = path.relative(root, resource);
         if (relative.startsWith(".."))
             continue;
@@ -127,6 +148,10 @@ function fixNodeModule(module, allModules) {
     // We also need to take care of scoped modules. If the name starts with @ we must keep two parts,
     // so @corp/bar is the proper module name.
     let name = /\bnode_modules[\\/](?!.*\bnode_modules\b)((?:@[^\\/]+[\\/])?[^\\/]+)/i.exec(module.resource)[1];
+    if (!name) {
+        logger.log('issue while fixing node modules: not a node module', module.resource);
+        return;
+    }
     name = name.replace("\\", "/"); // normalize \ to / for scoped modules
     let entry = allModules.find(m => removeLoaders(m.rawRequest) === name);
     if (entry)

@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.SubFolderPlugin = exports.resolveCache = void 0;
 // This plugin tries to redirect failing request that look like `module/something`
 // into `module/path-to-main/something`.
 // For example, supposing `aurelia-charts` resolves to `aurelia-charts/dist/index.js`,
