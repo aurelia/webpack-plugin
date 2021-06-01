@@ -29,6 +29,7 @@ class SubFolderPlugin {
             //       we just ignore the error and pretend nothing happened (i.e. call cb())
             resolver.doResolve(resolver.hooks.resolve, rootRequest, "module sub-folder: identify root", {}, (err, result) => {
                 if (!result ||
+                    !result.relativePath ||
                     !result.relativePath.startsWith('./')) {
                     cb();
                     return;
