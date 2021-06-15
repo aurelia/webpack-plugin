@@ -49,7 +49,7 @@ export class DistPlugin {
     function resolveHandlerDoResolve(request: ResolveRequest, resolveContext: ResolveContext, cb: (err?: any, result?: any) => void) {
       let $request = { ...request };
       let innerRequest = $request.request;
-      if (!innerRequest) return cb();
+      if (!innerRequest || /* shouldn't interfere relative paths */innerRequest.startsWith('.')) return cb();
       let rewrittenPath = determineRewrittenPath(innerRequest, resolveContext);
 
       let newRequest: Partial<ResolveRequest> = { path: $request.path, request: rewrittenPath, fullySpecified: false };

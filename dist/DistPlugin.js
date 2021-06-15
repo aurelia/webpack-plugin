@@ -33,7 +33,7 @@ class DistPlugin {
         function resolveHandlerDoResolve(request, resolveContext, cb) {
             let $request = Object.assign({}, request);
             let innerRequest = $request.request;
-            if (!innerRequest)
+            if (!innerRequest || /* shouldn't interfere relative paths */ innerRequest.startsWith('.'))
                 return cb();
             let rewrittenPath = determineRewrittenPath(innerRequest, resolveContext);
             let newRequest = { path: $request.path, request: rewrittenPath, fullySpecified: false };
