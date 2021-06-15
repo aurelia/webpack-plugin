@@ -1,0 +1,5 @@
+<template bindable="type, value">
+  <h1 if.bind="type === 'h1'">${value}</h1>
+  <h2 if.bind="type === 'h2'">${value}</h2>
+  <h3 else>${value}</h3>
+</template>

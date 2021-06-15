@@ -1,0 +1,15 @@
+{
+  "name": "app-simple",
+  "scripts": {
+    "dev": "webpack serve",
+    "build": "webpack --stats-error-details",
+    "build:prod": "webpack --mode=production",
+    "build:ci": "npm run build -- --no-stats",
+    "install:plugin": "npm install ../../",
+    "rimraf": "rimraf dist/**/*.js"
+  },
+  "dependencies": {
+    "@microsoft/applicationinsights-web": "^2.6.3",
+    "aurelia-webpack-plugin": "file:../.."
+  }
+}
