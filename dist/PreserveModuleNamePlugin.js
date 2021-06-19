@@ -53,7 +53,7 @@ class PreserveModuleNamePlugin {
                             makeModuleRelative(roots, realModule.resource) ||
                             aliasRelative(alias, realModule.resource);
                     if (!id)
-                        throw new Error(`Can't figure out a normalized module name for ${realModule.rawRequest}, please call PLATFORM.moduleName() somewhere to help.`);
+                        throw new Error(`Can't figure out a normalized module name for ${realModule.rawRequest} from ${module.resource}, please call PLATFORM.moduleName() somewhere to help.`);
                     // Remove default extensions 
                     normalizers.forEach(n => id = id.replace(n, ""));
                     // Keep "async!" in front of code splits proxies, they are used by aurelia-loader
