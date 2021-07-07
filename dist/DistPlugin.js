@@ -21,8 +21,11 @@ class DistPlugin {
         resolver.ensureHook(sourceHookName)
             .tapAsync(tapName, resolveHandlerDoResolve);
         function determineRewrittenPath(filePath, resolveContext) {
-            let innerRequest = path.normalize(filePath);
-            let rewrittenPath = path.normalize(innerRequest.replace(/[\/\\]dist[\/\\][^/\\]+[\/\\]?/i, dist)).replace(/[\/\\]$/, '');
+            filePath = filePath || "";
+            let parts = filePath.split("?");
+            let innerRequest = path.normalize(parts[0]);
+            parts[0] = path.normalize(innerRequest.replace(/[\/\\]dist[\/\\][^/\\]+[\/\\]?/i, dist)).replace(/[\/\\]$/, '');
+            let rewrittenPath = parts.join("?");
             return rewrittenPath;
         }
         // If the request contains /dist/xxx/, try /dist/{rawDist}/
