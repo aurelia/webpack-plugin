@@ -36,8 +36,11 @@ export class DistPlugin {
             .tapAsync(tapName, resolveHandlerDoResolve);
 
     function determineRewrittenPath(filePath: string, resolveContext: ResolveContext) {
-      let innerRequest = path.normalize(filePath);
-      let rewrittenPath = path.normalize(innerRequest.replace(/[\/\\]dist[\/\\][^/\\]+[\/\\]?/i, dist)).replace(/[\/\\]$/, '');
+      filePath = filePath || "";
+      let parts = filePath.split("?");
+      let innerRequest = path.normalize(parts[0]);
+      parts[0] = path.normalize(innerRequest.replace(/[\/\\]dist[\/\\][^/\\]+[\/\\]?/i, dist)).replace(/[\/\\]$/, '');
+      let rewrittenPath = parts.join("?")
       return rewrittenPath;
     }
 
