@@ -9,23 +9,38 @@ jobs:
         node-version: [14.x]
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
-      with:
-        node-version: ${{ matrix.node-version }}
-    - run: npm ci
-    - run: npm run build:ci
-      working-directory: ./tests/app-basic
-    - run: npm run build:ci
-      working-directory: ./tests/app-simple
-    - run: npm run build:ci
-      working-directory: ./tests/app-router
-    - run: npm run build:ci
-      working-directory: ./tests/app-scoped-package
-    - run: npm run build:ci
-      working-directory: ./tests/app-plugin-3rd-party
-    - run: npm run build:ci
-      working-directory: ./tests/app-plugin-dialog
-    - run: npm run build:ci
-      working-directory: ./tests/app-plugin-store
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test build basic app
+        working-directory: ./tests/app-basic
+        run: npm run build:ci
+
+      - name: Test build simple app
+        working-directory: ./tests/app-simple
+        run: npm run build:ci
+
+      - name: Test build router app
+        working-directory: ./tests/app-router
+        run: npm run build:ci
+
+      - name: Test build scoped package app
+        working-directory: ./tests/app-scoped-package
+        run: npm run build:ci
+
+      # - name: Test build app using 3rd party lib
+      #   working-directory: ./tests/app-plugin-3rd-party
+      #   run: npm run build:ci
+
+      - name: Test build app with dialog plugin
+        working-directory: ./tests/app-plugin-dialog
+        run: npm run build:ci
+
+      - name: Test build app with store plugin
+        working-directory: ./tests/app-plugin-store
+        run: npm run build:ci
