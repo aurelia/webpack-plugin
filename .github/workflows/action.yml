@@ -16,4 +16,16 @@ jobs:
         node-version: ${{ matrix.node-version }}
     - run: npm ci
     - run: npm run build:ci
+      working-directory: ./tests/app-basic
+    - run: npm run build:ci
       working-directory: ./tests/app-simple
+    - run: npm run build:ci
+      working-directory: ./tests/app-router
+    - run: npm run build:ci
+      working-directory: ./tests/app-scoped-package
+    - run: npm run build:ci
+      working-directory: ./tests/app-plugin-3rd-party
+    - run: npm run build:ci
+      working-directory: ./tests/app-plugin-dialog
+    - run: npm run build:ci
+      working-directory: ./tests/app-plugin-store
