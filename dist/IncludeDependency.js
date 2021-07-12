@@ -15,10 +15,10 @@ class IncludeDependency extends webpack.dependencies.ModuleDependency {
         return IncludeDependency.name;
     }
     getReferencedExports(moduleGraph) {
-        var _a;
-        return ((_a = this.options) === null || _a === void 0 ? void 0 : _a.exports)
-            ? [{ name: this.options.exports, canMangle: false }]
-            : webpack.Dependency.NO_EXPORTS_REFERENCED;
+        var _a, _b;
+        // when there's no specific exports are targetted,
+        // passing an empty array means preserving all
+        return [{ name: (_b = (_a = this.options) === null || _a === void 0 ? void 0 : _a.exports) !== null && _b !== void 0 ? _b : [], canMangle: false }];
     }
     get [PreserveModuleNamePlugin_1.preserveModuleName]() {
         return true;
