@@ -1,9 +1,10 @@
 {
-  "name": "app-simple",
+  "name": "app-basic",
   "scripts": {
-    "dev": "webpack-dev-server",
+    "dev": "webpack serve",
     "build": "webpack --stats-error-details",
     "build:prod": "webpack --mode=production",
+    "prebuild:ci": "npm install",
     "build:ci": "npm run build -- --no-stats",
     "install:plugin": "npm install ../../",
     "rimraf": "rimraf dist/**/*.js"

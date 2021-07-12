@@ -1,7 +1,7 @@
 {
   "name": "app-basic",
   "scripts": {
-    "dev": "webpack-dev-server",
+    "dev": "webpack serve",
     "build": "webpack --stats-error-details",
     "build:prod": "webpack --mode=production",
     "prebuild:ci": "npm install",
