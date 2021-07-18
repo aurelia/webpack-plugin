@@ -1,5 +1,5 @@
 const path = require('path');
-const os = require('os');
+// const os = require('os');
 const { AureliaPlugin } = require('aurelia-webpack-plugin');
 
 module.exports = (config) => {
@@ -18,7 +18,6 @@ module.exports = (config) => {
       'karma-mocha',
       'karma-webpack',
       'karma-chrome-launcher',
-      'karma-ie-launcher',
       'karma-sourcemap-loader',
     ],
 
@@ -48,10 +47,10 @@ function webpackConfig() {
   return {
     mode: 'development',
     // target: ['es5'],
-    output: {
-      filename: 'app.js',
-      path: path.join(os.tmpdir(), '_karma_webpack_') + Math.floor(Math.random() * 1000000),
-    },
+    // output: {
+    //   filename: 'app.js',
+    //   path: path.join(os.tmpdir(), '_karma_webpack_') + Math.floor(Math.random() * 1000000),
+    // },
     stats: {
       modules: false,
       colors: true,

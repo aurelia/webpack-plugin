@@ -2,7 +2,7 @@ name: CI
 on: [push]
 jobs:
   Core:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     strategy:
       matrix:
@@ -21,13 +21,13 @@ jobs:
         working-directory: ./tests/app-basic
         run: npm run build:ci
 
-      - name: \[simple app\] build
+      - name: (simple app) build
         working-directory: ./tests/app-simple
         run: npm run build:ci
 
-      - name: \[simple app\] with Karma
+      - name: (simple app) with Karma
         working-directory: ./tests/app-simple
-        run: npm run test
+        run: ../../node_modules/.bin/karma.cmd start --singleRun
 
       - name: Test build router app
         working-directory: ./tests/app-router
