@@ -155,7 +155,7 @@ export class AureliaPlugin {
     // because they are determined at build-time.
     const dependencies: ModuleDependenciesPluginOptions = {
       // PAL for target
-      "aurelia-bootstrapper": "pal" in opts ? opts.pal : { name: getPAL(compiler.options.target as string), exports: ['initialize'] },
+      "aurelia-bootstrapper": "pal" in opts ? opts.pal : { name: getPAL(compiler.options.target), exports: ['initialize'] },
       // `aurelia-framework` exposes configuration helpers like `.standardConfiguration()`,
       // that load plugins, but we can't know if they are actually used or not.
       // User indicates what he uses at build time in `aureliaConfig` option.
@@ -233,7 +233,7 @@ export class AureliaPlugin {
 
     compiler.hooks.compilation.tap('AureliaPlugin', (compilation, params) => {
       compilation.hooks.runtimeRequirementInTree
-        .for(Webpack.RuntimeGlobals.definePropertyGetters)
+        .for(Webpack.RuntimeGlobals.require)
         .tap('AureliaPlugin', (chunk) => {
           compilation.addRuntimeModule(chunk, new AureliaExposeWebpackInternal());
         });
@@ -278,9 +278,23 @@ export class AureliaPlugin {
   }
 };
 
-function getPAL(target: string) {
+function getPAL(target?: string | string[] | false) {
+  if (target instanceof Array) {
+    if (target.includes('web') || target.includes('es5')) {
+      return 'aurelia-pal-browser';
+    }
+
+    // not really sure what to pick from an array
+    target = target[0];
+  }
+  if (target === false) {
+    throw new Error('Invalid target to build for AureliaPlugin.');
+  }
   switch (target) {
-    case "web": return "aurelia-pal-browser";
+    case undefined:
+    case "es5":
+    case "web":
+      return "aurelia-pal-browser";
     case "webworker": return "aurelia-pal-worker";
     case "electron-renderer": return "aurelia-pal-browser";
     default: return "aurelia-pal-nodejs";
@@ -336,8 +350,8 @@ class AureliaExposeWebpackInternal extends Webpack.RuntimeModule {
    */
   generate() {
     return Webpack.Template.asString([
-      "__webpack_require__.m = __webpack_require__.m || __webpack_modules__",
-      "__webpack_require__.c = __webpack_require__.c || __webpack_module_cache__",
+      "__webpack_require__.m = __webpack_require__.m || __webpack_modules__;",
+      "__webpack_require__.c = __webpack_require__.c || __webpack_module_cache__;",
     ]);
   }
 }

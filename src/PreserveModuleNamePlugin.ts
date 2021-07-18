@@ -67,7 +67,7 @@ export class PreserveModuleNamePlugin {
           normalizers.forEach(n => id = id!.replace(n, ""));
 
           // Keep "async!" in front of code splits proxies, they are used by aurelia-loader
-          if (/^async[?!]/.test(realModule.rawRequest)) 
+          if (/^async[?!]/.test(realModule.rawRequest))
             id = "async!" + id;
 
           id = id.replace(/\\/g, "/");

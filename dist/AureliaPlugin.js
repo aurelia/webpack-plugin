@@ -153,7 +153,7 @@ class AureliaPlugin {
         }
         compiler.hooks.compilation.tap('AureliaPlugin', (compilation, params) => {
             compilation.hooks.runtimeRequirementInTree
-                .for(Webpack.RuntimeGlobals.definePropertyGetters)
+                .for(Webpack.RuntimeGlobals.require)
                 .tap('AureliaPlugin', (chunk) => {
                 compilation.addRuntimeModule(chunk, new AureliaExposeWebpackInternal());
             });
@@ -199,8 +199,21 @@ class AureliaPlugin {
 exports.AureliaPlugin = AureliaPlugin;
 ;
 function getPAL(target) {
+    if (target instanceof Array) {
+        if (target.includes('web') || target.includes('es5')) {
+            return 'aurelia-pal-browser';
+        }
+        // not really sure what to pick from an array
+        target = target[0];
+    }
+    if (target === false) {
+        throw new Error('Invalid target to build for AureliaPlugin.');
+    }
     switch (target) {
-        case "web": return "aurelia-pal-browser";
+        case undefined:
+        case "es5":
+        case "web":
+            return "aurelia-pal-browser";
         case "webworker": return "aurelia-pal-worker";
         case "electron-renderer": return "aurelia-pal-browser";
         default: return "aurelia-pal-nodejs";
@@ -256,8 +269,8 @@ class AureliaExposeWebpackInternal extends Webpack.RuntimeModule {
      */
     generate() {
         return Webpack.Template.asString([
-            "__webpack_require__.m = __webpack_require__.m || __webpack_modules__",
-            "__webpack_require__.c = __webpack_require__.c || __webpack_module_cache__",
+            "__webpack_require__.m = __webpack_require__.m || __webpack_modules__;",
+            "__webpack_require__.c = __webpack_require__.c || __webpack_module_cache__;",
         ]);
     }
 }
