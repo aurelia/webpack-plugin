@@ -92,11 +92,11 @@ export class AureliaPlugin {
       noModulePathResolve: false,
       noWebpackLoader: false,
       // Ideally we would like _not_ to process conventions in node_modules,
-      // because they should be using @useView and not rely in convention in 
+      // because they should be using @useView and not rely in convention in
       // the first place. Unfortunately at this point many libs do use conventions
       // so it's just more helpful for users to process them.
       // As unlikely as it may seem, a common offender here is tslib, which has
-      // matching (yet unrelated) html files in its distribution. So I am making 
+      // matching (yet unrelated) html files in its distribution. So I am making
       // a quick exception for that.
       viewsFor: "**/!(tslib)*.{ts,js}",
       viewsExtensions: ".html",
@@ -189,7 +189,7 @@ export class AureliaPlugin {
       needsEmptyEntry = true;
     }
     else if (opts.aureliaApp) {
-      // Add aurelia-app entry point. 
+      // Add aurelia-app entry point.
       // When using includeAll, we assume it's already included
       globalDependencies.push({ name: opts.aureliaApp, exports: ["configure"] });
     }
@@ -213,7 +213,7 @@ export class AureliaPlugin {
 
     if (!opts.noHtmlLoader) {
       // Ensure that we trace HTML dependencies (always required because of 3rd party libs)
-      // Note that this loader will be in last place, which is important 
+      // Note that this loader will be in last place, which is important
       // because it will process the file first, before any other loader.
       compiler.options.module.rules.push({ test: /\.html?$/i, use: "aurelia-webpack-plugin/html-requires-loader" });
     }
@@ -267,9 +267,18 @@ export class AureliaPlugin {
     if (typeof webpackEntry === 'function') {
       return;
     }
+
+    // If entry point unspecified in plugin options; use the first webpack entry point
+    const pluginEntry = this.options.entry ?? [Object.keys(webpackEntry)[0]];
+
+    // Ensure array
+    const pluginEntries = Array.isArray(pluginEntry) ? pluginEntry : [pluginEntry];
+
     // Add runtime to each entry
-    for (let k in webpackEntry) {
-      if (this.options.entry?.includes(k) ?? false) {
+    for (const k of pluginEntries) {
+
+      // Verify that plugin options entry points are defined in webpack entry points
+      if (!(k in webpackEntry)) {
         throw new Error('entry key "' + k + '" is not defined in Webpack build, cannot apply runtime.');
       }
       let entry = webpackEntry[k];
