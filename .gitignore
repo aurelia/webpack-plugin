@@ -3,5 +3,6 @@ testoutput
 .idea
 .vscode
 .DS_STORE
+.npmrc
 npm-debug.log*
 *.tgz
