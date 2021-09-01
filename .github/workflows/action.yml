@@ -1,5 +1,5 @@
 name: CI
-on: [push]
+on: [push, pull_request]
 jobs:
   Core:
     runs-on: windows-latest
@@ -47,4 +47,15 @@ jobs:
 
       - name: Test build app with store plugin
         working-directory: ./tests/app-plugin-store
+        run: npm run build:ci
+jobs:
+  PNPM:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: pnpm/action-setup@v2.0.1
+        with:
+          version: 6.0.2
+      - name: Test build basic app with PNPM
+        working-directory: ./tests/app-pnpm
         run: npm run build:ci
