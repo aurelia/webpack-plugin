@@ -29,7 +29,7 @@ class ConventionDependenciesPlugin extends BaseIncludePlugin_1.BaseIncludePlugin
             if (/^async[!?]/.test(rawRequest)) {
                 return;
             }
-            if (!minimatch(path.relative(root, file), this.glob)) {
+            if (!minimatch(path.relative(root, file), this.glob, { dot: true })) {
                 return;
             }
             for (let c of this.conventions) {
