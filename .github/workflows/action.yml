@@ -50,12 +50,25 @@ jobs:
         run: npm run build:ci
 
   PNPM:
-    runs-on: ubuntu-latest
+    runs-on: window-latest
+
+    strategy:
+      matrix:
+        node-version: [14.x]
 
     steps:
-      - uses: pnpm/action-setup@v2.0.1
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
         with:
-          version: 6.0.2
+          node-version: ${{ matrix.node-version }}
+
+      - name: prepare pnpm
+        run: npm i -g pnpm
+
+      - name: Install dependencies
+        run: pnpm ci
+
       - name: Test build basic app with PNPM
         working-directory: ./tests/app-pnpm
         run: npm run build:ci
