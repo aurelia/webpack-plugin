@@ -2,6 +2,7 @@ name: CI
 on: [push, pull_request]
 jobs:
   Core:
+    name: Core tests with npm
     runs-on: windows-latest
 
     strategy:
@@ -50,7 +51,8 @@ jobs:
         run: npm run build:ci
 
   PNPM:
-    runs-on: window-latest
+    name: Extra tests with PNPM
+    runs-on: windows-latest
 
     strategy:
       matrix:
@@ -63,12 +65,12 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: prepare pnpm
-        run: npm i -g pnpm
-
-      - name: Install dependencies
-        run: pnpm ci
+      - name: Prepare test PNPM
+        run: |
+          npm i -g pnpm
+          pnpm install
 
       - name: Test build basic app with PNPM
         working-directory: ./tests/app-pnpm
-        run: npm run build:ci
+        run: |
+          npm run build:ci
