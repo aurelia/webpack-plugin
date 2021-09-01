@@ -36,7 +36,7 @@ export class ConventionDependenciesPlugin extends BaseIncludePlugin {
       if (/^async[!?]/.test(rawRequest)) {
         return;
       }
-      if (!minimatch(path.resolve(root, file), this.glob, {dot: true})) {
+      if (!minimatch(path.relative(root, file), this.glob, {dot: true})) {
         return;
       }
 
