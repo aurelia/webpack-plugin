@@ -48,7 +48,7 @@ jobs:
       - name: Test build app with store plugin
         working-directory: ./tests/app-plugin-store
         run: npm run build:ci
-jobs:
+
   PNPM:
     runs-on: ubuntu-latest
 
