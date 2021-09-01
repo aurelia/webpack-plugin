@@ -2,6 +2,7 @@ name: CI
 on: [push, pull_request]
 jobs:
   Core:
+    name: Core tests with npm
     runs-on: windows-latest
 
     strategy:
@@ -50,12 +51,26 @@ jobs:
         run: npm run build:ci
 
   PNPM:
-    runs-on: ubuntu-latest
+    name: Extra tests with PNPM
+    runs-on: windows-latest
+
+    strategy:
+      matrix:
+        node-version: [14.x]
 
     steps:
-      - uses: pnpm/action-setup@v2.0.1
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
         with:
-          version: 6.0.2
+          node-version: ${{ matrix.node-version }}
+
+      - name: Prepare test PNPM
+        run: |
+          npm i -g pnpm
+          pnpm install
+
       - name: Test build basic app with PNPM
         working-directory: ./tests/app-pnpm
-        run: npm run build:ci
+        run: |
+          npm run build:ci
