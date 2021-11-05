@@ -1,6 +1,6 @@
 {
   "name": "aurelia-webpack-plugin",
-  "version": "5.0.2",
+  "version": "5.0.3",
   "description": "A plugin for webpack that enables bundling Aurelia applications.",
   "keywords": [
     "aurelia",

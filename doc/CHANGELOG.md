@@ -1,3 +1,7 @@
+## 5.0.3
+
+Fix webpack v5.52.0 error with mini-css-extract-plugin
+
 ## 4.0.0
 
 Remove the runtime insertion hack from the Webpack 3 and below era, wherein only the first "entry" item had the runtime appended to it. This was originally implemented to avoid adding the runtime to the secondary "vendor" entry. Using "vendor" entry points which is no longer recommended for Webpack 4 and up.
