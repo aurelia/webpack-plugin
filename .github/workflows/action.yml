@@ -39,7 +39,7 @@ jobs:
         run: npm run build:ci
 
       - name: Test CSS extract
-        working-directory: ./test/app-with-css-extract
+        working-directory: ./tests/app-with-css-extract
         run: npm run build:ci
 
       # - name: Test build app using 3rd party lib
