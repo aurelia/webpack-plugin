@@ -30,7 +30,7 @@ jobs:
         working-directory: ./tests/app-simple
         run: |
           npm run build:ci
-          npm run test
+          ../../node_modules/.bin/karma.cmd start --singleRun
 
       - name: Test build router app
         working-directory: ./tests/app-router
@@ -44,7 +44,7 @@ jobs:
         working-directory: ./tests/app-with-css-extract
         run: |
           npm run build:ci
-          npm run test
+          ../../node_modules/.bin/karma.cmd start --singleRun
 
       # - name: Test build app using 3rd party lib
       #   working-directory: ./tests/app-plugin-3rd-party
