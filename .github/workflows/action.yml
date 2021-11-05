@@ -28,7 +28,9 @@ jobs:
 
       - name: (simple app) with Karma
         working-directory: ./tests/app-simple
-        run: npm run test
+        run: |
+          npm run build:ci
+          npm run test
 
       - name: Test build router app
         working-directory: ./tests/app-router
@@ -40,7 +42,9 @@ jobs:
 
       - name: Test CSS extract
         working-directory: ./tests/app-with-css-extract
-        run: npm run test
+        run: |
+          npm run build:ci
+          npm run test
 
       # - name: Test build app using 3rd party lib
       #   working-directory: ./tests/app-plugin-3rd-party
