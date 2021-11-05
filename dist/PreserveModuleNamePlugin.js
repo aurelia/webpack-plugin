@@ -5,7 +5,7 @@ const path = require("path");
 const logger_1 = require("./logger");
 exports.preserveModuleName = Symbol();
 const TAP_NAME = "Aurelia:PreserveModuleName";
-const logger = logger_1.createLogger('PreserveModuleNamePlugin');
+const logger = (0, logger_1.createLogger)('PreserveModuleNamePlugin');
 // This plugins preserves the module names of IncludeDependency and 
 // AureliaDependency so that they can be dynamically requested by 
 // aurelia-loader.

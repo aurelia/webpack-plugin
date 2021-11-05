@@ -33,15 +33,12 @@ module.exports = (env = {}) => {
       rules: [
         {
           test: /\.ts$/,
-          use: 'ts-loader',
+          loader: 'ts-loader',
           exclude: /node_modules/
         },
         {
           test: /\.html$/,
-          loader: 'html-loader',
-          options: {
-            attrs: false
-          }
+          loader: 'html-loader'
         }
       ]
     },
