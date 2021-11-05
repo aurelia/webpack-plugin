@@ -359,8 +359,10 @@ class AureliaExposeWebpackInternal extends Webpack.RuntimeModule {
    */
   generate() {
     return Webpack.Template.asString([
+      "if (typeof __webpack_modules__ !== 'undefined') {",
       "__webpack_require__.m = __webpack_require__.m || __webpack_modules__;",
       "__webpack_require__.c = __webpack_require__.c || __webpack_module_cache__;",
+      "}",
     ]);
   }
 }

@@ -2,6 +2,7 @@ const { AureliaPlugin } = require('aurelia-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const path = require('path');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 Error.stackTraceLimit = Infinity;
 
@@ -21,7 +22,6 @@ module.exports = (env = {}) => {
         'node_modules'
       ]
     },
-    devtool: false,
     entry: {
       // application entry file is app
       app: ["aurelia-bootstrapper"],
@@ -40,26 +40,26 @@ module.exports = (env = {}) => {
         {
           test: /\.html$/,
           loader: 'html-loader'
+        },
+        {
+          test: /\.css$/,
+          issuer: { not: [ /.html$/i ] },
+          use: [
+            MiniCssExtractPlugin.loader,
+            'css-loader'
+          ]
         }
       ]
     },
     plugins: [
       new AureliaPlugin({
-        dist: 'es2015'
+        aureliaConfig: ['basic'],
       }),
       // Standard plugin to build index.html
       new HtmlWebpackPlugin({
         template: 'index.ejs'
       }),
-      // new CopyWebpackPlugin({
-      //   patterns: [
-      //     // Have all static files / asessts copied over
-      //     { from: 'static/**', to: '.' },
-      //   ],
-      //   options: {
-      //     // copyUnmodified: true
-      //   }
-      // }),
+      new MiniCssExtractPlugin()
     ]
   };
 };

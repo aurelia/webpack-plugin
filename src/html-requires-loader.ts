@@ -26,11 +26,11 @@ namespace loader {
   };
 
   function traverse(tree: DocumentFragment | Element, cb: (tag: string, attr: Attribute) => void) {
-    tree.childNodes.forEach((n: any) => {
+    tree.childNodes && tree.childNodes.forEach((n: any) => {
       const ne = n as Element;
-      ne.attrs.forEach(attr => {
+      ne.attrs && ne.attrs.forEach(attr => {
         cb(ne.tagName, attr);
-      })
+      });
       if (ne.childNodes) traverse(ne, cb);
       // For <template> tag
       if (n.content && n.content.childNodes) traverse(n.content as DocumentFragment, cb);

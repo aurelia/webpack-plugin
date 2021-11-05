@@ -1,5 +1,5 @@
 {
-  "name": "app-basic",
+  "name": "app-with-css-extract",
   "scripts": {
     "dev": "webpack serve",
     "build": "webpack --stats-error-details",

@@ -85,6 +85,7 @@
     "chai": "^4.3.4",
     "copy-webpack-plugin": "^9.0.1",
     "css-loader": "^6.5.1",
+    "html-loader": "^3.0.1",
     "html-webpack-plugin": "^5.5.0",
     "karma": "^6.3.7",
     "karma-chrome-launcher": "^3.1.0",
