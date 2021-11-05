@@ -38,6 +38,10 @@ jobs:
         working-directory: ./tests/app-scoped-package
         run: npm run build:ci
 
+      - name: Test CSS extract
+        working-directory: ./test/app-with-css-extract
+        run: npm run build:ci
+
       # - name: Test build app using 3rd party lib
       #   working-directory: ./tests/app-plugin-3rd-party
       #   run: npm run build:ci
