@@ -8,7 +8,8 @@
     "build:ci": "npm run build -- --no-stats",
     "install:plugin": "npm install ../../",
     "rimraf": "rimraf dist/**/*.js",
-    "test": "karma start --singleRun"
+    "test": "../../node_modules/.bin/karma start --singleRun",
+    "test:win": "karma start --singleRun"
   },
   "dependencies": {
     "aurelia-webpack-plugin": "file:../.."
