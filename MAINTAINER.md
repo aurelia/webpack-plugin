@@ -5,8 +5,8 @@ For this package specifically, we try to maintain what you see in GH is what you
 Steps:
 
 1. checkout
-2. restore dependencies
-3. update version
+2. restore dependencies (`npm ci`)
+3. update version (`npm version -m 'chore(release): prepare release %s'`)
 4. push
 5. publish to npm
 
