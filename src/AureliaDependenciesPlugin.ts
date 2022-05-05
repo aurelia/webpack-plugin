@@ -36,7 +36,7 @@ class AureliaDependency extends IncludeDependency {
   }
 }
 
-webpack.util.serialization.register(AureliaDependency, "AureliaDependency", null as any, new ClassSerializer(AureliaDependency));
+webpack.util.serialization.register(AureliaDependency, "AureliaDependency", "AureliaDependency", new ClassSerializer(AureliaDependency));
 
 class Template {
   apply(dep: AureliaDependency, source: webpack.sources.ReplaceSource) {

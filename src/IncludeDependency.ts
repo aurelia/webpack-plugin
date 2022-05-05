@@ -45,7 +45,7 @@ export class IncludeDependency extends webpack.dependencies.ModuleDependency {
   }
 };
 
-webpack.util.serialization.register(IncludeDependency, "IncludeDependency", null as any, new ClassSerializer(IncludeDependency));
+webpack.util.serialization.register(IncludeDependency, "IncludeDependency", "IncludeDependency", new ClassSerializer(IncludeDependency));
 
 export type NullDependencyTemplate = typeof webpack.dependencies.NullDependency.Template;
 export const Template: NullDependencyTemplate = webpack.dependencies.NullDependency.Template;
