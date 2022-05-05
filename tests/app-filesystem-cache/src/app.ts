@@ -1,3 +1,5 @@
+import { MyComponent } from "my-component";
+
 export class App {
-  appDate: Date = new Date();
+  viewModel = MyComponent;
 }
