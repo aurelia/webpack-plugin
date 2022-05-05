@@ -46,6 +46,10 @@ jobs:
           npm run build:ci
           ../../node_modules/.bin/karma.cmd start --singleRun
 
+      - name: Test caching
+        working-directory: ./tests/app-filesystem-cache
+        run: npm run build:ci
+
       # - name: Test build app using 3rd party lib
       #   working-directory: ./tests/app-plugin-3rd-party
       #   run: npm run build:ci
