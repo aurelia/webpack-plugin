@@ -1,4 +1,5 @@
 import { IncludeDependency } from "./IncludeDependency";
+import { ClassSerializer } from "./ClassSerializer";
 import * as estree from 'estree';
 import * as webpack from 'webpack';
 
@@ -8,9 +9,9 @@ const BasicEvaluatedExpression: $BasicEvaluatedExpression = require("webpack/lib
 const TAP_NAME = "Aurelia:Dependencies";
 
 class AureliaDependency extends IncludeDependency {
-  constructor(request: string, 
-              public range: [number, number], 
-              options?: DependencyOptions) {
+  constructor(public request: string,
+    public range: [number, number],
+    options?: DependencyOptions) {
     super(request, options);
   }
 
@@ -21,7 +22,21 @@ class AureliaDependency extends IncludeDependency {
   get [dependencyImports]() {
     return webpack.Dependency.EXPORTS_OBJECT_REFERENCED as any;
   }
+
+  serialize(context: any) {
+    const { write } = context;
+    write(this.range);
+    super.serialize(context);
+  }
+
+  deserialize(context: any) {
+    const { read } = context;
+    this.range = read();
+    super.deserialize(context);
+  }
 }
+
+webpack.util.serialization.register(AureliaDependency, "AureliaDependency", null as any, new ClassSerializer(AureliaDependency));
 
 class Template {
   apply(dep: AureliaDependency, source: webpack.sources.ReplaceSource) {
@@ -57,8 +72,8 @@ class ParserPlugin {
           // import('aurelia-pal').then(pal => pal.PLATFORM.moduleName(...))
           // import('aurelia-pal').then({ PLATFORM } => PLATFORM.moduleName(...))
           || expr.object.type === 'MemberExpression'
-            && expr.object.property.type === 'Identifier'
-            && expr.object.property.name === 'PLATFORM'
+          && expr.object.property.type === 'Identifier'
+          && expr.object.property.name === 'PLATFORM'
         )
       ) {
         return new BasicEvaluatedExpression()
@@ -100,7 +115,7 @@ class ParserPlugin {
             let value = parser.evaluateExpression(prop.value as estree.Literal)!;
             switch (prop.key.name) {
               case "chunk":
-                if (value.isString()) 
+                if (value.isString())
                   options.chunk = value.string;
                 break;
               case "exports":
