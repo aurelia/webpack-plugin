@@ -9,6 +9,8 @@ export declare class IncludeDependency extends webpack.dependencies.ModuleDepend
     getReferencedExports(moduleGraph: webpack.ModuleGraph): (string[] | ReferencedExport)[];
     get [preserveModuleName](): boolean;
     get [dependencyImports](): string[] | undefined;
+    serialize(context: any): void;
+    deserialize(context: any): void;
 }
 export declare type NullDependencyTemplate = typeof webpack.dependencies.NullDependency.Template;
 export declare const Template: NullDependencyTemplate;
