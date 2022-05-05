@@ -49,8 +49,6 @@
     "parse5": "^5.1.1"
   },
   "peerDependencies": {
-    "chart.js": "^3.7.1",
-    "redux": "^4.2.0",
     "webpack": ">= 5.0.0"
   },
   "devDependencies": {
@@ -86,6 +84,8 @@
     "aurelia-templating-router": "^1.4.0",
     "aurelia-testing": "^1.0.0",
     "chai": "^4.3.4",
+    "chart.js": "^3.7.1",
+    "redux": "^4.2.0",
     "copy-webpack-plugin": "^9.0.1",
     "css-loader": "^6.5.1",
     "html-loader": "^3.0.1",
