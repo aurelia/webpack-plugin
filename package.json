@@ -31,7 +31,6 @@
     "runtime"
   ],
   "scripts": {
-    "postinstall": "link-parent-bin -c tests",
     "build": "tsc",
     "build:watch": "tsc --watch",
     "test": "cd tests/app-basic && npm run build:ci",
