@@ -10,8 +10,8 @@ const TAP_NAME = "Aurelia:Dependencies";
 
 class AureliaDependency extends IncludeDependency {
   constructor(public request: string,
-    public range: [number, number],
-    options?: DependencyOptions) {
+              public range: [number, number],
+              options?: DependencyOptions) {
     super(request, options);
   }
 
@@ -72,8 +72,8 @@ class ParserPlugin {
           // import('aurelia-pal').then(pal => pal.PLATFORM.moduleName(...))
           // import('aurelia-pal').then({ PLATFORM } => PLATFORM.moduleName(...))
           || expr.object.type === 'MemberExpression'
-          && expr.object.property.type === 'Identifier'
-          && expr.object.property.name === 'PLATFORM'
+            && expr.object.property.type === 'Identifier'
+            && expr.object.property.name === 'PLATFORM'
         )
       ) {
         return new BasicEvaluatedExpression()
