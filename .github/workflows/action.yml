@@ -81,7 +81,7 @@ jobs:
 
       - name: Prepare test PNPM
         run: |
-          npm i -g pnpm
+          npm i -g pnpm@6
           pnpm install --shamefully-hoist
 
       - name: Test build basic app with PNPM
