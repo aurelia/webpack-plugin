@@ -18,6 +18,14 @@ export class PreserveModuleNamePlugin {
   }
 
   apply(compiler: Webpack.Compiler) {
+    // Override NormalModule serializer: "preserveModuleName" should be serialized
+    // to ensure correct module serialization of conventional dependencies (ConventionDependenciesPlugin)
+    // when "webpack filesystem cache" is enabled, https://github.com/aurelia/webpack-plugin/issues/199
+    const isFilesystemCacheEnabled = typeof (compiler.options.cache) != 'boolean' && compiler.options.cache.type == 'filesystem';
+    if (isFilesystemCacheEnabled) {
+      overrideNormalModuleSerializer();
+    }
+
     compiler.hooks.compilation.tap(TAP_NAME, compilation => {
       compilation.hooks.beforeModuleIds.tap(TAP_NAME, $modules => {
         let modules = Array.from($modules) as Webpack.NormalModule[];
@@ -188,4 +196,21 @@ function removeLoaders(request: string | undefined) {
   if (!request) return request;
   let lastBang = request.lastIndexOf("!");
   return lastBang < 0 ? request : request.substr(lastBang + 1);
+}
+
+function overrideNormalModuleSerializer() {
+  const originalSerialize = Webpack.NormalModule.prototype.serialize;
+  Webpack.NormalModule.prototype.serialize = function (context) {
+    context.write(this[preserveModuleName]);
+    originalSerialize.call(this, context);
+  }
+
+  const originalDeserialize = Webpack.NormalModule.prototype.deserialize;
+  Webpack.NormalModule.prototype.deserialize = function (context) {
+    const preserve = context.read();
+    if (preserve) {
+      this[preserveModuleName] = preserve;
+    }
+    originalDeserialize.call(this, context);
+  }
 }

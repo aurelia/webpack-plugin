@@ -9,7 +9,7 @@ const BasicEvaluatedExpression: $BasicEvaluatedExpression = require("webpack/lib
 const TAP_NAME = "Aurelia:Dependencies";
 
 class AureliaDependency extends IncludeDependency {
-  constructor(public request: string,
+  constructor(request: string,
               public range: [number, number],
               options?: DependencyOptions) {
     super(request, options);
@@ -21,18 +21,6 @@ class AureliaDependency extends IncludeDependency {
 
   get [dependencyImports]() {
     return webpack.Dependency.EXPORTS_OBJECT_REFERENCED as any;
-  }
-
-  serialize(context: any) {
-    const { write } = context;
-    write(this.range);
-    super.serialize(context);
-  }
-
-  deserialize(context: any) {
-    const { read } = context;
-    this.range = read();
-    super.deserialize(context);
   }
 }
 

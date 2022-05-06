@@ -10,7 +10,6 @@ const TAP_NAME = "Aurelia:Dependencies";
 class AureliaDependency extends IncludeDependency_1.IncludeDependency {
     constructor(request, range, options) {
         super(request, options);
-        this.request = request;
         this.range = range;
     }
     get type() {
@@ -19,18 +18,8 @@ class AureliaDependency extends IncludeDependency_1.IncludeDependency {
     get [PreserveExportsPlugin_1.dependencyImports]() {
         return webpack.Dependency.EXPORTS_OBJECT_REFERENCED;
     }
-    serialize(context) {
-        const { write } = context;
-        write(this.range);
-        super.serialize(context);
-    }
-    deserialize(context) {
-        const { read } = context;
-        this.range = read();
-        super.deserialize(context);
-    }
 }
-webpack.util.serialization.register(AureliaDependency, "AureliaDependency", null, new ClassSerializer_1.ClassSerializer(AureliaDependency));
+webpack.util.serialization.register(AureliaDependency, "AureliaDependency", "AureliaDependency", new ClassSerializer_1.ClassSerializer(AureliaDependency));
 class Template {
     apply(dep, source) {
         source.replace(dep.range[0], dep.range[1] - 1, "'" + dep.request.replace(/^async(?:\?[^!]*)?!/, "") + "'");

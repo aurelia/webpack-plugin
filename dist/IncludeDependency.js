@@ -29,17 +29,15 @@ class IncludeDependency extends webpack.dependencies.ModuleDependency {
         return (_a = this.options) === null || _a === void 0 ? void 0 : _a.exports;
     }
     serialize(context) {
-        const { write } = context;
-        write(this.options);
+        context.write(this.options);
         super.serialize(context);
     }
     deserialize(context) {
-        const { read } = context;
-        this.options = read();
+        this.options = context.read();
         super.deserialize(context);
     }
 }
 exports.IncludeDependency = IncludeDependency;
 ;
-webpack.util.serialization.register(IncludeDependency, "IncludeDependency", null, new ClassSerializer_1.ClassSerializer(IncludeDependency));
+webpack.util.serialization.register(IncludeDependency, "IncludeDependency", "IncludeDependency", new ClassSerializer_1.ClassSerializer(IncludeDependency));
 exports.Template = webpack.dependencies.NullDependency.Template;

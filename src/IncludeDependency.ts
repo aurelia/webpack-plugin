@@ -33,14 +33,12 @@ export class IncludeDependency extends webpack.dependencies.ModuleDependency {
   }
 
   serialize(context: any) {
-    const { write } = context;
-    write(this.options);
+    context.write(this.options);
     super.serialize(context);
   }
 
   deserialize(context: any) {
-    const { read } = context;
-    this.options = read();
+    this.options = context.read();
     super.deserialize(context);
   }
 };
