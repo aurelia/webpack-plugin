@@ -1,4 +1,4 @@
-import { MyComponent } from "my-component";
+import { MyComponent } from "./my-component";
 
 export class App {
   viewModel = MyComponent;

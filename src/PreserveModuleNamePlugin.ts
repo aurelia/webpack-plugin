@@ -198,7 +198,12 @@ function removeLoaders(request: string | undefined) {
   return lastBang < 0 ? request : request.substr(lastBang + 1);
 }
 
+let overridden = false;
 function overrideNormalModuleSerializer() {
+  if (overridden) {
+    return;
+  }
+  overridden = true;
   const originalSerialize = Webpack.NormalModule.prototype.serialize;
   Webpack.NormalModule.prototype.serialize = function (context) {
     context.write(this[preserveModuleName]);

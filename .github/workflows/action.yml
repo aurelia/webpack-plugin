@@ -50,7 +50,12 @@ jobs:
 
       - name: Test caching
         working-directory: ./tests/app-filesystem-cache
-        run: npm run build:ci
+        run: |
+          npm run build:ci
+          npm run test
+          # run it twice to to use cache 2nd run (hopefully?)
+          npm run test
+          Write-Host ( Get-ChildItem .\node_modules\.bin | Measure-Object ).Count;
 
       # - name: Test build app using 3rd party lib
       #   working-directory: ./tests/app-plugin-3rd-party

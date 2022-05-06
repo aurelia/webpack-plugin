@@ -13,7 +13,10 @@ module.exports = (env = {}) => {
     mode: 'development',
     target: 'web',
     cache: {
-      type: 'filesystem'
+      type: 'filesystem',
+      buildDependencies: {
+        config: [__filename]
+      }
     },
     resolve: {
       extensions: [".ts", ".js"],
