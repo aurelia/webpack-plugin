@@ -21,7 +21,7 @@ export class PreserveModuleNamePlugin {
     // Override NormalModule serializer: "preserveModuleName" should be serialized
     // to ensure correct module serialization of conventional dependencies (ConventionDependenciesPlugin)
     // when "webpack filesystem cache" is enabled, https://github.com/aurelia/webpack-plugin/issues/199
-    const isFilesystemCacheEnabled = typeof (compiler.options.cache) != 'boolean' && compiler.options.cache.type == 'filesystem';
+    const isFilesystemCacheEnabled = typeof (compiler.options.cache) == 'object' && compiler.options.cache.type == 'filesystem';
     if (isFilesystemCacheEnabled) {
       overrideNormalModuleSerializer();
     }
