@@ -16,7 +16,9 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - name: Install dependencies
-        run: npm ci
+        run: |
+          npm ci
+          npx link-parent-bin -c tests
 
       - name: Test build basic app
         working-directory: ./tests/app-basic
@@ -46,6 +48,15 @@ jobs:
           npm run build:ci
           ../../node_modules/.bin/karma.cmd start --singleRun
 
+      - name: Test caching
+        working-directory: ./tests/app-filesystem-cache
+        run: |
+          npm run build:ci
+          npm run test
+          # run it twice to to use cache 2nd run (hopefully?)
+          npm run test
+          Write-Host ( Get-ChildItem .\node_modules\.bin | Measure-Object ).Count;
+
       # - name: Test build app using 3rd party lib
       #   working-directory: ./tests/app-plugin-3rd-party
       #   run: npm run build:ci
@@ -73,9 +84,14 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
+      - name: Install dependencies
+        run: |
+          npm ci
+          npx link-parent-bin -c tests
+
       - name: Prepare test PNPM
         run: |
-          npm i -g pnpm
+          npm i -g pnpm@6
           pnpm install
 
       - name: Test build basic app with PNPM

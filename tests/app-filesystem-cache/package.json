@@ -1,5 +1,5 @@
 {
-  "name": "app-simple",
+  "name": "app-basic",
   "scripts": {
     "dev": "webpack serve",
     "build": "webpack --stats-error-details",

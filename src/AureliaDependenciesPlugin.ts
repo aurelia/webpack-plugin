@@ -1,4 +1,5 @@
 import { IncludeDependency } from "./IncludeDependency";
+import { ClassSerializer } from "./ClassSerializer";
 import * as estree from 'estree';
 import * as webpack from 'webpack';
 
@@ -8,8 +9,8 @@ const BasicEvaluatedExpression: $BasicEvaluatedExpression = require("webpack/lib
 const TAP_NAME = "Aurelia:Dependencies";
 
 class AureliaDependency extends IncludeDependency {
-  constructor(request: string, 
-              public range: [number, number], 
+  constructor(request: string,
+              public range: [number, number],
               options?: DependencyOptions) {
     super(request, options);
   }
@@ -22,6 +23,8 @@ class AureliaDependency extends IncludeDependency {
     return webpack.Dependency.EXPORTS_OBJECT_REFERENCED as any;
   }
 }
+
+webpack.util.serialization.register(AureliaDependency, "AureliaDependency", "AureliaDependency", new ClassSerializer(AureliaDependency));
 
 class Template {
   apply(dep: AureliaDependency, source: webpack.sources.ReplaceSource) {
@@ -100,7 +103,7 @@ class ParserPlugin {
             let value = parser.evaluateExpression(prop.value as estree.Literal)!;
             switch (prop.key.name) {
               case "chunk":
-                if (value.isString()) 
+                if (value.isString())
                   options.chunk = value.string;
                 break;
               case "exports":
