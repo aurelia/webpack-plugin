@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PreserveModuleNamePlugin = exports.preserveModuleName = void 0;
 const path = require("path");
+const Webpack = require("webpack");
 const logger_1 = require("./logger");
 exports.preserveModuleName = Symbol();
 const TAP_NAME = "Aurelia:PreserveModuleName";
@@ -16,6 +17,13 @@ class PreserveModuleNamePlugin {
         this.isDll = isDll;
     }
     apply(compiler) {
+        // Override NormalModule serializer: "preserveModuleName" should be serialized
+        // to ensure correct module serialization of conventional dependencies (ConventionDependenciesPlugin)
+        // when "webpack filesystem cache" is enabled, https://github.com/aurelia/webpack-plugin/issues/199
+        const isFilesystemCacheEnabled = typeof (compiler.options.cache) == 'object' && compiler.options.cache.type == 'filesystem';
+        if (isFilesystemCacheEnabled) {
+            overrideNormalModuleSerializer();
+        }
         compiler.hooks.compilation.tap(TAP_NAME, compilation => {
             compilation.hooks.beforeModuleIds.tap(TAP_NAME, $modules => {
                 let modules = Array.from($modules);
@@ -176,4 +184,24 @@ function removeLoaders(request) {
         return request;
     let lastBang = request.lastIndexOf("!");
     return lastBang < 0 ? request : request.substr(lastBang + 1);
+}
+let overridden = false;
+function overrideNormalModuleSerializer() {
+    if (overridden) {
+        return;
+    }
+    overridden = true;
+    const originalSerialize = Webpack.NormalModule.prototype.serialize;
+    Webpack.NormalModule.prototype.serialize = function (context) {
+        context.write(this[exports.preserveModuleName]);
+        originalSerialize.call(this, context);
+    };
+    const originalDeserialize = Webpack.NormalModule.prototype.deserialize;
+    Webpack.NormalModule.prototype.deserialize = function (context) {
+        const preserve = context.read();
+        if (preserve) {
+            this[exports.preserveModuleName] = preserve;
+        }
+        originalDeserialize.call(this, context);
+    };
 }

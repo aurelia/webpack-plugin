@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AureliaDependenciesPlugin = void 0;
 const IncludeDependency_1 = require("./IncludeDependency");
+const ClassSerializer_1 = require("./ClassSerializer");
 const webpack = require("webpack");
 const PreserveExportsPlugin_1 = require("./PreserveExportsPlugin");
 const BasicEvaluatedExpression = require("webpack/lib/javascript/BasicEvaluatedExpression");
@@ -18,6 +19,7 @@ class AureliaDependency extends IncludeDependency_1.IncludeDependency {
         return webpack.Dependency.EXPORTS_OBJECT_REFERENCED;
     }
 }
+webpack.util.serialization.register(AureliaDependency, "AureliaDependency", "AureliaDependency", new ClassSerializer_1.ClassSerializer(AureliaDependency));
 class Template {
     apply(dep, source) {
         source.replace(dep.range[0], dep.range[1] - 1, "'" + dep.request.replace(/^async(?:\?[^!]*)?!/, "") + "'");

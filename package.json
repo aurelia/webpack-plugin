@@ -1,6 +1,6 @@
 {
   "name": "aurelia-webpack-plugin",
-  "version": "5.0.3",
+  "version": "5.0.4",
   "description": "A plugin for webpack that enables bundling Aurelia applications.",
   "keywords": [
     "aurelia",
@@ -35,7 +35,8 @@
     "build:watch": "tsc --watch",
     "test": "cd tests/app-basic && npm run build:ci",
     "preversion": "npm run test",
-    "version": "npm run build && git add ."
+    "version": "npm run build && git add .",
+    "cut-release": "npm version --git-tag-version false --"
   },
   "repository": {
     "type": "git",

@@ -1,3 +1,7 @@
+## 5.0.4
+
+Fix webpack serialization when a component module is imported via the normal way
+
 ## 5.0.3
 
 Fix webpack v5.52.0 error with mini-css-extract-plugin
