@@ -6,7 +6,7 @@ var loaderUtils = require("loader-utils");
 
 function loader() { }
 
-export default loader;
+export = loader;
 
 loader.pitch = function (this: import('webpack').WebpackPluginInstance, remainingRequest: any) {
   this.cacheable && this.cacheable();
