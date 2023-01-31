@@ -127,7 +127,7 @@ export class AureliaPlugin {
     let alias = resolveLoader.alias || (resolveLoader.alias = {});
     alias["aurelia-webpack-plugin"] = "aurelia-webpack-plugin/dist";
     // Our async! loader is in fact just bundle-loader!.
-    alias["async"] = "bundle-loader";
+    alias["async"] = "aurelia-webpack-plugin/dist/bundle-loader";
 
     // For my own sanity when working on this plugin with `yarn link`,
     // make sure neither webpack nor Node resolve symlinks.
