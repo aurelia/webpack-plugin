@@ -21,7 +21,7 @@ export class IncludeDependency extends webpack.dependencies.ModuleDependency {
   getReferencedExports(moduleGraph: webpack.ModuleGraph): (string[] | ReferencedExport)[] {
     // when there's no specific exports are targetted,
     // passing an empty array means preserving all
-    return [{ name: this.options?.exports ?? [], canMangle: false }]
+    return require("webpack").Dependency.EXPORTS_OBJECT_REFERENCED
   }
 
   get [preserveModuleName]() {
